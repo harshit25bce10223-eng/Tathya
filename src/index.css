@@ -1,0 +1,60 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --tathya-bg: #0B0F17;
+  --tathya-bg-secondary: #070A0F;
+  --tathya-surface: #121A27;
+  --tathya-surface-elevated: #172233;
+  --tathya-border: #1E2C40;
+  --tathya-border-subtle: #152030;
+  --tathya-text-primary: #F1F5F9;
+  --tathya-text-secondary: #94A3B8;
+  --tathya-text-muted: #64748B;
+  --tathya-accent: #38BDF8;
+  --tathya-success: #10B981;
+  --tathya-warning: #F59E0B;
+  --tathya-danger: #EF4444;
+  --tathya-critical: #DC2626;
+  --tathya-info: #3B82F6;
+}
+
+body {
+  margin: 0;
+  background-color: var(--tathya-bg);
+  color: var(--tathya-text-primary);
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Custom crisp scrollbar for enterprise document review */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #0B0F17;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #1E2C40;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #2D415D;
+}
+
+/* Tabular numerals for high-precision business figures */
+.font-tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Focus styles */
+*:focus-visible {
+  outline: 2px solid var(--tathya-accent);
+  outline-offset: 2px;
+}
