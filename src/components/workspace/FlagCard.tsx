@@ -5,7 +5,9 @@ import {
   AlertTriangle,
   CheckCircle2,
   XCircle,
-  Wrench
+  Wrench,
+  HelpCircle,
+  FileSearch
 } from 'lucide-react';
 
 interface FlagCardProps {
@@ -53,10 +55,22 @@ export const FlagCard: React.FC<FlagCardProps> = ({
     }
   };
 
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      onSelect?.();
+    }
+  };
+
   return (
     <div
+      role="button"
+      tabIndex={0}
+      aria-pressed={isSelected}
+      aria-label={`Flag finding: ${flag.type}, severity ${flag.severity}, ${flag.claim}`}
       onClick={onSelect}
-      className={`p-4 rounded-xl border transition-all cursor-pointer ${
+      onKeyDown={handleKeyDown}
+      className={`finding-card p-4 rounded-xl border transition-all cursor-pointer focus:outline-none focus:ring-2 focus:ring-tathya-accent ${
         isSelected
           ? 'bg-tathya-surface-elevated border-tathya-accent ring-1 ring-tathya-accent/50 shadow-tathya-elevated'
           : 'bg-tathya-surface border-tathya-surface-border hover:border-slate-600 hover:bg-tathya-surface/80'
@@ -74,28 +88,38 @@ export const FlagCard: React.FC<FlagCardProps> = ({
         <div>{getStatusBadge()}</div>
       </div>
 
-      {/* Primary Question: Why Should I Care? (Reason) */}
+      {/* Primary Question: Why Should I Care? (Materiality / Impact) */}
       <div className="mb-3 p-2.5 rounded-lg bg-red-950/25 border border-red-900/40 text-xs text-red-200 leading-relaxed">
-        <span className="font-semibold text-red-300 block mb-0.5">Finding Materiality:</span>
+        <div className="flex items-center justify-between mb-0.5">
+          <span className="font-semibold text-red-300">Finding Materiality:</span>
+          {flag.impactScore && (
+            <span className="text-[10px] font-mono font-bold text-red-400">
+              {flag.impactScore} pts
+            </span>
+          )}
+        </div>
         {flag.reason}
       </div>
 
-      {/* Claim vs Expected */}
+      {/* Claim from AI Document */}
       <div className="space-y-1.5 text-xs mb-3">
         <div className="text-tathya-text-muted">
           <span className="text-white font-medium">Document Claim: </span>
-          <span className="italic text-slate-300">"{flag.claim}"</span>
+          <span className="italic text-slate-200 font-mono text-[11px]">"{flag.claim}"</span>
         </div>
       </div>
 
-      {/* Evidence Preview */}
+      {/* Ground Truth Evidence Excerpt preview */}
       <div className="p-2.5 rounded-lg bg-tathya-surface-elevated/80 border border-tathya-surface-border text-xs mb-3">
         <div className="flex items-center justify-between text-[11px] text-tathya-text-muted mb-1 font-mono">
-          <span className="truncate text-emerald-400 font-semibold">{flag.evidence.authority}</span>
-          <span className="flex-shrink-0">{flag.evidence.location}</span>
+          <span className="truncate text-emerald-400 font-semibold flex items-center gap-1">
+            <FileSearch className="w-3 h-3 text-emerald-400" />
+            {flag.evidence.authority || flag.evidence.sourceName}
+          </span>
+          <span className="flex-shrink-0 text-slate-400">{flag.evidence.location}</span>
         </div>
         <p className="text-slate-300 italic text-[11px] leading-relaxed">
-          {flag.evidence.quote}
+          {flag.evidence.quote ? flag.evidence.quote : 'No supporting evidence found in approved sources.'}
         </p>
       </div>
 

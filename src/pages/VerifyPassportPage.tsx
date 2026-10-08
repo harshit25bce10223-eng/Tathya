@@ -73,7 +73,7 @@ export const VerifyPassportPage: React.FC = () => {
         {loading ? (
           <div className="p-16 text-center">
             <Loader2 className="w-8 h-8 text-tathya-accent animate-spin mx-auto mb-2" />
-            <span className="text-xs text-tathya-text-muted">Verifying cryptographic seal and Merkle tree proofs...</span>
+            <span className="text-xs text-tathya-text-muted">Verifying cryptographic seal and claim hash chain proofs...</span>
           </div>
         ) : result ? (
           <div className="rounded-2xl bg-tathya-surface border border-tathya-surface-border overflow-hidden shadow-tathya-elevated">
@@ -154,11 +154,11 @@ export const VerifyPassportPage: React.FC = () => {
                   <span className="text-slate-300 break-all">{result.passport.documentHash}</span>
                 </div>
                 <div>
-                  <span className="text-[10px] text-tathya-text-muted block">MERKLE TREE CLAIM ROOT:</span>
-                  <span className="text-tathya-accent break-all">{result.passport.merkleRoot}</span>
+                  <span className="text-[10px] text-tathya-text-muted block">SHA-256 CLAIM CHAIN ROOT:</span>
+                  <span className="text-tathya-accent break-all">{result.passport.claimTreeRoot}</span>
                 </div>
                 <div>
-                  <span className="text-[10px] text-tathya-text-muted block">ECDSA SIGNATURE:</span>
+                  <span className="text-[10px] text-tathya-text-muted block">ECDSA P-256 SIGNATURE:</span>
                   <span className="text-emerald-400/90 break-all text-[11px]">{result.passport.signature}</span>
                 </div>
               </div>

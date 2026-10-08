@@ -1,3 +1,4 @@
+import '../page-specific/approved-paper-theme.css';
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { TathyaLogo } from '../brand/TathyaLogo';
@@ -25,7 +26,7 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
   const isLoginPage = location.pathname === '/login';
 
   return (
-    <div className="min-h-screen bg-tathya-bg text-tathya-text-primary flex flex-col font-sans">
+    <div className="theme-paper min-h-screen bg-tathya-bg text-tathya-text-primary flex flex-col font-sans">
       {/* GLOBAL TOP ENTERPRISE HEADER */}
       <header className="h-15 border-b border-tathya-surface-border bg-tathya-surface/90 backdrop-blur sticky top-0 z-40 px-4 lg:px-6 flex items-center justify-between">
         {/* Left: Brand & Mobile Toggle */}

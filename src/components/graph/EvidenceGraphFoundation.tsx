@@ -7,7 +7,7 @@ interface EvidenceGraphFoundationProps {
   auditId?: string;
 }
 
-export const EvidenceGraphFoundation: React.FC<EvidenceGraphFoundationProps> = ({ auditId: _auditId = 'AUD-1042' }) => {
+export const EvidenceGraphFoundation: React.FC<EvidenceGraphFoundationProps> = ({ auditId = 'CURRENT_AUDIT' }) => {
   const initialNodes = [
     {
       id: 'doc-1',

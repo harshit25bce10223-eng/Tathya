@@ -1,0 +1,87 @@
+/* Approved Phase 1/2 palette. Scoped to the app shell; workflow logic is unchanged. */
+body:has(.theme-paper) { background: #f8f7f3; }
+.theme-paper.theme-paper {
+  --tathya-bg: #f8f7f3;
+  --tathya-bg-secondary: #efeee8;
+  --tathya-surface: #ffffff;
+  --tathya-surface-elevated: #f0f1eb;
+  --tathya-border: #dedfd6;
+  --tathya-text-primary: #203731;
+  --tathya-text-secondary: #63736c;
+  --tathya-text-muted: #63736c;
+  --tathya-accent: #17634f;
+  background: var(--tathya-bg);
+  color: var(--tathya-text-primary);
+  font-family: 'Segoe UI', Arial, sans-serif;
+}
+.theme-paper main, .theme-paper [class*='bg-tathya-bg'] { background: var(--tathya-bg); }
+.theme-paper [class*='bg-tathya-surface'] { background: var(--tathya-surface); }
+.theme-paper [class*='bg-tathya-surface-elevated'], .theme-paper [class*='bg-tathya-surface-hover'] { background: var(--tathya-surface-elevated); }
+.theme-paper [class*='border-tathya-surface'] { border-color: var(--tathya-border); }
+.theme-paper [class*='text-tathya-text-primary'], .theme-paper .text-white,
+.theme-paper [class*='text-slate-1'], .theme-paper [class*='text-slate-2'], .theme-paper [class*='text-slate-3'] { color: var(--tathya-text-primary); }
+.theme-paper [class*='text-tathya-text-secondary'], .theme-paper [class*='text-tathya-text-muted'],
+.theme-paper [class*='text-slate-4'], .theme-paper [class*='text-slate-5'], .theme-paper [class*='text-slate-6'] { color: var(--tathya-text-secondary); }
+.theme-paper [class*='text-tathya-accent'] { color: var(--tathya-accent); }
+.theme-paper [class*='border-tathya-accent'] { border-color: #39816b; }
+.theme-paper [class*='bg-tathya-accent/'] { background: #e9f0eb; }
+.theme-paper [class*='bg-slate-8'], .theme-paper [class*='bg-slate-9'], .theme-paper [class*='bg-black/'] { background: #efeee8; }
+.theme-paper .fixed[class*='bg-black/'] { background: #20373180; }
+.theme-paper [class*='border-slate-'], .theme-paper [class*='border-emerald-9'] { border-color: #dedfd6; }
+.theme-paper [class*='bg-red-9'] { background: #fbefec; }
+.theme-paper [class*='text-red-'] { color: #a43b32; }
+.theme-paper [class*='border-red-'] { border-color: #e7bbb4; }
+.theme-paper [class*='bg-amber-9'] { background: #faf2e2; }
+.theme-paper [class*='text-amber-'] { color: #93641e; }
+.theme-paper [class*='border-amber-'] { border-color: #e6d2a8; }
+.theme-paper [class*='bg-emerald-9'] { background: #e9f0eb; }
+.theme-paper [class*='text-emerald-'] { color: #17634f; }
+.theme-paper [class*='border-emerald-'] { border-color: #bdd5c7; }
+.theme-paper [class*='shadow-tathya-'] { box-shadow: 0 2px 9px #20373106; }
+.theme-paper header { height: 64px; background: #ffffff; backdrop-filter: none; }
+.theme-paper aside[class] { background: #f0f1eb; }
+.theme-paper aside nav a { background: transparent; font-size: 13px; border-radius: 7px; padding: 11px 12px; }
+.theme-paper aside nav a:hover { background: #e9f0eb; color: #174f40; }
+.theme-paper header [class*='bg-gradient'] { background: #e9f0eb; }
+.theme-paper aside nav a[aria-current='page'] { background: #dde9df; color: #174f40; }
+.theme-paper aside a[href='/submit'], .theme-paper header a[href='/submit'],
+.theme-paper .bg-tathya-accent { background: #17634f; color: #ffffff; }
+.theme-paper aside a[href='/submit'] span { color: #ffffff; }
+.theme-paper aside a[href='/submit'] span:last-child { background: #ffffff15; }
+.theme-paper [class*='hover:text-white']:hover { color: #174f40; }
+.theme-paper .trust-workspace { background: #f8f7f3; height: calc(100dvh - 64px); }
+.theme-paper .workspace-header { background: #f8f7f3; padding-top: 18px; padding-bottom: 18px; }
+.theme-paper .trust-workspace .workspace-header h2 { font-family: Georgia, 'Times New Roman', serif; font-weight: 400; font-size: 20px; letter-spacing: -.035em; }
+.theme-paper .workspace-header > div:first-child { flex-wrap: wrap; }
+.theme-paper .result-summary { background: #ffffff; }
+.theme-paper .workspace-section-heading { background: #f8f7f3; }
+.theme-paper .workspace-section-heading span { text-transform: none; letter-spacing: 0; }
+.theme-paper .workspace-evidence, .theme-paper .workspace-findings { background: #ffffff; }
+.theme-paper .finding-card[aria-pressed='true'] { background: #f5f8f4; box-shadow: inset 3px 0 0 #17634f; border-color: #39816b; }
+.theme-paper .finding-card [class*='bg-red-9'] { background: #fbefec; }
+.theme-paper .document-reader > .flex-1 { background: #efeee8; }
+.theme-paper .document-reader .max-w-3xl { background: #fffefb; border-color: #dedfd6; }
+.theme-paper .document-reader > div:first-child, .theme-paper .document-reader > div:last-child { background: #ffffff; }
+.theme-paper .document-reader h4 { color: #17634f; }
+.theme-paper .heatmap-gutter { background: #f0f1eb; }
+.theme-paper .workspace-actions { background: #ffffff; }
+.theme-paper .workspace-actions > div { background: #f8f7f3; }
+.theme-paper .workspace-actions [class*='bg-red-6'], .theme-paper .workspace-actions [class*='bg-red-7'] { background: #a43b32; color: #ffffff; }
+.theme-paper .workspace-actions [class*='bg-tathya-accent'] { background: #17634f; color: #ffffff; }
+.theme-paper .document-reader [role='button'] [class*='bg-red-7'],
+.theme-paper .document-reader [role='button'] [class*='bg-red-8'],
+.theme-paper .document-reader [role='button'] [class*='bg-amber-7'],
+.theme-paper .document-reader [role='button'] [class*='bg-amber-8'] { color: #ffffff; }
+.theme-paper .result-summary button.bg-tathya-accent { background: #e9f0eb; color: #174f40; box-shadow: inset 0 0 0 1px #bdd5c7; }
+.theme-paper .workspace-mobile-tabs button.bg-tathya-surface { background: #ffffff; color: #174f40; box-shadow: 0 1px 4px #20373110; }
+.theme-paper :focus-visible { outline-color: #39816b; }
+.theme-paper ::-webkit-scrollbar-track { background: #efeee8; }
+.theme-paper ::-webkit-scrollbar-thumb { background: #c5cec4; }
+.theme-paper .react-flow { background: #f8f7f3; }
+.theme-paper .workspace-evidence svg circle:first-child { stroke: #dedfd6; }
+@media (max-width: 1279px) {
+  .theme-paper .trust-workspace { height: auto; min-height: calc(100dvh - 64px); }
+}
+@media (max-width: 639px) {
+  .theme-paper .trust-workspace .workspace-header h2 { font-size: 19px; line-height: 1.4; }
+}

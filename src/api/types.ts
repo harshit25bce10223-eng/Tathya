@@ -1,11 +1,36 @@
 /**
  * TATHYA (तथ्य) API & DOMAIN CONTRACT TYPES
  * Centralized strictly typed definitions for all frontend models.
+ * Phase 3: Trust Pipeline UI (Heatmap, Highlights, Results, Evidence Review).
  */
 
 export type SeverityLevel = 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW' | 'INFORMATIONAL';
 export type MaterialityLevel = 'MATERIAL' | 'HIGH' | 'MODERATE' | 'LOW';
 export type ClaimVerificationStatus = 'SUPPORTED' | 'CONTRADICTED' | 'UNSUPPORTED' | 'UNCERTAIN';
+
+/** Phase 3: Trust Pipeline Result States */
+export type TrustResultState =
+  | 'PROCESSING'
+  | 'READY'
+  | 'PARTIAL'
+  | 'FAILED'
+  | 'NO_FINDINGS'
+  | 'FINDINGS_PRESENT'
+  | 'UNCERTAIN';
+
+/** Full processing status lifecycle */
+export type ProcessingStatus =
+  | 'QUEUED'
+  | 'UPLOADING'
+  | 'PARSING'
+  | 'CANONICALIZING'
+  | 'EXTRACTING_FACTS'
+  | 'INDEXING'
+  | 'RETRIEVING'
+  | 'VERIFYING'
+  | 'COMPLETED'
+  | 'FAILED';
+
 export type AuditStatus =
   | 'QUEUED'
   | 'PROCESSING'
@@ -17,6 +42,26 @@ export type AuditStatus =
 
 export type FlagStatus = 'PENDING' | 'ACCEPTED' | 'DISMISSED' | 'FIXED';
 
+/** Document location — backend-canonical, never LLM-derived */
+export type DocumentLocation =
+  | { type: 'pdf'; page: number; bbox?: [number, number, number, number] }
+  | { type: 'docx'; paragraph: number; charStart: number; charEnd: number }
+  | { type: 'xlsx'; sheet: string; cell: string }
+  | { type: 'text'; charStart: number; charEnd: number }
+  | { type: 'unknown'; description: string };
+
+/** Phase 3: Location-aware heatmap region model */
+export interface HeatmapRegion {
+  id: string;
+  sectionIndex: number;
+  sectionTitle: string;
+  location: DocumentLocation;
+  highestSeverity?: SeverityLevel;
+  findingCount: number;
+  flagIds: string[];
+  clean: boolean;
+}
+
 export interface SourceDocument {
   id: string;
   name: string;
@@ -27,6 +72,8 @@ export interface SourceDocument {
   authorityLabel: string;
   freshnessDate: string;
   version: string;
+  approvalStatus?: 'APPROVED' | 'PENDING' | 'SUPERSEDED' | 'REJECTED';
+  modifiedDate?: string;
   hash: string;
 }
 
@@ -36,13 +83,17 @@ export interface GroundTruthEvidence {
   authority: string;
   freshnessDate: string;
   quote: string;
-  location: string; // e.g. "Section 4.2 · Page 18"
+  location: string; // human-readable e.g. "Section 4.2 · Page 18"
+  documentLocation?: DocumentLocation; // structured backend location
+  relevanceScore?: number; // 0-1 from reranker, optional
+  relationship?: 'SUPPORTED' | 'CONTRADICTED' | 'UNSUPPORTED' | 'UNCERTAIN';
 }
 
 export interface CounterEvidence {
   sourceName: string;
   quote: string;
   location: string;
+  documentLocation?: DocumentLocation;
 }
 
 export interface Claim {
@@ -51,12 +102,7 @@ export interface Claim {
   text: string;
   category: 'COMMERCIAL_VALUE' | 'DELIVERY_DATE' | 'SLA_GUARANTEE' | 'INDEMNITY' | 'PII_SECURITY' | 'COMPLIANCE';
   status: ClaimVerificationStatus;
-  documentOffset?: {
-    page: number;
-    paragraph: number;
-    startChar: number;
-    endChar: number;
-  };
+  documentLocation?: DocumentLocation; // from backend canonicalization
   expectedTruth?: string;
   variance?: string;
 }
@@ -76,7 +122,8 @@ export interface Flag {
   whatToCheck: string;
   status: FlagStatus;
   reviewerNote?: string;
-  impactScore: number; // point deduction e.g. -28
+  impactScore: number; // negative point deduction
+  verificationStatus?: ClaimVerificationStatus;
 }
 
 export interface WhatToCheckItem {
@@ -98,15 +145,41 @@ export interface TrustWaterfallStep {
   severity: SeverityLevel | 'NEUTRAL';
 }
 
+/** Processing stage for ingestion progress UI */
+export interface IngestionStage {
+  status: ProcessingStatus;
+  label: string;
+  description: string;
+  completedAt?: string;
+}
+
+/** Phase 3: Comprehensive backend-driven verification result summary */
+export interface VerificationResultSummary {
+  claimsChecked: number;
+  evidenceMatched: number;
+  contradictions: number;
+  unsupportedClaims: number;
+  uncertainClaims: number;
+  criticalFindings: number;
+  highFindings: number;
+  mediumFindings: number;
+  lowFindings: number;
+  resultState: TrustResultState;
+}
+
 export interface Audit {
   id: string;
   title: string;
   documentName: string;
+  documentVersion?: string; // Immutable version support
   documentType: 'Procurement Contract' | 'Master Services Agreement' | 'Financial Report' | 'Technical Spec' | 'Compliance Filing';
   language: string;
   uploadedAt: string;
   updatedAt: string;
   status: AuditStatus;
+  processingStatus?: ProcessingStatus;
+  resultState?: TrustResultState; // Phase 3 trust result state
+  resultSummary?: VerificationResultSummary; // Phase 3 counts summary
   priority: SeverityLevel;
   trustScore: number;
   initialScore: number;
@@ -114,6 +187,7 @@ export interface Audit {
   findingsCount: number;
   aiDocument: {
     name: string;
+    version?: string;
     size: string;
     hash: string;
     pageCount: number;
@@ -140,9 +214,9 @@ export interface Passport {
   auditId: string;
   documentName: string;
   documentHash: string;
-  merkleRoot: string;
+  claimTreeRoot: string; // SHA-256 claim digest chain root
   signature: string;
-  signedBy: string;
+  signedBy: string; // ECDSA P-256 / prime256v1
   signedAt: string;
   trustScore: number;
   status: 'VERIFIED' | 'REVOKED' | 'TAMPER_DETECTED';
