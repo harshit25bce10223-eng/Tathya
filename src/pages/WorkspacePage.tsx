@@ -292,33 +292,100 @@ export const WorkspacePage: React.FC = () => {
         <div className={`workspace-evidence min-w-0 w-full xl:w-4/12 h-full flex flex-col bg-tathya-surface-elevated/30 overflow-hidden ${
           mobileView === 'EVIDENCE' ? 'block' : 'hidden xl:flex'
         }`}>
-          {/* Top Score Banner */}
-          <div className="flex-shrink-0 p-3 border-b border-tathya-surface-border bg-tathya-surface flex items-center justify-between gap-3">
-            <ScoreRing
-              score={audit.trustScore}
-              initialScore={audit.initialScore}
-              size={80}
-              strokeWidth={7}
-              state="available"
-            />
+          {/* Top Score Banner — Phase 4: AI Score vs Reviewed Score distinction */}
+          <div className="flex-shrink-0 p-3 border-b border-tathya-surface-border bg-tathya-surface space-y-2.5">
+            {/* AI Score row */}
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex items-center gap-2.5">
+                <ScoreRing
+                  score={audit.trustScore}
+                  initialScore={audit.initialScore}
+                  size={70}
+                  strokeWidth={6}
+                  state={audit.status === 'PROCESSING' ? 'calculating' : 'available'}
+                />
+                <div className="flex-1 space-y-0.5 text-left">
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-tathya-text-muted">
+                      AI Score
+                    </span>
+                    <span className="text-[9px] font-mono px-1 py-0.5 rounded bg-tathya-surface-elevated border border-tathya-surface-border text-slate-400">
+                      Deterministic
+                    </span>
+                    <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-slate-900 border border-slate-700 text-slate-300">
+                      {audit.riskBand}
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-tathya-text-muted leading-tight">
+                    {audit.findingsCount > 0
+                      ? `${audit.findingsCount} active contradiction(s) require auditor resolution.`
+                      : 'All business claims reconciled against approved ground truth.'}
+                  </p>
+                  {/* Document version line */}
+                  {(audit.documentVersion || audit.aiDocument.version) && (
+                    <div className="text-[10px] font-mono text-tathya-text-muted pt-0.5">
+                      Doc version:{' '}
+                      <span className="text-white font-semibold">
+                        {audit.documentVersion || audit.aiDocument.version}
+                      </span>
+                      {' · '}Initial: 100 → AI Score:{' '}
+                      <span className="font-bold text-white">{audit.trustScore}</span>/100
+                    </div>
+                  )}
+                  {!(audit.documentVersion || audit.aiDocument.version) && (
+                    <div className="text-[10px] font-mono text-tathya-text-muted pt-0.5">
+                      Initial: 100 → AI Score:{' '}
+                      <span className="font-bold text-white">{audit.trustScore}</span>/100
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
 
-            <div className="flex-1 space-y-1 text-left">
-              <div className="flex items-center gap-2">
-                <span className="text-[11px] font-bold uppercase tracking-wider text-white">
-                  Deterministic Score
-                </span>
-                <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-slate-900 border border-slate-700 text-slate-300">
-                  {audit.riskBand}
-                </span>
+            {/* Reviewed Score row — Phase 4 */}
+            <div className="flex items-center gap-2 px-2.5 py-2 rounded-lg bg-tathya-surface-elevated border border-tathya-surface-border">
+              <div className="w-5 h-5 rounded flex items-center justify-center flex-shrink-0">
+                {/* UserCheck equivalent using inline svg feel via lucide — use FileCheck2 already imported */}
+                <FileCheck2 className="w-4 h-4 text-emerald-400" />
               </div>
-              <p className="text-[11px] text-tathya-text-muted leading-tight">
-                {audit.findingsCount > 0
-                  ? `${audit.findingsCount} active contradiction(s) require auditor resolution.`
-                  : 'All business claims reconciled 100% against approved ground truth.'}
-              </p>
-              <div className="text-[10px] font-mono text-tathya-text-muted">
-                Initial: 100 → Reviewed: <span className="font-bold text-white">{audit.trustScore}</span> / 100
+              <div className="flex-1 min-w-0">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-tathya-text-muted block">
+                  Reviewed Score
+                </span>
+                {audit.reviewedScore !== null && audit.reviewedScore !== undefined ? (
+                  <div className="flex items-center gap-2">
+                    <span
+                      className={`text-sm font-bold font-tabular tabular-nums ${
+                        audit.reviewedScore >= 80
+                          ? 'text-emerald-400'
+                          : audit.reviewedScore >= 50
+                          ? 'text-amber-400'
+                          : 'text-red-400'
+                      }`}
+                    >
+                      {audit.reviewedScore}/100
+                    </span>
+                    {audit.reviewedRiskBand && (
+                      <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-slate-900 border border-slate-700 text-slate-300">
+                        {audit.reviewedRiskBand}
+                      </span>
+                    )}
+                    {audit.reviewerDecisionCount !== undefined &&
+                      audit.reviewerDecisionCount > 0 && (
+                        <span className="text-[10px] text-tathya-text-muted">
+                          · {audit.reviewerDecisionCount} decision
+                          {audit.reviewerDecisionCount !== 1 ? 's' : ''} recorded
+                        </span>
+                      )}
+                  </div>
+                ) : (
+                  <span className="text-[11px] text-tathya-text-muted italic">
+                    Pending first reviewer decision
+                  </span>
+                )}
               </div>
+              {/* Eye icon — read-only indicator — Phase 5 will enable full interaction */}
+              <Eye className="w-3.5 h-3.5 text-slate-600 flex-shrink-0" aria-hidden="true" />
             </div>
           </div>
 

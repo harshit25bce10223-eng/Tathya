@@ -1,7 +1,7 @@
 /**
  * TATHYA (तथ्य) API & DOMAIN CONTRACT TYPES
  * Centralized strictly typed definitions for all frontend models.
- * Phase 3: Trust Pipeline UI (Heatmap, Highlights, Results, Evidence Review).
+ * Phase 4: Trust Center, Review Queue, Workspace & Evidence UI.
  */
 
 export type SeverityLevel = 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW' | 'INFORMATIONAL';
@@ -167,6 +167,21 @@ export interface VerificationResultSummary {
   resultState: TrustResultState;
 }
 
+/**
+ * Phase 4: Aggregate dashboard summary stats.
+ * Returned by a future `getAuditSummary()` API endpoint (Harshit).
+ * Until that endpoint ships, ControlOverviewPage derives these from the audits list.
+ */
+export interface AuditSummaryStats {
+  total: number;
+  processing: number;
+  awaitingReview: number;
+  critical: number;
+  verified: number;
+  avgAiScore: number;
+  avgReviewedScore: number | null; // null when no reviewer decisions have been made yet
+}
+
 export interface Audit {
   id: string;
   title: string;
@@ -184,6 +199,12 @@ export interface Audit {
   trustScore: number;
   initialScore: number;
   riskBand: 'High Risk' | 'Review Needed' | 'Trustworthy';
+  /** Phase 4: Score after reviewer has accepted/dismissed/fixed findings. Null until first decision. */
+  reviewedScore?: number | null;
+  /** Phase 4: Risk band derived from reviewedScore. Null until first decision. */
+  reviewedRiskBand?: 'High Risk' | 'Review Needed' | 'Trustworthy' | null;
+  /** Phase 4: Number of reviewer decisions made on this audit's flags. */
+  reviewerDecisionCount?: number;
   findingsCount: number;
   aiDocument: {
     name: string;

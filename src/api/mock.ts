@@ -14,6 +14,9 @@ export const mockAudits: Audit[] = [
     trustScore: 42,
     initialScore: 100,
     riskBand: 'High Risk',
+    reviewedScore: null,
+    reviewedRiskBand: null,
+    reviewerDecisionCount: 0,
     findingsCount: 4,
     aiDocument: {
       name: 'AI_Procurement_Summary_v3.pdf',
@@ -319,6 +322,9 @@ Either party may terminate for convenience with 30 days written notice. Indemnif
     trustScore: 58,
     initialScore: 100,
     riskBand: 'Review Needed',
+    reviewedScore: null,
+    reviewedRiskBand: null,
+    reviewerDecisionCount: 0,
     findingsCount: 3,
     aiDocument: {
       name: 'Vendor_Indemnity_Summary_v1.pdf',
@@ -398,6 +404,9 @@ Either party may terminate for convenience with 30 days written notice. Indemnif
     trustScore: 94,
     initialScore: 100,
     riskBand: 'Trustworthy',
+    reviewedScore: 94,
+    reviewedRiskBand: 'Trustworthy',
+    reviewerDecisionCount: 0,
     findingsCount: 0,
     aiDocument: {
       name: 'Q3_Financial_Audit_Report_Certified.pdf',
@@ -443,6 +452,9 @@ Either party may terminate for convenience with 30 days written notice. Indemnif
     trustScore: 71,
     initialScore: 100,
     riskBand: 'Review Needed',
+    reviewedScore: null,
+    reviewedRiskBand: null,
+    reviewerDecisionCount: 0,
     findingsCount: 2,
     aiDocument: {
       name: 'HealthTech_FHIR_Compliance_v2.pdf',
@@ -499,6 +511,9 @@ Either party may terminate for convenience with 30 days written notice. Indemnif
     trustScore: 0,
     initialScore: 100,
     riskBand: 'Review Needed',
+    reviewedScore: null,
+    reviewedRiskBand: null,
+    reviewerDecisionCount: 0,
     findingsCount: 0,
     aiDocument: {
       name: 'Sovereign_Cloud_Compliance_Draft.docx',
