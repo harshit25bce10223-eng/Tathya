@@ -35,7 +35,7 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({ queueCount = 4, onItemCl
         <NavLink
           to="/submit"
           onClick={onItemClick}
-          className="flex items-center justify-between w-full px-3.5 py-2.5 rounded-lg text-sm font-semibold bg-gradient-to-r from-tathya-accent to-sky-400 text-slate-950 hover:opacity-95 shadow-sm transition-all"
+          className="flex items-center justify-between w-full px-3.5 py-2.5 rounded-lg text-sm font-semibold bg-gradient-to-r from-tathya-accent to-amber-400 text-slate-950 hover:opacity-95 shadow-sm transition-all"
         >
           <span className="flex items-center gap-2">
             <PlusCircle className="w-4 h-4" />

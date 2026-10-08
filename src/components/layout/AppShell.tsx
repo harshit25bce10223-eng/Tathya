@@ -39,13 +39,13 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
           </button>
 
           <Link to="/control" className="hover:opacity-95 transition-opacity">
-            <TathyaLogo size="md" showTagline={true} />
+            <TathyaLogo size="md" showTagline={false} />
           </Link>
 
-          {/* Environment & Trust Anchor Pill */}
-          <div className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-slate-900 border border-slate-700/60 text-[11px] text-slate-300">
+          {/* Live environment indicator */}
+          <div className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-slate-900/80 border border-slate-700/50 text-[11px] text-slate-400">
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
-            <span className="font-semibold text-slate-200">PRODUCTION AUDIT SUITE</span>
+            <span className="text-slate-300 font-medium">Production</span>
           </div>
         </div>
 
@@ -54,7 +54,7 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
           {/* Workspace Switcher */}
           <div className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-lg bg-tathya-surface-elevated border border-tathya-surface-border text-xs text-tathya-text-secondary hover:border-slate-600 transition-colors cursor-pointer">
             <Building2 className="w-3.5 h-3.5 text-tathya-accent" />
-            <span className="text-white font-medium">Enterprise Procurement</span>
+            <span className="text-white font-medium">Procurement</span>
             <span className="text-tathya-text-muted">· Space Alpha</span>
             <ChevronDown className="w-3.5 h-3.5 text-tathya-text-muted" />
           </div>
@@ -65,7 +65,7 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
               to="/submit"
               className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold bg-tathya-accent hover:bg-tathya-accent-hover text-slate-950 transition-colors shadow-sm"
             >
-              Start Audit
+              New Audit
             </Link>
           )}
 
@@ -80,12 +80,12 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
 
           {/* Reviewer / Enterprise Identity */}
           <div className="flex items-center gap-2 pl-2 border-l border-tathya-surface-border">
-            <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-sky-950 to-slate-800 border border-tathya-accent/40 flex items-center justify-center text-xs font-bold text-tathya-accent">
+            <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-amber-950 to-slate-800 border border-tathya-accent/40 flex items-center justify-center text-xs font-bold text-tathya-accent">
               <UserCheck className="w-4 h-4 text-tathya-accent" />
             </div>
             <div className="hidden xl:flex flex-col text-left">
-              <span className="text-xs font-semibold text-white leading-tight">Lead Compliance Officer</span>
-              <span className="text-[10px] text-tathya-text-muted">Lokesh · Senior Reviewer</span>
+              <span className="text-xs font-semibold text-white leading-tight">Lokesh</span>
+              <span className="text-[10px] text-tathya-text-muted">Lead Reviewer</span>
             </div>
           </div>
         </div>

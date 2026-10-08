@@ -100,7 +100,7 @@ export const SubmitPage: React.FC = () => {
     <div className="max-w-5xl mx-auto px-4 py-8 sm:py-12">
       {/* 1. HERO SECTION */}
       <div className="text-center max-w-3xl mx-auto mb-10">
-        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-sky-950/70 border border-sky-800/60 text-xs text-tathya-accent font-medium mb-3">
+        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-950/70 border border-amber-800/60 text-xs text-tathya-accent font-medium mb-3">
           <Sparkles className="w-3.5 h-3.5" />
           <span>Tathya Submit · Phase 1 Pipeline</span>
         </div>
@@ -377,7 +377,7 @@ export const SubmitPage: React.FC = () => {
             </div>
 
             {/* Execution CTA Banner */}
-            <div className="p-4 rounded-xl bg-gradient-to-r from-sky-950/40 via-tathya-surface-elevated to-slate-900 border border-sky-800/40 flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div className="p-4 rounded-xl bg-gradient-to-r from-amber-950/40 via-tathya-surface-elevated to-slate-900 border border-amber-800/40 flex flex-col sm:flex-row items-center justify-between gap-4">
               <div>
                 <h4 className="text-xs font-bold text-white uppercase tracking-wider">
                   Ready to compute deterministic trust

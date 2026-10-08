@@ -27,7 +27,7 @@ export const tokens = {
     textDisabled: '#475569',
 
     // Accents & Brand
-    accent: '#38BDF8',
+    accent: '#F59E0B',
     accentHover: '#0EA5E9',
     accentSubtle: 'rgba(56, 189, 248, 0.1)',
     accentBorder: 'rgba(56, 189, 248, 0.3)',
@@ -59,7 +59,7 @@ export const tokens = {
     infoBorder: 'rgba(59, 130, 246, 0.28)',
 
     // Focus & Overlay
-    focus: '#38BDF8',
+    focus: '#F59E0B',
     selection: 'rgba(56, 189, 248, 0.2)',
     overlay: 'rgba(3, 7, 18, 0.75)',
   },
@@ -112,7 +112,7 @@ export const tokens = {
     sm: '0 1px 2px 0 rgba(0, 0, 0, 0.4)',
     card: '0 4px 16px -2px rgba(0, 0, 0, 0.5), 0 2px 4px -1px rgba(0, 0, 0, 0.3)',
     elevated: '0 10px 30px -5px rgba(0, 0, 0, 0.6), 0 4px 8px -2px rgba(0, 0, 0, 0.4)',
-    focusRing: '0 0 0 2px #0B0F17, 0 0 0 4px #38BDF8',
+    focusRing: '0 0 0 2px #0B0F17, 0 0 0 4px #F59E0B',
   },
 
   transitions: {

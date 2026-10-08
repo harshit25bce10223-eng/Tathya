@@ -104,7 +104,7 @@ export const UploadDropzone: React.FC<UploadDropzoneProps> = ({
           <div className="flex items-center gap-3">
             <div className={`p-2.5 rounded-lg border ${
               isAiDocument 
-                ? 'bg-sky-950/70 border-sky-600/60 text-tathya-accent' 
+                ? 'bg-amber-950/70 border-amber-600/60 text-tathya-accent' 
                 : 'bg-slate-900 border-slate-700 text-slate-300'
             }`}>
               <FileText className="w-5 h-5" />
@@ -165,7 +165,7 @@ export const UploadDropzone: React.FC<UploadDropzoneProps> = ({
 
         <div className={`p-3 rounded-full mb-3 border ${
           isAiDocument 
-            ? 'bg-sky-950/80 border-sky-800/60 text-tathya-accent' 
+            ? 'bg-amber-950/80 border-amber-800/60 text-tathya-accent' 
             : 'bg-slate-900 border-slate-700 text-slate-400'
         }`}>
           <UploadCloud className="w-6 h-6" />

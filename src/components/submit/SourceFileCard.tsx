@@ -25,7 +25,7 @@ export const SourceFileCard: React.FC<SourceFileCardProps> = ({
 
   const authorityLabels = {
     LATEST_APPROVED: { label: '✓ Latest Approved', style: 'bg-emerald-950/70 text-emerald-300 border-emerald-700/60' },
-    SIGNED_EXECUTED: { label: '✓ Signed & Executed', style: 'bg-sky-950/70 text-sky-300 border-sky-700/60' },
+    SIGNED_EXECUTED: { label: '✓ Signed & Executed', style: 'bg-amber-950/70 text-amber-300 border-amber-700/60' },
     SUPERSEDED: { label: 'Older / Superseded', style: 'bg-slate-900 text-slate-400 border-slate-700/60' },
     DRAFT: { label: 'Preliminary Draft', style: 'bg-amber-950/70 text-amber-300 border-amber-700/60' },
   };

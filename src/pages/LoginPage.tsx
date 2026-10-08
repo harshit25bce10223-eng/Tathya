@@ -23,14 +23,14 @@ export const LoginPage: React.FC = () => {
     <div className="min-h-screen bg-tathya-bg text-tathya-text-primary flex flex-col items-center justify-center p-4">
       <div className="w-full max-w-sm space-y-6">
         {/* Brand */}
-        <div className="text-center flex flex-col items-center">
+        <div className="text-center flex flex-col items-center gap-3">
           <TathyaLogo size="lg" showTagline={true} />
-          <p className="text-xs text-tathya-text-secondary mt-3">
-            Enterprise Compliance & Trust Suite
+          <p className="text-xs text-tathya-text-muted">
+            Sign in to access your audit workspace
           </p>
         </div>
 
-        {/* Card */}
+        {/* Login Card */}
         <div className="p-6 rounded-2xl bg-tathya-surface border border-tathya-surface-border shadow-tathya-elevated">
           <form onSubmit={handleLogin} className="space-y-4">
             <div>
@@ -78,22 +78,21 @@ export const LoginPage: React.FC = () => {
               rightIcon={<ArrowRight className="w-4 h-4" />}
               className="w-full mt-2"
             >
-              Sign In to Control Center
+              Sign In
             </Button>
           </form>
 
-          {/* Quick SSO note */}
           <div className="mt-4 pt-4 border-t border-tathya-surface-border text-center text-[11px] text-tathya-text-muted flex items-center justify-center gap-1.5">
             <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
-            <span>Secured via Okta / SAML 2.0 Enterprise SSO</span>
+            <span>SSO via Okta · SAML 2.0</span>
           </div>
         </div>
 
-        {/* Guest Demo Prompt */}
+        {/* Demo access */}
         <div className="text-center text-xs text-tathya-text-muted">
-          Judge or Reviewer?{' '}
+          Evaluating Tathya?{' '}
           <Link to="/control" className="text-tathya-accent font-semibold hover:underline">
-            Access Demo Workspace Directly →
+            Open the demo →
           </Link>
         </div>
       </div>

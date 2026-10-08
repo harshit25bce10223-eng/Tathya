@@ -28,10 +28,10 @@ export default {
             disabled: '#475569',
           },
           accent: {
-            DEFAULT: '#38BDF8',
-            hover: '#0EA5E9',
-            subtle: 'rgba(56, 189, 248, 0.1)',
-            border: 'rgba(56, 189, 248, 0.3)',
+            DEFAULT: '#F59E0B',
+            hover: '#D97706',
+            subtle: 'rgba(245, 158, 11, 0.15)',
+            border: 'rgba(245, 158, 11, 0.4)',
           },
           status: {
             success: '#10B981',
@@ -68,7 +68,7 @@ export default {
         'tathya-sm': '0 1px 2px 0 rgba(0, 0, 0, 0.4)',
         'tathya-card': '0 4px 16px -2px rgba(0, 0, 0, 0.5), 0 2px 4px -1px rgba(0, 0, 0, 0.3)',
         'tathya-elevated': '0 10px 30px -5px rgba(0, 0, 0, 0.6), 0 4px 8px -2px rgba(0, 0, 0, 0.4)',
-        'tathya-focus': '0 0 0 2px #0B0F17, 0 0 0 4px #38BDF8',
+        'tathya-focus': '0 0 0 2px #0B0F17, 0 0 0 4px #F59E0B',
       },
       borderRadius: {
         'tathya-sm': '4px',
