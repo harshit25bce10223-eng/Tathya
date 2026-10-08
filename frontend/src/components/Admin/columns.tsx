@@ -43,7 +43,9 @@ export const columns: ColumnDef<UserTableData>[] = [
     header: "Role",
     cell: ({ row }) => (
       <Badge variant={row.original.is_superuser ? "default" : "secondary"}>
-        {row.original.is_superuser ? "Superuser" : "User"}
+        {row.original.is_superuser
+          ? "Superuser"
+          : (row.original as UserPublic & { role?: string }).role || "User"}
       </Badge>
     ),
   },

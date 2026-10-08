@@ -1,5 +1,14 @@
-import { Briefcase, Home, Users } from "lucide-react"
-
+import {
+  Archive,
+  BookOpen,
+  ChartNoAxesCombined,
+  LayoutDashboard,
+  Library,
+  ListChecks,
+  Upload,
+  Users,
+} from "lucide-react"
+import { isReviewer } from "@/api/audits"
 import { SidebarAppearance } from "@/components/Common/Appearance"
 import { Logo } from "@/components/Common/Logo"
 import {
@@ -13,16 +22,34 @@ import { type Item, Main } from "./Main"
 import { User } from "./User"
 
 const baseItems: Item[] = [
-  { icon: Home, title: "Overview", path: "/" },
-  { icon: Briefcase, title: "Items", path: "/items" },
+  { icon: Upload, title: "New audit", path: "/submit" },
+  { icon: LayoutDashboard, title: "Control center", path: "/control" },
+  { icon: Archive, title: "Audit archive", path: "/control/audits" },
+  { icon: Library, title: "Sources & truth", path: "/control/sources" },
+  { icon: BookOpen, title: "Trust policies", path: "/control/policies" },
+  {
+    icon: ChartNoAxesCombined,
+    title: "Metrics & drift",
+    path: "/control/metrics",
+  },
 ]
 
 export function AppSidebar() {
   const { user: currentUser } = useAuth()
 
-  const items = currentUser?.is_superuser
-    ? [...baseItems, { icon: Users, title: "Admin", path: "/admin" }]
+  const reviewerItems = isReviewer(currentUser)
+    ? [
+        ...baseItems,
+        { icon: ListChecks, title: "Review queue", path: "/control/queue" },
+      ]
     : baseItems
+
+  const items = currentUser?.is_superuser
+    ? [
+        ...reviewerItems,
+        { icon: Users, title: "Governance & admin", path: "/control/admin" },
+      ]
+    : reviewerItems
 
   return (
     <Sidebar collapsible="icon">

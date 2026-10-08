@@ -14,10 +14,22 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as RecoverPasswordRouteImport } from './routes/recover-password'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as SignupRouteImport } from './routes/signup'
+import { Route as SplashRouteImport } from './routes/splash'
 import { Route as LayoutIndexRouteImport } from './routes/_layout/index'
 import { Route as LayoutAdminRouteImport } from './routes/_layout/admin'
+import { Route as LayoutControlRouteImport } from './routes/_layout/control'
 import { Route as LayoutItemsRouteImport } from './routes/_layout/items'
 import { Route as LayoutSettingsRouteImport } from './routes/_layout/settings'
+import { Route as LayoutSubmitRouteImport } from './routes/_layout/submit'
+import { Route as VerifyTokenRouteImport } from './routes/verify.$token'
+import { Route as LayoutControlAdminRouteImport } from './routes/_layout/control_.admin'
+import { Route as LayoutControlAuditsRouteImport } from './routes/_layout/control_.audits'
+import { Route as LayoutControlMetricsRouteImport } from './routes/_layout/control_.metrics'
+import { Route as LayoutControlPoliciesRouteImport } from './routes/_layout/control_.policies'
+import { Route as LayoutControlQueueRouteImport } from './routes/_layout/control_.queue'
+import { Route as LayoutControlSourcesRouteImport } from './routes/_layout/control_.sources'
+import { Route as LayoutSubmitAuditIdRouteImport } from './routes/_layout/submit_.$auditId'
+import { Route as LayoutControlWorkspaceAuditIdRouteImport } from './routes/_layout/control_.workspace.$auditId'
 
 const LayoutRoute = LayoutRouteImport.update({
   id: '/_layout',
@@ -43,6 +55,11 @@ const SignupRoute = SignupRouteImport.update({
   path: '/signup',
   getParentRoute: () => rootRouteImport,
 } as any)
+const SplashRoute = SplashRouteImport.update({
+  id: '/splash',
+  path: '/splash',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const LayoutIndexRoute = LayoutIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -51,6 +68,11 @@ const LayoutIndexRoute = LayoutIndexRouteImport.update({
 const LayoutAdminRoute = LayoutAdminRouteImport.update({
   id: '/admin',
   path: '/admin',
+  getParentRoute: () => LayoutRoute,
+} as any)
+const LayoutControlRoute = LayoutControlRouteImport.update({
+  id: '/control',
+  path: '/control',
   getParentRoute: () => LayoutRoute,
 } as any)
 const LayoutItemsRoute = LayoutItemsRouteImport.update({
@@ -63,6 +85,57 @@ const LayoutSettingsRoute = LayoutSettingsRouteImport.update({
   path: '/settings',
   getParentRoute: () => LayoutRoute,
 } as any)
+const LayoutSubmitRoute = LayoutSubmitRouteImport.update({
+  id: '/submit',
+  path: '/submit',
+  getParentRoute: () => LayoutRoute,
+} as any)
+const VerifyTokenRoute = VerifyTokenRouteImport.update({
+  id: '/verify/$token',
+  path: '/verify/$token',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LayoutControlAdminRoute = LayoutControlAdminRouteImport.update({
+  id: '/control_/admin',
+  path: '/control/admin',
+  getParentRoute: () => LayoutRoute,
+} as any)
+const LayoutControlAuditsRoute = LayoutControlAuditsRouteImport.update({
+  id: '/control_/audits',
+  path: '/control/audits',
+  getParentRoute: () => LayoutRoute,
+} as any)
+const LayoutControlMetricsRoute = LayoutControlMetricsRouteImport.update({
+  id: '/control_/metrics',
+  path: '/control/metrics',
+  getParentRoute: () => LayoutRoute,
+} as any)
+const LayoutControlPoliciesRoute = LayoutControlPoliciesRouteImport.update({
+  id: '/control_/policies',
+  path: '/control/policies',
+  getParentRoute: () => LayoutRoute,
+} as any)
+const LayoutControlQueueRoute = LayoutControlQueueRouteImport.update({
+  id: '/control_/queue',
+  path: '/control/queue',
+  getParentRoute: () => LayoutRoute,
+} as any)
+const LayoutControlSourcesRoute = LayoutControlSourcesRouteImport.update({
+  id: '/control_/sources',
+  path: '/control/sources',
+  getParentRoute: () => LayoutRoute,
+} as any)
+const LayoutSubmitAuditIdRoute = LayoutSubmitAuditIdRouteImport.update({
+  id: '/submit_/$auditId',
+  path: '/submit/$auditId',
+  getParentRoute: () => LayoutRoute,
+} as any)
+const LayoutControlWorkspaceAuditIdRoute =
+  LayoutControlWorkspaceAuditIdRouteImport.update({
+    id: '/control_/workspace/$auditId',
+    path: '/control/workspace/$auditId',
+    getParentRoute: () => LayoutRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof LayoutIndexRoute
@@ -70,19 +143,43 @@ export interface FileRoutesByFullPath {
   '/recover-password': typeof RecoverPasswordRoute
   '/reset-password': typeof ResetPasswordRoute
   '/signup': typeof SignupRoute
+  '/splash': typeof SplashRoute
   '/admin': typeof LayoutAdminRoute
+  '/control': typeof LayoutControlRoute
   '/items': typeof LayoutItemsRoute
   '/settings': typeof LayoutSettingsRoute
+  '/submit': typeof LayoutSubmitRoute
+  '/verify/$token': typeof VerifyTokenRoute
+  '/control/admin': typeof LayoutControlAdminRoute
+  '/control/audits': typeof LayoutControlAuditsRoute
+  '/control/metrics': typeof LayoutControlMetricsRoute
+  '/control/policies': typeof LayoutControlPoliciesRoute
+  '/control/queue': typeof LayoutControlQueueRoute
+  '/control/sources': typeof LayoutControlSourcesRoute
+  '/submit/$auditId': typeof LayoutSubmitAuditIdRoute
+  '/control/workspace/$auditId': typeof LayoutControlWorkspaceAuditIdRoute
 }
 export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/recover-password': typeof RecoverPasswordRoute
   '/reset-password': typeof ResetPasswordRoute
   '/signup': typeof SignupRoute
+  '/splash': typeof SplashRoute
   '/admin': typeof LayoutAdminRoute
+  '/control': typeof LayoutControlRoute
   '/items': typeof LayoutItemsRoute
   '/settings': typeof LayoutSettingsRoute
+  '/submit': typeof LayoutSubmitRoute
+  '/verify/$token': typeof VerifyTokenRoute
   '/': typeof LayoutIndexRoute
+  '/control/admin': typeof LayoutControlAdminRoute
+  '/control/audits': typeof LayoutControlAuditsRoute
+  '/control/metrics': typeof LayoutControlMetricsRoute
+  '/control/policies': typeof LayoutControlPoliciesRoute
+  '/control/queue': typeof LayoutControlQueueRoute
+  '/control/sources': typeof LayoutControlSourcesRoute
+  '/submit/$auditId': typeof LayoutSubmitAuditIdRoute
+  '/control/workspace/$auditId': typeof LayoutControlWorkspaceAuditIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -91,10 +188,22 @@ export interface FileRoutesById {
   '/recover-password': typeof RecoverPasswordRoute
   '/reset-password': typeof ResetPasswordRoute
   '/signup': typeof SignupRoute
+  '/splash': typeof SplashRoute
   '/_layout/admin': typeof LayoutAdminRoute
+  '/_layout/control': typeof LayoutControlRoute
   '/_layout/items': typeof LayoutItemsRoute
   '/_layout/settings': typeof LayoutSettingsRoute
+  '/_layout/submit': typeof LayoutSubmitRoute
+  '/verify/$token': typeof VerifyTokenRoute
   '/_layout/': typeof LayoutIndexRoute
+  '/_layout/control_/admin': typeof LayoutControlAdminRoute
+  '/_layout/control_/audits': typeof LayoutControlAuditsRoute
+  '/_layout/control_/metrics': typeof LayoutControlMetricsRoute
+  '/_layout/control_/policies': typeof LayoutControlPoliciesRoute
+  '/_layout/control_/queue': typeof LayoutControlQueueRoute
+  '/_layout/control_/sources': typeof LayoutControlSourcesRoute
+  '/_layout/submit_/$auditId': typeof LayoutSubmitAuditIdRoute
+  '/_layout/control_/workspace/$auditId': typeof LayoutControlWorkspaceAuditIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -104,19 +213,43 @@ export interface FileRouteTypes {
     | '/recover-password'
     | '/reset-password'
     | '/signup'
+    | '/splash'
     | '/admin'
+    | '/control'
     | '/items'
     | '/settings'
+    | '/submit'
+    | '/verify/$token'
+    | '/control/admin'
+    | '/control/audits'
+    | '/control/metrics'
+    | '/control/policies'
+    | '/control/queue'
+    | '/control/sources'
+    | '/submit/$auditId'
+    | '/control/workspace/$auditId'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/login'
     | '/recover-password'
     | '/reset-password'
     | '/signup'
+    | '/splash'
     | '/admin'
+    | '/control'
     | '/items'
     | '/settings'
+    | '/submit'
+    | '/verify/$token'
     | '/'
+    | '/control/admin'
+    | '/control/audits'
+    | '/control/metrics'
+    | '/control/policies'
+    | '/control/queue'
+    | '/control/sources'
+    | '/submit/$auditId'
+    | '/control/workspace/$auditId'
   id:
     | '__root__'
     | '/_layout'
@@ -124,10 +257,22 @@ export interface FileRouteTypes {
     | '/recover-password'
     | '/reset-password'
     | '/signup'
+    | '/splash'
     | '/_layout/admin'
+    | '/_layout/control'
     | '/_layout/items'
     | '/_layout/settings'
+    | '/_layout/submit'
+    | '/verify/$token'
     | '/_layout/'
+    | '/_layout/control_/admin'
+    | '/_layout/control_/audits'
+    | '/_layout/control_/metrics'
+    | '/_layout/control_/policies'
+    | '/_layout/control_/queue'
+    | '/_layout/control_/sources'
+    | '/_layout/submit_/$auditId'
+    | '/_layout/control_/workspace/$auditId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -136,6 +281,8 @@ export interface RootRouteChildren {
   RecoverPasswordRoute: typeof RecoverPasswordRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   SignupRoute: typeof SignupRoute
+  SplashRoute: typeof SplashRoute
+  VerifyTokenRoute: typeof VerifyTokenRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -175,6 +322,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SignupRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/splash': {
+      id: '/splash'
+      path: '/splash'
+      fullPath: '/splash'
+      preLoaderRoute: typeof SplashRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_layout/': {
       id: '/_layout/'
       path: '/'
@@ -187,6 +341,13 @@ declare module '@tanstack/react-router' {
       path: '/admin'
       fullPath: '/admin'
       preLoaderRoute: typeof LayoutAdminRouteImport
+      parentRoute: typeof LayoutRoute
+    }
+    '/_layout/control': {
+      id: '/_layout/control'
+      path: '/control'
+      fullPath: '/control'
+      preLoaderRoute: typeof LayoutControlRouteImport
       parentRoute: typeof LayoutRoute
     }
     '/_layout/items': {
@@ -203,21 +364,111 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LayoutSettingsRouteImport
       parentRoute: typeof LayoutRoute
     }
+    '/_layout/submit': {
+      id: '/_layout/submit'
+      path: '/submit'
+      fullPath: '/submit'
+      preLoaderRoute: typeof LayoutSubmitRouteImport
+      parentRoute: typeof LayoutRoute
+    }
+    '/verify/$token': {
+      id: '/verify/$token'
+      path: '/verify/$token'
+      fullPath: '/verify/$token'
+      preLoaderRoute: typeof VerifyTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_layout/control_/admin': {
+      id: '/_layout/control_/admin'
+      path: '/control/admin'
+      fullPath: '/control/admin'
+      preLoaderRoute: typeof LayoutControlAdminRouteImport
+      parentRoute: typeof LayoutRoute
+    }
+    '/_layout/control_/audits': {
+      id: '/_layout/control_/audits'
+      path: '/control/audits'
+      fullPath: '/control/audits'
+      preLoaderRoute: typeof LayoutControlAuditsRouteImport
+      parentRoute: typeof LayoutRoute
+    }
+    '/_layout/control_/metrics': {
+      id: '/_layout/control_/metrics'
+      path: '/control/metrics'
+      fullPath: '/control/metrics'
+      preLoaderRoute: typeof LayoutControlMetricsRouteImport
+      parentRoute: typeof LayoutRoute
+    }
+    '/_layout/control_/policies': {
+      id: '/_layout/control_/policies'
+      path: '/control/policies'
+      fullPath: '/control/policies'
+      preLoaderRoute: typeof LayoutControlPoliciesRouteImport
+      parentRoute: typeof LayoutRoute
+    }
+    '/_layout/control_/queue': {
+      id: '/_layout/control_/queue'
+      path: '/control/queue'
+      fullPath: '/control/queue'
+      preLoaderRoute: typeof LayoutControlQueueRouteImport
+      parentRoute: typeof LayoutRoute
+    }
+    '/_layout/control_/sources': {
+      id: '/_layout/control_/sources'
+      path: '/control/sources'
+      fullPath: '/control/sources'
+      preLoaderRoute: typeof LayoutControlSourcesRouteImport
+      parentRoute: typeof LayoutRoute
+    }
+    '/_layout/submit_/$auditId': {
+      id: '/_layout/submit_/$auditId'
+      path: '/submit/$auditId'
+      fullPath: '/submit/$auditId'
+      preLoaderRoute: typeof LayoutSubmitAuditIdRouteImport
+      parentRoute: typeof LayoutRoute
+    }
+    '/_layout/control_/workspace/$auditId': {
+      id: '/_layout/control_/workspace/$auditId'
+      path: '/control/workspace/$auditId'
+      fullPath: '/control/workspace/$auditId'
+      preLoaderRoute: typeof LayoutControlWorkspaceAuditIdRouteImport
+      parentRoute: typeof LayoutRoute
+    }
   }
 }
 
 interface LayoutRouteChildren {
   LayoutAdminRoute: typeof LayoutAdminRoute
+  LayoutControlRoute: typeof LayoutControlRoute
   LayoutItemsRoute: typeof LayoutItemsRoute
   LayoutSettingsRoute: typeof LayoutSettingsRoute
+  LayoutSubmitRoute: typeof LayoutSubmitRoute
   LayoutIndexRoute: typeof LayoutIndexRoute
+  LayoutControlAdminRoute: typeof LayoutControlAdminRoute
+  LayoutControlAuditsRoute: typeof LayoutControlAuditsRoute
+  LayoutControlMetricsRoute: typeof LayoutControlMetricsRoute
+  LayoutControlPoliciesRoute: typeof LayoutControlPoliciesRoute
+  LayoutControlQueueRoute: typeof LayoutControlQueueRoute
+  LayoutControlSourcesRoute: typeof LayoutControlSourcesRoute
+  LayoutSubmitAuditIdRoute: typeof LayoutSubmitAuditIdRoute
+  LayoutControlWorkspaceAuditIdRoute: typeof LayoutControlWorkspaceAuditIdRoute
 }
 
 const LayoutRouteChildren: LayoutRouteChildren = {
   LayoutAdminRoute: LayoutAdminRoute,
+  LayoutControlRoute: LayoutControlRoute,
   LayoutItemsRoute: LayoutItemsRoute,
   LayoutSettingsRoute: LayoutSettingsRoute,
+  LayoutSubmitRoute: LayoutSubmitRoute,
   LayoutIndexRoute: LayoutIndexRoute,
+  LayoutControlAdminRoute: LayoutControlAdminRoute,
+  LayoutControlAuditsRoute: LayoutControlAuditsRoute,
+  LayoutControlMetricsRoute: LayoutControlMetricsRoute,
+  LayoutControlPoliciesRoute: LayoutControlPoliciesRoute,
+  LayoutControlQueueRoute: LayoutControlQueueRoute,
+  LayoutControlSourcesRoute: LayoutControlSourcesRoute,
+  LayoutSubmitAuditIdRoute: LayoutSubmitAuditIdRoute,
+  LayoutControlWorkspaceAuditIdRoute: LayoutControlWorkspaceAuditIdRoute,
 }
 
 const LayoutRouteWithChildren =
@@ -229,6 +480,8 @@ const rootRouteChildren: RootRouteChildren = {
   RecoverPasswordRoute: RecoverPasswordRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   SignupRoute: SignupRoute,
+  SplashRoute: SplashRoute,
+  VerifyTokenRoute: VerifyTokenRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

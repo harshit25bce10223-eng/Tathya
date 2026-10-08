@@ -36,7 +36,11 @@ export function Main({ items }: MainProps) {
       <SidebarGroupContent>
         <SidebarMenu>
           {items.map((item) => {
-            const isActive = currentPath === item.path
+            const isActive =
+              currentPath === item.path ||
+              (item.path === "/control/queue" &&
+                currentPath.startsWith("/control/workspace/")) ||
+              (item.path === "/control" && currentPath.startsWith("/submit/"))
 
             return (
               <SidebarMenuItem key={item.title}>
@@ -45,7 +49,11 @@ export function Main({ items }: MainProps) {
                   isActive={isActive}
                   asChild
                 >
-                  <RouterLink to={item.path} onClick={handleMenuClick}>
+                  <RouterLink
+                    to={item.path}
+                    activeOptions={{ exact: true }}
+                    onClick={handleMenuClick}
+                  >
                     <item.icon />
                     <span>{item.title}</span>
                   </RouterLink>

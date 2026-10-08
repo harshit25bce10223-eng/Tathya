@@ -1,5 +1,4 @@
 import { Link } from "@tanstack/react-router"
-import { ShieldCheck } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 interface LogoProps {
@@ -16,7 +15,11 @@ export function Logo({
   const content = (
     <span className={cn("brand-lockup inline-flex", className)}>
       <span className="brand-mark">
-        <ShieldCheck strokeWidth={1.7} />
+        <img
+          src="/assets/images/tathya-logo.png"
+          alt=""
+          className="original-brand-icon"
+        />
       </span>
       {variant !== "icon" && (
         <span
