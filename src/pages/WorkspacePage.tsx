@@ -14,10 +14,10 @@ import { ResultSummaryBar } from '../components/workspace/ResultSummaryBar';
 import { StatusBadge, SeverityBadge } from '../components/brand/TrustBadge';
 import { EvidenceGraphFoundation } from '../components/graph/EvidenceGraphFoundation';
 import { EmptyState } from '../components/ui/EmptyState';
-import { 
-  ShieldCheck, 
-  ChevronRight, 
-  ExternalLink, 
+import {
+  ShieldCheck,
+  ChevronRight,
+  ExternalLink,
   AlertTriangle,
   Loader2,
   AlertOctagon,
@@ -34,7 +34,7 @@ export const WorkspacePage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [selectedFlagId, setSelectedFlagId] = useState<string | null>(null);
-  
+
   // Phase 3 Filter state for findings & document
   const [activeSeverityFilter, setActiveSeverityFilter] = useState<SeverityLevel | 'ALL' | 'UNCERTAIN'>('ALL');
 
@@ -121,10 +121,10 @@ export const WorkspacePage: React.FC = () => {
     highFindings: audit.flags.filter(f => f.severity === 'HIGH').length,
     mediumFindings: audit.flags.filter(f => f.severity === 'MEDIUM').length,
     lowFindings: audit.flags.filter(f => f.severity === 'LOW').length,
-    resultState: audit.status === 'PROCESSING' 
-      ? 'PROCESSING' 
-      : audit.flags.length > 0 
-      ? 'FINDINGS_PRESENT' 
+    resultState: audit.status === 'PROCESSING'
+      ? 'PROCESSING'
+      : audit.flags.length > 0
+      ? 'FINDINGS_PRESENT'
       : 'NO_FINDINGS',
   };
 
@@ -194,8 +194,8 @@ export const WorkspacePage: React.FC = () => {
 
       {/* 2. PHASE 3 RESULT SUMMARY BAR */}
       <div className="flex-shrink-0 px-4 py-2 border-b border-tathya-surface-border bg-tathya-surface/40">
-        <ResultSummaryBar 
-          summary={summary} 
+        <ResultSummaryBar
+          summary={summary}
           activeFilter={activeSeverityFilter}
           onFilterChange={(flt) => setActiveSeverityFilter(flt)}
           documentVersion={audit.aiDocument.version || 'v3.2'}
@@ -204,7 +204,7 @@ export const WorkspacePage: React.FC = () => {
 
       {/* 3. THREE-COLUMN ENTERPRISE AUDIT WORKSPACE */}
       <div className="workspace-panels flex-1 flex overflow-hidden">
-        
+
         {/* COLUMN 1: DOCUMENT VIEWER WITH INTEGRATED HEATMAP */}
         <div className={`workspace-document min-w-0 w-full xl:w-5/12 h-full p-2.5 sm:p-3 border-r border-tathya-surface-border overflow-hidden ${
           mobileView === 'DOC' ? 'block' : 'hidden xl:block'
@@ -256,7 +256,7 @@ export const WorkspacePage: React.FC = () => {
               <div className="flex items-center justify-between text-[10px] font-bold uppercase tracking-wider text-tathya-text-muted">
                 <span>Findings ({filteredFlags.length})</span>
                 {activeSeverityFilter !== 'ALL' && (
-                  <button 
+                  <button
                     onClick={() => setActiveSeverityFilter('ALL')}
                     className="text-tathya-accent hover:underline font-mono"
                   >
@@ -413,8 +413,8 @@ export const WorkspacePage: React.FC = () => {
           {/* Tab Content Body (Scrollable) */}
           <div className="flex-1 p-3.5 overflow-y-auto space-y-3">
             {activeRightTab === 'EVIDENCE' && (
-              <EvidencePanel 
-                flag={selectedFlag} 
+              <EvidencePanel
+                flag={selectedFlag}
                 onNavigateToClaim={() => setMobileView('DOC')}
                 sourceDocument={audit.sourceDocuments[0]}
               />

@@ -26,13 +26,13 @@ export const ReviewerActionBar: React.FC<ReviewerActionBarProps> = ({
       setErrorFeedback(null);
       await onAction(action, note);
 
-      const feedbackText = 
-        action === 'ACCEPT' 
+      const feedbackText =
+        action === 'ACCEPT'
           ? 'Finding accepted. Risk confirmed on audit record.'
           : action === 'FIX'
           ? 'Suggested fix applied. Trust score recalibrated.'
           : 'Finding dismissed with documented rationale.';
-      
+
       setSuccessFeedback(feedbackText);
       setTimeout(() => setSuccessFeedback(null), 3500);
     } catch (err: any) {

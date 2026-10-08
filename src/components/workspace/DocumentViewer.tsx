@@ -76,14 +76,14 @@ export const DocumentViewer: React.FC<DocumentViewerProps> = ({
             const visible = isFlagVisible(matchedFlag.id);
 
             return (
-              <div 
-                key={pIdx} 
+              <div
+                key={pIdx}
                 id={`doc-section-${pIdx + 1}`}
                 className={`relative pl-4 border-l-2 transition-all ${
-                  isSelected 
-                    ? 'border-tathya-accent bg-tathya-accent/5 py-1.5 pr-2 rounded-r' 
-                    : visible 
-                    ? 'border-slate-700' 
+                  isSelected
+                    ? 'border-tathya-accent bg-tathya-accent/5 py-1.5 pr-2 rounded-r'
+                    : visible
+                    ? 'border-slate-700'
                     : 'border-slate-800 opacity-40'
                 }`}
               >
@@ -156,13 +156,13 @@ export const DocumentViewer: React.FC<DocumentViewerProps> = ({
     return (
       <div className="space-y-6 text-xs sm:text-sm leading-relaxed text-slate-300 font-sans">
         {/* Section 1: FLG-101 */}
-        <div 
+        <div
           id="doc-section-1"
           className={`relative pl-4 border-l-2 transition-all ${
-            selectedFlagId === 'FLG-101' 
-              ? 'border-red-500 bg-red-950/15 py-1.5 pr-2 rounded-r' 
-              : isFlagVisible('FLG-101') 
-              ? 'border-slate-700/60' 
+            selectedFlagId === 'FLG-101'
+              ? 'border-red-500 bg-red-950/15 py-1.5 pr-2 rounded-r'
+              : isFlagVisible('FLG-101')
+              ? 'border-slate-700/60'
               : 'border-slate-800 opacity-40'
           }`}
         >
@@ -200,13 +200,13 @@ export const DocumentViewer: React.FC<DocumentViewerProps> = ({
         </div>
 
         {/* Section 2: FLG-102 */}
-        <div 
+        <div
           id="doc-section-2"
           className={`relative pl-4 border-l-2 transition-all ${
-            selectedFlagId === 'FLG-102' 
-              ? 'border-amber-500 bg-amber-950/15 py-1.5 pr-2 rounded-r' 
-              : isFlagVisible('FLG-102') 
-              ? 'border-slate-700/60' 
+            selectedFlagId === 'FLG-102'
+              ? 'border-amber-500 bg-amber-950/15 py-1.5 pr-2 rounded-r'
+              : isFlagVisible('FLG-102')
+              ? 'border-slate-700/60'
               : 'border-slate-800 opacity-40'
           }`}
         >
@@ -244,13 +244,13 @@ export const DocumentViewer: React.FC<DocumentViewerProps> = ({
         </div>
 
         {/* Section 3: FLG-103 */}
-        <div 
+        <div
           id="doc-section-3"
           className={`relative pl-4 border-l-2 transition-all ${
-            selectedFlagId === 'FLG-103' 
-              ? 'border-amber-500 bg-amber-950/15 py-1.5 pr-2 rounded-r' 
-              : isFlagVisible('FLG-103') 
-              ? 'border-slate-700/60' 
+            selectedFlagId === 'FLG-103'
+              ? 'border-amber-500 bg-amber-950/15 py-1.5 pr-2 rounded-r'
+              : isFlagVisible('FLG-103')
+              ? 'border-slate-700/60'
               : 'border-slate-800 opacity-40'
           }`}
         >
@@ -288,13 +288,13 @@ export const DocumentViewer: React.FC<DocumentViewerProps> = ({
         </div>
 
         {/* Section 4: FLG-104 */}
-        <div 
+        <div
           id="doc-section-4"
           className={`relative pl-4 border-l-2 transition-all ${
-            selectedFlagId === 'FLG-104' 
-              ? 'border-red-500 bg-red-950/15 py-1.5 pr-2 rounded-r' 
-              : isFlagVisible('FLG-104') 
-              ? 'border-slate-700/60' 
+            selectedFlagId === 'FLG-104'
+              ? 'border-red-500 bg-red-950/15 py-1.5 pr-2 rounded-r'
+              : isFlagVisible('FLG-104')
+              ? 'border-slate-700/60'
               : 'border-slate-800 opacity-40'
           }`}
         >

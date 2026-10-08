@@ -1,23 +1,23 @@
 /**
  * TATHYA (तथ्य) TYPED API CLIENT
- * 
+ *
  * Central API abstraction for frontend views.
  * Supports:
  * - REAL API when VITE_API_BASE_URL is reachable
  * - DEV ADAPTER / MOCK when offline or in development
- * 
+ *
  * Strict Phase 2 Contracts:
  * - Cryptography uses SHA-256 claim hash chain & ECDSA P-256 (prime256v1)
  * - No AUD-1042 hard-coded production dependency
  * - Granular Ingestion stages (QUEUED -> UPLOADING -> PARSING -> CANONICALIZING -> EXTRACTING_FACTS -> INDEXING -> RETRIEVING -> VERIFYING -> COMPLETED)
  */
 
-import { 
-  Audit, 
-  Flag, 
-  Passport, 
-  VerificationResult, 
-  SourceDocument, 
+import {
+  Audit,
+  Flag,
+  Passport,
+  VerificationResult,
+  SourceDocument,
   Claim,
   ProcessingStatus
 } from './types';
@@ -257,7 +257,7 @@ class TathyaApiClient {
 
     let score = 100;
     const activeFlags = audit.flags.filter((f) => f.status === 'PENDING' || f.status === 'ACCEPTED');
-    
+
     activeFlags.forEach((f) => {
       score += f.impactScore;
     });

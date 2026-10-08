@@ -4,11 +4,11 @@ import { api } from '../api/client';
 import { VerificationResult } from '../api/types';
 import { TathyaLogo } from '../components/brand/TathyaLogo';
 import { Button } from '../components/ui/Button';
-import { 
-  ShieldCheck, 
-  CheckCircle2, 
-  AlertTriangle, 
-  Key, 
+import {
+  ShieldCheck,
+  CheckCircle2,
+  AlertTriangle,
+  Key,
   Loader2
 } from 'lucide-react';
 

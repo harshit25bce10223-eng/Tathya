@@ -22,3 +22,24 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Tathya Sensitive & Runtime ignores
+.env
+.env.*
+!.env.example
+secrets/
+data/models/
+data/cache/
+storage/
+*.pem
+*.key
+backend/secrets/
+backend/data/models/
+backend/data/cache/
+backend/storage/
+
+# Test artifacts
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/

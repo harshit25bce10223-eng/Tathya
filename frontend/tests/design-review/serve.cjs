@@ -1,0 +1,38 @@
+const http = require("node:http"),
+  fs = require("node:fs"),
+  path = require("node:path")
+const root = path.resolve("docs/ui-design-review")
+http
+  .createServer((req, res) => {
+    let file
+    try {
+      file = path.resolve(
+        root,
+        `.${decodeURIComponent(new URL(req.url, "http://localhost").pathname)}`,
+      )
+      if (file === root) file = path.join(root, "index.html")
+      if (!file.startsWith(root + path.sep)) {
+        res.writeHead(403)
+        res.end()
+        return
+      }
+      const types = {
+        ".html": "text/html",
+        ".png": "image/png",
+        ".webm": "video/webm",
+        ".md": "text/plain",
+      }
+      const data = fs.readFileSync(file)
+      res.setHeader(
+        "Content-Type",
+        types[path.extname(file)] || "application/octet-stream",
+      )
+      res.end(data)
+    } catch {
+      res.writeHead(404)
+      res.end("Not found")
+    }
+  })
+  .listen(4174, "127.0.0.1", () =>
+    console.log("Design review gallery at http://127.0.0.1:4174"),
+  )

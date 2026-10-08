@@ -29,7 +29,7 @@ export const ScoreRing: React.FC<ScoreRingProps> = ({
 
   const radius = (size - strokeWidth) / 2;
   const circumference = 2 * Math.PI * radius;
-  
+
   const clampedScore = typeof score === 'number' ? Math.max(0, Math.min(100, score)) : 0;
   const offset = resolvedState === 'available'
     ? circumference - (clampedScore / 100) * circumference

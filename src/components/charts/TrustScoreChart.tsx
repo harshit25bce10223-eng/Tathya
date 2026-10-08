@@ -1,12 +1,12 @@
 import React from 'react';
-import { 
-  AreaChart, 
-  Area, 
-  XAxis, 
-  YAxis, 
-  Tooltip, 
-  ResponsiveContainer, 
-  CartesianGrid 
+import {
+  AreaChart,
+  Area,
+  XAxis,
+  YAxis,
+  Tooltip,
+  ResponsiveContainer,
+  CartesianGrid
 } from 'recharts';
 
 interface TrustDataPoint {
@@ -52,29 +52,29 @@ export const TrustScoreChart: React.FC<TrustScoreChartProps> = ({
             </linearGradient>
           </defs>
           <CartesianGrid strokeDasharray="3 3" stroke="#1E2C40" vertical={false} />
-          <XAxis 
-            dataKey="iteration" 
-            stroke="#64748B" 
-            tick={{ fill: '#94A3B8', fontSize: 11 }} 
+          <XAxis
+            dataKey="iteration"
+            stroke="#64748B"
+            tick={{ fill: '#94A3B8', fontSize: 11 }}
             axisLine={{ stroke: '#1E2C40' }}
           />
-          <YAxis 
-            domain={[0, 100]} 
-            stroke="#64748B" 
-            tick={{ fill: '#94A3B8', fontSize: 11 }} 
+          <YAxis
+            domain={[0, 100]}
+            stroke="#64748B"
+            tick={{ fill: '#94A3B8', fontSize: 11 }}
             axisLine={{ stroke: '#1E2C40' }}
           />
-          <Tooltip 
+          <Tooltip
             contentStyle={{ backgroundColor: '#172233', borderColor: '#1E2C40', borderRadius: '8px', fontSize: '12px' }}
             itemStyle={{ color: '#F1F5F9' }}
           />
-          <Area 
-            type="monotone" 
-            dataKey="score" 
-            stroke="#F59E0B" 
-            strokeWidth={2.5} 
-            fillOpacity={1} 
-            fill="url(#trustScoreGrad)" 
+          <Area
+            type="monotone"
+            dataKey="score"
+            stroke="#F59E0B"
+            strokeWidth={2.5}
+            fillOpacity={1}
+            fill="url(#trustScoreGrad)"
           />
         </AreaChart>
       </ResponsiveContainer>

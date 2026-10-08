@@ -1,0 +1,35 @@
+name: Isolated test environment
+description: Generate disposable credentials for CI database and application tests
+runs:
+  using: composite
+  steps:
+    - name: Configure test services
+      shell: bash
+      run: |
+        python3 - <<'PY'
+        import os
+        import secrets
+
+        password = secrets.token_hex(24)
+        secret = secrets.token_hex(32)
+        admin_password = secrets.token_hex(24)
+        for value in (password, secret, admin_password):
+            print(f"::add-mask::{value}")
+        values = {
+            "PROJECT_NAME": "Tathya CI",
+            "DOMAIN": "localhost",
+            "SECRET_KEY": secret,
+            "POSTGRES_PASSWORD": password,
+            "DATABASE_URL": f"postgresql://postgres:{password}@localhost:5432/app",
+            "FIRST_SUPERUSER": "admin@example.com",
+            "FIRST_SUPERUSER_PASSWORD": admin_password,
+            "SMTP_HOST": "localhost",
+            "SMTP_PORT": "1025",
+            "SMTP_TLS": "false",
+            "EMAILS_FROM_EMAIL": "info@example.com",
+            "FASTAPI_ENV": "development",
+        }
+        with open(os.environ["GITHUB_ENV"], "a", encoding="utf-8") as output:
+            for name, value in values.items():
+                output.write(f"{name}={value}\n")
+        PY

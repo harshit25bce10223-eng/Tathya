@@ -22,7 +22,7 @@ export const DocumentHeatmapGutter: React.FC<DocumentHeatmapGutterProps> = ({
     const secNum = idx + 1;
     // Section 1: FLG-101, Section 2: FLG-102, Section 3: FLG-103, Section 4: FLG-104
     const sectionFlags = flags.filter((f, fIdx) => (fIdx + 1) === secNum);
-    
+
     let highestSeverity: SeverityLevel | 'CLEAN' = 'CLEAN';
     if (sectionFlags.some(f => f.severity === 'CRITICAL')) {
       highestSeverity = 'CRITICAL';

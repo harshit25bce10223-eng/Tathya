@@ -1,18 +1,18 @@
 import React from 'react';
 import { Flag, DocumentLocation, SourceDocument } from '../../api/types';
-import { 
-  AlertOctagon, 
-  HelpCircle, 
-  Clock, 
-  Building, 
-  MapPin, 
-  ShieldCheck, 
-  CheckCircle, 
-  FileQuestion, 
-  FileX2, 
-  Sparkles, 
-  Layers, 
-  FileSpreadsheet, 
+import {
+  AlertOctagon,
+  HelpCircle,
+  Clock,
+  Building,
+  MapPin,
+  ShieldCheck,
+  CheckCircle,
+  FileQuestion,
+  FileX2,
+  Sparkles,
+  Layers,
+  FileSpreadsheet,
   FileText,
   BadgeAlert,
   ArrowRight
@@ -24,10 +24,10 @@ interface EvidencePanelProps {
   sourceDocument?: SourceDocument;
 }
 
-export const EvidencePanel: React.FC<EvidencePanelProps> = ({ 
-  flag, 
+export const EvidencePanel: React.FC<EvidencePanelProps> = ({
+  flag,
   onNavigateToClaim,
-  sourceDocument 
+  sourceDocument
 }) => {
   if (!flag) {
     return (
@@ -44,7 +44,7 @@ export const EvidencePanel: React.FC<EvidencePanelProps> = ({
   // Explicit distinct verification relationship
   const getVerificationStatusHeader = () => {
     const status = flag.verificationStatus || (
-      flag.severity === 'CRITICAL' || flag.severity === 'HIGH' ? 'CONTRADICTED' : 
+      flag.severity === 'CRITICAL' || flag.severity === 'HIGH' ? 'CONTRADICTED' :
       flag.severity === 'MEDIUM' ? 'UNSUPPORTED' : 'UNCERTAIN'
     );
 

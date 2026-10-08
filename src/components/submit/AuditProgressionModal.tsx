@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import { 
-  CheckCircle2, 
-  Loader2, 
-  ShieldCheck, 
-  ArrowRight, 
+import {
+  CheckCircle2,
+  Loader2,
+  ShieldCheck,
+  ArrowRight,
   AlertCircle,
   FileText,
   Search,
@@ -38,47 +38,47 @@ export const AuditProgressionModal: React.FC<AuditProgressionModalProps> = ({
   // 5. Evidence index prepared
   // 6. Trust check running
   const stages = [
-    { 
+    {
       status: 'UPLOADING' as ProcessingStatus,
-      label: 'Receiving documents & calculating SHA-256 hashes', 
+      label: 'Receiving documents & calculating SHA-256 hashes',
       detail: 'Staging verification target and evidence files securely',
       icon: FileText,
-      duration: 500 
+      duration: 500
     },
-    { 
+    {
       status: 'PARSING' as ProcessingStatus,
-      label: 'Parsing files & extracting raw content', 
+      label: 'Parsing files & extracting raw content',
       detail: 'Extracting paragraphs, tables, and bounding boxes',
       icon: Cpu,
-      duration: 650 
+      duration: 650
     },
-    { 
+    {
       status: 'CANONICALIZING' as ProcessingStatus,
-      label: 'Building canonical text stream', 
+      label: 'Building canonical text stream',
       detail: 'Normalizing token positions and sentence boundaries',
       icon: Database,
-      duration: 600 
+      duration: 600
     },
-    { 
+    {
       status: 'EXTRACTING_FACTS' as ProcessingStatus,
-      label: 'Extracting verifiable business claims', 
+      label: 'Extracting verifiable business claims',
       detail: 'Identifying commercial numbers, delivery dates, and security clauses',
       icon: Search,
-      duration: 750 
+      duration: 750
     },
-    { 
+    {
       status: 'INDEXING' as ProcessingStatus,
-      label: 'Preparing evidence retrieval index (BM25 + BGE-M3)', 
+      label: 'Preparing evidence retrieval index (BM25 + BGE-M3)',
       detail: 'Ranking approved source chunks by authority level',
       icon: Scale,
-      duration: 800 
+      duration: 800
     },
-    { 
+    {
       status: 'VERIFYING' as ProcessingStatus,
-      label: 'Running deterministic trust verification', 
+      label: 'Running deterministic trust verification',
       detail: 'Detecting contradictions, unsupported assertions, and score impacts',
       icon: ShieldCheck,
-      duration: 700 
+      duration: 700
     },
   ];
 
@@ -148,11 +148,11 @@ export const AuditProgressionModal: React.FC<AuditProgressionModalProps> = ({
             const Icon = s.icon;
 
             return (
-              <div 
-                key={idx} 
+              <div
+                key={idx}
                 className={`p-2.5 rounded-lg border transition-all ${
-                  isCurrent 
-                    ? 'bg-tathya-surface border-tathya-accent/60 shadow-sm' 
+                  isCurrent
+                    ? 'bg-tathya-surface border-tathya-accent/60 shadow-sm'
                     : isDone
                     ? 'bg-tathya-surface/40 border-tathya-surface-border/50'
                     : 'bg-transparent border-transparent opacity-40'

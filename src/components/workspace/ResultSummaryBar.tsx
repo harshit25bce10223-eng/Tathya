@@ -1,16 +1,16 @@
 import React from 'react';
-import { 
-  VerificationResultSummary, 
-  TrustResultState, 
-  SeverityLevel 
+import {
+  VerificationResultSummary,
+  TrustResultState,
+  SeverityLevel
 } from '../../api/types';
-import { 
-  ShieldCheck, 
-  AlertTriangle, 
-  AlertOctagon, 
-  CheckCircle2, 
-  HelpCircle, 
-  Scale, 
+import {
+  ShieldCheck,
+  AlertTriangle,
+  AlertOctagon,
+  CheckCircle2,
+  HelpCircle,
+  Scale,
   FileSearch,
   FileCheck2,
   Filter,
