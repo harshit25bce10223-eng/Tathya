@@ -5,6 +5,7 @@ import {
   LayoutDashboard,
   Library,
   ListChecks,
+  Package,
   Upload,
   Users,
 } from "lucide-react"
@@ -32,6 +33,7 @@ const baseItems: Item[] = [
     title: "Metrics & drift",
     path: "/control/metrics",
   },
+  { icon: Package, title: "Items", path: "/items" },
 ]
 
 export function AppSidebar() {

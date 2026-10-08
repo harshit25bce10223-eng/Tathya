@@ -1,6 +1,6 @@
 # Phase 1 + Phase 2 · Screenshot review
 
-Preview audit records are sample data. Main merge awaits approval.
+Preview audit records are sample data. Design approved for main.
 
 [Animated splash video](splash-animation.webm) · [Design notes and validation](README.md)
 

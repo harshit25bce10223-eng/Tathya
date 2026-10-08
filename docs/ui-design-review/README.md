@@ -1,6 +1,6 @@
 # Tathya Phase 1 + Phase 2 UI review
 
-Status: ready for design review; main merge awaits user approval. Branch: `codex/tathya-ui-polish`.
+Status: ready for design review; design approved by the user; approved for publication to main. Branch: `codex/tathya-ui-polish`.
 
 ## Page coverage
 

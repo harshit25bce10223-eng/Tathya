@@ -56,15 +56,17 @@ function ItemsTable() {
 
 function Items() {
   return (
-    <div className="flex flex-col gap-6">
-      <div className="flex items-center justify-between">
+    <div className="product-page">
+      <div className="product-heading">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Items</h1>
           <p className="text-muted-foreground">Create and manage your items</p>
         </div>
         <AddItem />
       </div>
-      <ItemsTable />
+      <section className="product-panel p-4">
+        <ItemsTable />
+      </section>
     </div>
   )
 }
