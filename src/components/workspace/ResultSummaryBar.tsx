@@ -73,7 +73,7 @@ export const ResultSummaryBar: React.FC<ResultSummaryBarProps> = ({
   };
 
   return (
-    <div className="bg-tathya-surface border border-tathya-surface-border rounded-xl p-3.5 sm:p-4 shadow-tathya-sm space-y-3">
+    <div className="result-summary bg-tathya-surface border border-tathya-surface-border rounded-xl p-3.5 sm:p-4 shadow-tathya-sm space-y-3">
       {/* Top Banner: Status & Version */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 pb-3 border-b border-tathya-surface-border">
         <div className="flex items-center gap-2 flex-wrap">

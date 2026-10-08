@@ -1,3 +1,4 @@
+import '../components/page-specific/trust-workspace.css';
 import React, { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { api } from '../api/client';
@@ -137,9 +138,9 @@ export const WorkspacePage: React.FC = () => {
   const selectedFlag = audit.flags.find((f) => f.id === selectedFlagId) || (filteredFlags[0] || audit.flags[0] || null);
 
   return (
-    <div className="flex flex-col h-[calc(100vh-3.75rem)] overflow-hidden">
+    <div className="trust-workspace flex flex-col h-[calc(100vh-3.75rem)] overflow-hidden">
       {/* 1. TOP BREADCRUMB & AUDIT CONTROL HEADER */}
-      <div className="flex-shrink-0 px-4 py-2 border-b border-tathya-surface-border bg-tathya-surface/90 backdrop-blur flex flex-col sm:flex-row sm:items-center justify-between gap-2 z-20">
+      <div className="workspace-header flex-shrink-0 px-4 py-2 border-b border-tathya-surface-border bg-tathya-surface/90 backdrop-blur flex flex-col sm:flex-row sm:items-center justify-between gap-2 z-20">
         <div className="flex items-center gap-2 min-w-0">
           <Link to="/control/queue" className="text-xs text-tathya-text-muted hover:text-white transition-colors">
             Review Queue
@@ -158,7 +159,7 @@ export const WorkspacePage: React.FC = () => {
         {/* Passport link, Mobile Switcher tabs */}
         <div className="flex items-center gap-2 flex-shrink-0">
           {/* Mobile column switch buttons */}
-          <div className="flex xl:hidden bg-slate-900 p-0.5 rounded-lg border border-slate-800 text-[11px]">
+          <div className="workspace-mobile-tabs flex xl:hidden bg-slate-900 p-0.5 rounded-lg border border-slate-800 text-[11px]">
             <button
               onClick={() => setMobileView('DOC')}
               className={`px-2.5 py-1 rounded font-medium ${mobileView === 'DOC' ? 'bg-tathya-surface text-white' : 'text-slate-400'}`}
@@ -202,10 +203,10 @@ export const WorkspacePage: React.FC = () => {
       </div>
 
       {/* 3. THREE-COLUMN ENTERPRISE AUDIT WORKSPACE */}
-      <div className="flex-1 flex overflow-hidden">
+      <div className="workspace-panels flex-1 flex overflow-hidden">
         
         {/* COLUMN 1: DOCUMENT VIEWER WITH INTEGRATED HEATMAP */}
-        <div className={`w-full xl:w-5/12 h-full p-2.5 sm:p-3 border-r border-tathya-surface-border overflow-hidden ${
+        <div className={`workspace-document min-w-0 w-full xl:w-5/12 h-full p-2.5 sm:p-3 border-r border-tathya-surface-border overflow-hidden ${
           mobileView === 'DOC' ? 'block' : 'hidden xl:block'
         }`}>
           <DocumentViewer
@@ -223,11 +224,11 @@ export const WorkspacePage: React.FC = () => {
         </div>
 
         {/* COLUMN 2: FINDINGS LIST & WHAT TO CHECK */}
-        <div className={`w-full xl:w-3/12 h-full flex flex-col bg-tathya-surface border-r border-tathya-surface-border overflow-hidden ${
+        <div className={`workspace-findings min-w-0 w-full xl:w-3/12 h-full flex flex-col bg-tathya-surface border-r border-tathya-surface-border overflow-hidden ${
           mobileView === 'FLAGS' ? 'block' : 'hidden xl:flex'
         }`}>
           {/* Header of Column 2 */}
-          <div className="p-3 border-b border-tathya-surface-border bg-tathya-surface-elevated/70 flex items-center justify-between">
+          <div className="workspace-section-heading p-3 border-b border-tathya-surface-border bg-tathya-surface-elevated/70 flex items-center justify-between">
             <div className="flex items-center gap-1.5">
               <AlertOctagon className="w-4 h-4 text-amber-400" />
               <span className="text-xs font-bold text-white uppercase tracking-wider">
@@ -240,18 +241,18 @@ export const WorkspacePage: React.FC = () => {
           <div className="flex-1 p-3 overflow-y-auto space-y-3">
             {/* What to check checklist */}
             {audit.whatToCheck && audit.whatToCheck.length > 0 && (
-              <WhatToCheckPanel
+              <div className="workspace-guidance"><WhatToCheckPanel
                 items={audit.whatToCheck}
                 selectedFlagId={selectedFlagId}
                 onSelectItem={(flagId) => {
                   setSelectedFlagId(flagId);
                   setMobileView('EVIDENCE');
                 }}
-              />
+              /></div>
             )}
 
             {/* List of Flag Cards */}
-            <div className="space-y-2.5 pt-1">
+            <div className="workspace-finding-list space-y-2.5 pt-1">
               <div className="flex items-center justify-between text-[10px] font-bold uppercase tracking-wider text-tathya-text-muted">
                 <span>Findings ({filteredFlags.length})</span>
                 {activeSeverityFilter !== 'ALL' && (
@@ -288,7 +289,7 @@ export const WorkspacePage: React.FC = () => {
         </div>
 
         {/* COLUMN 3: EVIDENCE & SCORE INVESTIGATION PANEL */}
-        <div className={`w-full xl:w-4/12 h-full flex flex-col bg-tathya-surface-elevated/30 overflow-hidden ${
+        <div className={`workspace-evidence min-w-0 w-full xl:w-4/12 h-full flex flex-col bg-tathya-surface-elevated/30 overflow-hidden ${
           mobileView === 'EVIDENCE' ? 'block' : 'hidden xl:flex'
         }`}>
           {/* Top Score Banner */}
@@ -322,7 +323,7 @@ export const WorkspacePage: React.FC = () => {
           </div>
 
           {/* Subtabs for Right Panel */}
-          <div className="flex-shrink-0 px-3 pt-1 border-b border-tathya-surface-border bg-tathya-surface flex items-center gap-2">
+          <div className="workspace-evidence-tabs flex-shrink-0 px-3 pt-1 border-b border-tathya-surface-border bg-tathya-surface flex items-center gap-2">
             {[
               { id: 'EVIDENCE', label: 'Ground Truth Evidence' },
               { id: 'WATERFALL', label: 'Trust Waterfall' },
@@ -372,7 +373,7 @@ export const WorkspacePage: React.FC = () => {
           </div>
 
           {/* Fixed Reviewer Action Bar at Bottom of Column 3 */}
-          <div className="flex-shrink-0 p-3 border-t border-tathya-surface-border bg-tathya-surface">
+          <div className="workspace-actions flex-shrink-0 p-3 border-t border-tathya-surface-border bg-tathya-surface">
             {selectedFlag && (
               <ReviewerActionBar
                 flagId={selectedFlag.id}

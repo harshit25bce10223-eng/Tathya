@@ -92,7 +92,7 @@ export const DocumentHeatmapGutter: React.FC<DocumentHeatmapGutterProps> = ({
   };
 
   return (
-    <div className="w-14 sm:w-16 flex flex-col h-full bg-[#080C14] border-r border-tathya-surface-border p-1.5 space-y-1.5 select-none">
+    <div className="heatmap-gutter w-14 sm:w-16 flex flex-col h-full bg-[#080C14] border-r border-tathya-surface-border p-1.5 space-y-1.5 select-none">
       <div className="text-[9px] uppercase font-bold text-tathya-text-muted text-center tracking-wider py-1 border-b border-tathya-surface-border">
         Heatmap
       </div>
@@ -111,6 +111,7 @@ export const DocumentHeatmapGutter: React.FC<DocumentHeatmapGutterProps> = ({
                 onSectionClick?.(sec.sectionNum);
               }}
               role="button"
+              aria-pressed={sec.hasSelected}
               tabIndex={0}
               aria-label={`Document Section ${sec.sectionNum}: ${sec.isClean ? 'Clean' : `${sec.flags.length} findings, ${sec.highestSeverity}`}`}
               onKeyDown={(e) => {
@@ -143,7 +144,7 @@ export const DocumentHeatmapGutter: React.FC<DocumentHeatmapGutterProps> = ({
               )}
 
               {/* Hover tooltip for quick glance */}
-              <div className="absolute left-full ml-2 z-50 hidden group-hover:flex flex-col w-48 p-2 rounded-lg bg-tathya-surface-elevated border border-tathya-surface-border shadow-tathya-elevated text-left pointer-events-none">
+              <div className="absolute left-full ml-2 z-50 hidden group-hover:flex group-focus-visible:flex flex-col w-48 p-2 rounded-lg bg-tathya-surface-elevated border border-tathya-surface-border shadow-tathya-elevated text-left pointer-events-none">
                 <div className="flex items-center justify-between text-[10px] font-bold uppercase tracking-wider mb-1">
                   <span className="text-white">Section {sec.sectionNum}</span>
                   <span className={style.textColor}>{style.label}</span>

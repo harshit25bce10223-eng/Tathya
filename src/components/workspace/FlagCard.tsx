@@ -70,7 +70,7 @@ export const FlagCard: React.FC<FlagCardProps> = ({
       aria-label={`Flag finding: ${flag.type}, severity ${flag.severity}, ${flag.claim}`}
       onClick={onSelect}
       onKeyDown={handleKeyDown}
-      className={`p-4 rounded-xl border transition-all cursor-pointer focus:outline-none focus:ring-2 focus:ring-tathya-accent ${
+      className={`finding-card p-4 rounded-xl border transition-all cursor-pointer focus:outline-none focus:ring-2 focus:ring-tathya-accent ${
         isSelected
           ? 'bg-tathya-surface-elevated border-tathya-accent ring-1 ring-tathya-accent/50 shadow-tathya-elevated'
           : 'bg-tathya-surface border-tathya-surface-border hover:border-slate-600 hover:bg-tathya-surface/80'

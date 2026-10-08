@@ -30,7 +30,7 @@ export const DocumentViewer: React.FC<DocumentViewerProps> = ({
   useEffect(() => {
     if (activeHighlightRef.current) {
       activeHighlightRef.current.scrollIntoView({
-        behavior: 'smooth',
+        behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth',
         block: 'center',
       });
     }
@@ -49,7 +49,7 @@ export const DocumentViewer: React.FC<DocumentViewerProps> = ({
   const handleScrollToSection = (sectionIndex: number) => {
     const el = document.getElementById(`doc-section-${sectionIndex}`);
     if (el) {
-      el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      el.scrollIntoView({ behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'start' });
     }
   };
 
@@ -350,7 +350,7 @@ export const DocumentViewer: React.FC<DocumentViewerProps> = ({
   };
 
   return (
-    <div className="flex flex-col h-full bg-tathya-surface rounded-xl border border-tathya-surface-border overflow-hidden shadow-tathya-card">
+    <div className="document-reader flex flex-col h-full bg-tathya-surface rounded-xl border border-tathya-surface-border overflow-hidden shadow-tathya-card">
       {/* Top Document Header Bar */}
       <div className="flex items-center justify-between p-3.5 border-b border-tathya-surface-border bg-tathya-surface-elevated/70">
         <div className="flex items-center gap-2.5 min-w-0">
@@ -370,6 +370,8 @@ export const DocumentViewer: React.FC<DocumentViewerProps> = ({
         {/* Toggle Heatmap gutter button */}
         <div className="flex items-center gap-2">
           <button
+            aria-pressed={showHeatmapGutter}
+            aria-label="Toggle document heatmap"
             onClick={() => setShowHeatmapGutter(!showHeatmapGutter)}
             className="inline-flex items-center gap-1 px-2 py-1 rounded text-[11px] font-medium bg-slate-900 border border-slate-700 text-slate-300 hover:text-white transition-colors"
             title="Toggle risk density gutter"

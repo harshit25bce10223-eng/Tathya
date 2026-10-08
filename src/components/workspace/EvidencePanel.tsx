@@ -125,7 +125,7 @@ export const EvidencePanel: React.FC<EvidencePanelProps> = ({
   const hasQuote = Boolean(flag.evidence.quote && flag.evidence.quote.trim().length > 0);
 
   return (
-    <div className="space-y-4">
+    <div className="evidence-detail space-y-4">
       {/* 1. Header & Verification Relationship */}
       <div className="flex items-center justify-between gap-2">
         {getVerificationStatusHeader()}
