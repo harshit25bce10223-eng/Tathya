@@ -214,7 +214,9 @@ def _parse_docx(path: Path) -> ParsedDocument:
     headings: list[str] = []
 
     def _emit_line(
-        text: str, loc: dict[str, Any] | None, cell_spans: list[tuple[int, int, dict[str, Any]]] | None = None
+        text: str,
+        loc: dict[str, Any] | None,
+        cell_spans: list[tuple[int, int, dict[str, Any]]] | None = None,
     ) -> None:
         nonlocal cursor
         start = cursor
@@ -230,9 +232,7 @@ def _parse_docx(path: Path) -> ParsedDocument:
                     )
                 )
         elif loc is not None:
-            locations.append(
-                CharLocation(start=start, end=cursor, location=loc)
-            )
+            locations.append(CharLocation(start=start, end=cursor, location=loc))
         parts.append("\n\n")
         cursor += 2
 

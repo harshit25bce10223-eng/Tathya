@@ -1,44 +1,436 @@
 // Run from the repository root against the frontend production preview on port 4173.
-require('node:fs').mkdirSync('artifacts/ui-review',{recursive:true});
-const {chromium,expect}=require('@playwright/test');
-const id='11111111-1111-4111-8111-111111111111';
-const records=[{id,title:'Preview · Cloud procurement agreement',status:'completed',created_at:'2026-10-08T10:00:00Z',updated_at:'2026-10-08T10:05:00Z'},...['Vendor onboarding','Annual services agreement','Delivery schedule','Security policy'].map((title,i)=>({id:`audit-${i}`,title:`Preview · ${title}`,status:['completed','processing','queued','failed'][i],created_at:'2026-10-08T09:00:00Z',updated_at:'2026-10-08T09:05:00Z'}))];
-let flags=[{id:'flag-1',audit_id:id,document_id:'document-1',claim_id:null,type:'COMMERCIAL_VALUE',severity:'CRITICAL',materiality:'MATERIAL',reason:'The draft states ₹1.25 crore; the approved schedule lists ₹83.4 lakh. The ₹41.6 lakh difference requires a reviewer decision.',suggested_fix:'Reconcile the contract value against the latest approved commercial schedule.',status:'pending',reviewer_note:null,impact_score:28,location_json:'{"page":3,"section":"4.2"}'},{id:'flag-2',audit_id:id,document_id:'document-2',claim_id:null,type:'DELIVERY_DATE',severity:'HIGH',materiality:'HIGH',reason:'The delivery date differs between the draft and the signed schedule.',suggested_fix:'Confirm the signed delivery milestone with the project owner.',status:'pending',reviewer_note:null,impact_score:14,location_json:'{"page":7,"section":"2.1"}'}];
-const documents=[{id:'document-1',filename:'Procurement_Agreement_Draft.pdf',kind:'primary',version_no:1,text_hash:'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855',is_current:true},{id:'document-2',filename:'Approved_Commercial_Schedule.xlsx',kind:'primary',version_no:2,text_hash:'b5af45644298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b8',is_current:true}];
-let score=58,role='reviewer',mode='normal',submitted=false,decisions=0,summaryCalls=0;
-(async()=>{
- const browser=await chromium.launch({headless:true,channel:'chromium'});
- let page=await browser.newPage({viewport:{width:1440,height:1000}});
- const errors=[];page.on('pageerror',e=>errors.push(e.message));
- await page.addInitScript(()=>{sessionStorage.setItem('tathya-splash-seen','1');localStorage.setItem('access_token','design-preview');localStorage.setItem('vite-ui-theme','light')});
- await page.route('**/api/v1/users/me',r=>r.fulfill({json:{id:'preview',email:'preview@example.in',full_name:'Preview Reviewer',is_active:true,is_superuser:true,role}}));
- await page.route('**/api/v1/audits**',async r=>{
-  const path=new URL(r.request().url()).pathname;
-  if(mode==='unavailable'){await r.fulfill({status:404,json:{detail:'Not Found'}});return}
-  if(path.endsWith('/decision')){const body=r.request().postDataJSON();if(!body.note)throw Error('Missing reviewer note');flags=flags.map(f=>path.includes(f.id)?{...f,status:body.action==='dismiss'?'dismissed':'accepted',reviewer_note:body.note}:f);decisions++;await r.fulfill({json:{id:'decision-1'}});return}
-  if(path.endsWith('/rescore')){score=86;await r.fulfill({json:{trust_score:score}});return}
-  if(path.endsWith('/flags')){await r.fulfill({json:{data:mode==='processing'&&summaryCalls<2?[]:flags,count:flags.length}});return}
-  if(path.endsWith('/documents')){await r.fulfill({json:{data:documents,count:2}});return}
-  if(path.endsWith('/audits')&&r.request().method()==='POST'){const body=r.request().postDataBuffer().toString();if(!body.includes('filename="agreement.txt"')||!body.includes('Draft agreement'))throw Error('Multipart file data missing');submitted=true;await r.fulfill({status:201,json:records[0]});return}
-  if(path.endsWith('/audits')&&mode==='malformed'){await r.fulfill({json:{data:[{id:'broken'}],count:1}});return} if(path.endsWith('/audits')){await r.fulfill({json:{data:mode==='empty'?[]:records,count:mode==='empty'?0:records.length}});return}
-  if(mode==='processing')summaryCalls++; await r.fulfill({json:{audit:{...records[0],status:mode==='processing'&&summaryCalls<2?'processing':'completed'},document_count:2,flag_count:2,open_flag_count:flags.filter(f=>f.status==='pending').length,claim_count:24,passport:{trust_score:score,status:'VERIFIED',verify_token:'previewtoken'}}});
- });
+require("node:fs").mkdirSync("artifacts/ui-review", { recursive: true })
+const { chromium, expect } = require("@playwright/test")
+const id = "11111111-1111-4111-8111-111111111111"
+const records = [
+  {
+    id,
+    title: "Preview · Cloud procurement agreement",
+    status: "completed",
+    created_at: "2026-10-08T10:00:00Z",
+    updated_at: "2026-10-08T10:05:00Z",
+  },
+  ...[
+    "Vendor onboarding",
+    "Annual services agreement",
+    "Delivery schedule",
+    "Security policy",
+  ].map((title, i) => ({
+    id: `audit-${i}`,
+    title: `Preview · ${title}`,
+    status: ["completed", "processing", "queued", "failed"][i],
+    created_at: "2026-10-08T09:00:00Z",
+    updated_at: "2026-10-08T09:05:00Z",
+  })),
+]
+let flags = [
+  {
+    id: "flag-1",
+    audit_id: id,
+    document_id: "document-1",
+    claim_id: null,
+    type: "COMMERCIAL_VALUE",
+    severity: "CRITICAL",
+    materiality: "MATERIAL",
+    reason:
+      "The draft states ₹1.25 crore; the approved schedule lists ₹83.4 lakh. The ₹41.6 lakh difference requires a reviewer decision.",
+    suggested_fix:
+      "Reconcile the contract value against the latest approved commercial schedule.",
+    status: "pending",
+    reviewer_note: null,
+    impact_score: 28,
+    location_json: '{"page":3,"section":"4.2"}',
+  },
+  {
+    id: "flag-2",
+    audit_id: id,
+    document_id: "document-2",
+    claim_id: null,
+    type: "DELIVERY_DATE",
+    severity: "HIGH",
+    materiality: "HIGH",
+    reason:
+      "The delivery date differs between the draft and the signed schedule.",
+    suggested_fix:
+      "Confirm the signed delivery milestone with the project owner.",
+    status: "pending",
+    reviewer_note: null,
+    impact_score: 14,
+    location_json: '{"page":7,"section":"2.1"}',
+  },
+]
+const documents = [
+  {
+    id: "document-1",
+    filename: "Procurement_Agreement_Draft.pdf",
+    kind: "primary",
+    version_no: 1,
+    text_hash:
+      "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    is_current: true,
+  },
+  {
+    id: "document-2",
+    filename: "Approved_Commercial_Schedule.xlsx",
+    kind: "primary",
+    version_no: 2,
+    text_hash:
+      "b5af45644298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b8",
+    is_current: true,
+  },
+]
+let score = 58,
+  role = "reviewer",
+  mode = "normal",
+  _submitted = false,
+  _decisions = 0,
+  summaryCalls = 0
+;(async () => {
+  const browser = await chromium.launch({ headless: true, channel: "chromium" })
+  let page = await browser.newPage({ viewport: { width: 1440, height: 1000 } })
+  const errors = []
+  page.on("pageerror", (e) => errors.push(e.message))
+  await page.addInitScript(() => {
+    sessionStorage.setItem("tathya-splash-seen", "1")
+    localStorage.setItem("access_token", "design-preview")
+    localStorage.setItem("vite-ui-theme", "light")
+  })
+  await page.route("**/api/v1/users/me", (r) =>
+    r.fulfill({
+      json: {
+        id: "preview",
+        email: "preview@example.in",
+        full_name: "Preview Reviewer",
+        is_active: true,
+        is_superuser: true,
+        role,
+      },
+    }),
+  )
+  await page.route("**/api/v1/audits**", async (r) => {
+    const path = new URL(r.request().url()).pathname
+    if (mode === "unavailable") {
+      await r.fulfill({ status: 404, json: { detail: "Not Found" } })
+      return
+    }
+    if (path.endsWith("/decision")) {
+      const body = r.request().postDataJSON()
+      if (!body.note) throw Error("Missing reviewer note")
+      flags = flags.map((f) =>
+        path.includes(f.id)
+          ? {
+              ...f,
+              status: body.action === "dismiss" ? "dismissed" : "accepted",
+              reviewer_note: body.note,
+            }
+          : f,
+      )
+      _decisions++
+      await r.fulfill({ json: { id: "decision-1" } })
+      return
+    }
+    if (path.endsWith("/rescore")) {
+      score = 86
+      await r.fulfill({ json: { trust_score: score } })
+      return
+    }
+    if (path.endsWith("/flags")) {
+      await r.fulfill({
+        json: {
+          data: mode === "processing" && summaryCalls < 2 ? [] : flags,
+          count: flags.length,
+        },
+      })
+      return
+    }
+    if (path.endsWith("/documents")) {
+      await r.fulfill({ json: { data: documents, count: 2 } })
+      return
+    }
+    if (path.endsWith("/audits") && r.request().method() === "POST") {
+      const body = r.request().postDataBuffer().toString()
+      if (
+        !body.includes('filename="agreement.txt"') ||
+        !body.includes("Draft agreement")
+      )
+        throw Error("Multipart file data missing")
+      _submitted = true
+      await r.fulfill({ status: 201, json: records[0] })
+      return
+    }
+    if (path.endsWith("/audits") && mode === "malformed") {
+      await r.fulfill({ json: { data: [{ id: "broken" }], count: 1 } })
+      return
+    }
+    if (path.endsWith("/audits")) {
+      await r.fulfill({
+        json: {
+          data: mode === "empty" ? [] : records,
+          count: mode === "empty" ? 0 : records.length,
+        },
+      })
+      return
+    }
+    if (mode === "processing") summaryCalls++
+    await r.fulfill({
+      json: {
+        audit: {
+          ...records[0],
+          status:
+            mode === "processing" && summaryCalls < 2
+              ? "processing"
+              : "completed",
+        },
+        document_count: 2,
+        flag_count: 2,
+        open_flag_count: flags.filter((f) => f.status === "pending").length,
+        claim_count: 24,
+        passport: {
+          trust_score: score,
+          status: "VERIFIED",
+          verify_token: "previewtoken",
+        },
+      },
+    })
+  })
 
- await page.route('**/api/v1/users/?**',r=>r.fulfill({json:{data:[{id:'preview',email:'preview@example.in',full_name:'Preview Reviewer',is_active:true,is_superuser:true},{id:'other',email:'submitter@example.in',full_name:'Preview Submitter',is_active:true,is_superuser:false,role:'user'}],count:2}}));
- let verifyMode='normal';
- await page.route('**/api/v1/verify/**',r=>r.fulfill({json:verifyMode==='missing'?{found:false,status:'NOT_FOUND',trust_score:0,document_count:0,document_hash:'',issued_at:null,signature_valid:null,chain:null}:verifyMode==='malformed'?{}:{found:true,status:'VERIFIED',trust_score:58,document_count:2,document_hash:documents[0].text_hash,issued_at:'2026-10-08T10:05:00Z',signature_valid:verifyMode==='failed'?false:true,chain:{ok:verifyMode!=='failed',reason:verifyMode==='failed'?'Integrity check failed':'Chain intact',entry_count:4}}}));
- const pages=[['/control/queue','queue','Review queue'],['/control/workspace/'+id,'investigation','COMMERCIAL VALUE'],['/control/audits','archive','Audit archive'],['/control/sources','sources','Sources & truth'],['/control/policies','policies','Trust policies'],['/control/metrics','metrics','Metrics & drift'],['/control/admin','admin','Governance & admin'],['/settings','settings','User Settings'],['/verify/previewtoken','verifier','Trust, with a paper trail.']];
- for(const width of [1440,390]){
-  await page.setViewportSize({width,height:width===1440?1000:844});
-  for(const [path,name,heading] of pages){await page.goto('http://127.0.0.1:4173'+path);await expect(page.getByRole('heading',{name:heading,exact:true})).toBeVisible();if(name==='sources')await expect(page.getByText(documents[0].filename,{exact:true})).toBeVisible();if(name==='admin')await expect(page.getByText('preview@example.in',{exact:true}).filter({visible:true}).first()).toBeVisible();await page.screenshot({path:'artifacts/ui-review/'+name+'-'+(width===1440?'desktop':'mobile')+'-v3.png',fullPage:true,timeout:60000});if(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth))throw Error('Overflow '+path+' '+width);if(name==='admin'){await page.getByRole('button',{name:'Add User',exact:true}).click();await expect(page.getByRole('dialog')).toBeVisible();await page.screenshot({path:'artifacts/ui-review/add-user-'+width+'-v3.png',fullPage:true,timeout:60000});await page.getByRole('button',{name:'Cancel',exact:true}).click()}}
- }
- await page.setViewportSize({width:1440,height:1000});await page.goto('http://127.0.0.1:4173/settings');for(const [name,file] of [['Password','settings-password'],['Danger zone','settings-account']]){await page.getByRole('tab',{name,exact:true}).click();await page.screenshot({path:'artifacts/ui-review/'+file+'-v3.png',fullPage:true,timeout:60000})}
- await page.goto('http://127.0.0.1:4173/control/sources');await page.getByLabel('Search documents').fill('no-match');await expect(page.getByRole('heading',{name:'No matching documents'})).toBeVisible();
- for(const state of ['missing','failed','malformed']){verifyMode=state;await page.goto('http://127.0.0.1:4173/verify/'+state);await expect(page.getByText(state==='missing'?'Passport not found':state==='failed'?'Integrity check failed':'The verification service returned incomplete data.',{exact:state!=='failed'})).toBeVisible();}
- await page.close();page=await browser.newPage();page.on('pageerror',e=>errors.push(e.message));await page.addInitScript(()=>{sessionStorage.setItem('tathya-splash-seen','1');localStorage.setItem('vite-ui-theme','light')});
- for(const width of [1440,390]){await page.setViewportSize({width,height:width===1440?1000:844});for(const [path,name] of [['/login','login'],['/signup','signup'],['/recover-password','recover'],['/reset-password?token=preview','reset'],['/page-not-found','notfound']]){await page.goto('http://127.0.0.1:4173'+path);await expect(page.locator('h1')).toBeVisible();await page.locator('img').evaluateAll(imgs=>Promise.all(imgs.map(img=>img.decode().catch(()=>{}))));await page.screenshot({path:'artifacts/ui-review/'+name+'-'+(width===1440?'desktop':'mobile')+'-v3.png',fullPage:true,timeout:60000});if(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth))throw Error('Overflow '+path)}}
- await page.setViewportSize({width:1440,height:1000});await page.goto('http://127.0.0.1:4173/splash');await page.locator('.splash-art img').first().evaluate(img=>img.decode());await expect(page.locator('.splash-preview')).toBeVisible();
- for(const [time,name] of [[200,'start'],[950,'parts'],[2300,'complete']]){await page.evaluate(time=>{document.querySelectorAll('.splash-preview').forEach(root=>root.getAnimations({subtree:true}).forEach(a=>{a.pause();a.currentTime=time}))},time);await page.screenshot({path:'artifacts/ui-review/splash-'+name+'-v3.png',fullPage:true,timeout:60000})}
- await page.emulateMedia({reducedMotion:'reduce'});await page.reload();await expect(page.locator('.splash-preview')).toBeVisible();if(await page.locator('.splash-preview .splash-complete').evaluate(el=>getComputedStyle(el).opacity)!=='1')throw Error('Reduced motion logo hidden');
- if(errors.length)throw Error(JSON.stringify(errors));console.log(JSON.stringify({passed:true,pages:pages.length,checks:['desktop and mobile page coverage','source search','governance records','public proof verified missing invalid malformed','all auth screens','404','splash sequence','reduced motion'],errors}));await browser.close();
-})().catch(e=>{console.error(e);process.exit(1)});
+  await page.route("**/api/v1/users/?**", (r) =>
+    r.fulfill({
+      json: {
+        data: [
+          {
+            id: "preview",
+            email: "preview@example.in",
+            full_name: "Preview Reviewer",
+            is_active: true,
+            is_superuser: true,
+          },
+          {
+            id: "other",
+            email: "submitter@example.in",
+            full_name: "Preview Submitter",
+            is_active: true,
+            is_superuser: false,
+            role: "user",
+          },
+        ],
+        count: 2,
+      },
+    }),
+  )
+  let verifyMode = "normal"
+  await page.route("**/api/v1/verify/**", (r) =>
+    r.fulfill({
+      json:
+        verifyMode === "missing"
+          ? {
+              found: false,
+              status: "NOT_FOUND",
+              trust_score: 0,
+              document_count: 0,
+              document_hash: "",
+              issued_at: null,
+              signature_valid: null,
+              chain: null,
+            }
+          : verifyMode === "malformed"
+            ? {}
+            : {
+                found: true,
+                status: "VERIFIED",
+                trust_score: 58,
+                document_count: 2,
+                document_hash: documents[0].text_hash,
+                issued_at: "2026-10-08T10:05:00Z",
+                signature_valid: verifyMode !== "failed",
+                chain: {
+                  ok: verifyMode !== "failed",
+                  reason:
+                    verifyMode === "failed"
+                      ? "Integrity check failed"
+                      : "Chain intact",
+                  entry_count: 4,
+                },
+              },
+    }),
+  )
+  const pages = [
+    ["/control/queue", "queue", "Review queue"],
+    [`/control/workspace/${id}`, "investigation", "COMMERCIAL VALUE"],
+    ["/control/audits", "archive", "Audit archive"],
+    ["/control/sources", "sources", "Sources & truth"],
+    ["/control/policies", "policies", "Trust policies"],
+    ["/control/metrics", "metrics", "Metrics & drift"],
+    ["/control/admin", "admin", "Governance & admin"],
+    ["/settings", "settings", "User Settings"],
+    ["/verify/previewtoken", "verifier", "Trust, with a paper trail."],
+  ]
+  for (const width of [1440, 390]) {
+    await page.setViewportSize({ width, height: width === 1440 ? 1000 : 844 })
+    for (const [path, name, heading] of pages) {
+      await page.goto(`http://127.0.0.1:4173${path}`)
+      await expect(
+        page.getByRole("heading", { name: heading, exact: true }),
+      ).toBeVisible()
+      if (name === "sources")
+        await expect(
+          page.getByText(documents[0].filename, { exact: true }),
+        ).toBeVisible()
+      if (name === "admin")
+        await expect(
+          page
+            .getByText("preview@example.in", { exact: true })
+            .filter({ visible: true })
+            .first(),
+        ).toBeVisible()
+      await page.screenshot({
+        path: `artifacts/ui-review/${name}-${width === 1440 ? "desktop" : "mobile"}-v3.png`,
+        fullPage: true,
+        timeout: 60000,
+      })
+      if (
+        await page.evaluate(
+          () => document.documentElement.scrollWidth > innerWidth,
+        )
+      )
+        throw Error(`Overflow ${path} ${width}`)
+      if (name === "admin") {
+        await page
+          .getByRole("button", { name: "Add User", exact: true })
+          .click()
+        await expect(page.getByRole("dialog")).toBeVisible()
+        await page.screenshot({
+          path: `artifacts/ui-review/add-user-${width}-v3.png`,
+          fullPage: true,
+          timeout: 60000,
+        })
+        await page.getByRole("button", { name: "Cancel", exact: true }).click()
+      }
+    }
+  }
+  await page.setViewportSize({ width: 1440, height: 1000 })
+  await page.goto("http://127.0.0.1:4173/settings")
+  for (const [name, file] of [
+    ["Password", "settings-password"],
+    ["Danger zone", "settings-account"],
+  ]) {
+    await page.getByRole("tab", { name, exact: true }).click()
+    await page.screenshot({
+      path: `artifacts/ui-review/${file}-v3.png`,
+      fullPage: true,
+      timeout: 60000,
+    })
+  }
+  await page.goto("http://127.0.0.1:4173/control/sources")
+  await page.getByLabel("Search documents").fill("no-match")
+  await expect(
+    page.getByRole("heading", { name: "No matching documents" }),
+  ).toBeVisible()
+  for (const state of ["missing", "failed", "malformed"]) {
+    verifyMode = state
+    await page.goto(`http://127.0.0.1:4173/verify/${state}`)
+    await expect(
+      page.getByText(
+        state === "missing"
+          ? "Passport not found"
+          : state === "failed"
+            ? "Integrity check failed"
+            : "The verification service returned incomplete data.",
+        { exact: state !== "failed" },
+      ),
+    ).toBeVisible()
+  }
+  await page.close()
+  page = await browser.newPage()
+  page.on("pageerror", (e) => errors.push(e.message))
+  await page.addInitScript(() => {
+    sessionStorage.setItem("tathya-splash-seen", "1")
+    localStorage.setItem("vite-ui-theme", "light")
+  })
+  for (const width of [1440, 390]) {
+    await page.setViewportSize({ width, height: width === 1440 ? 1000 : 844 })
+    for (const [path, name] of [
+      ["/login", "login"],
+      ["/signup", "signup"],
+      ["/recover-password", "recover"],
+      ["/reset-password?token=preview", "reset"],
+      ["/page-not-found", "notfound"],
+    ]) {
+      await page.goto(`http://127.0.0.1:4173${path}`)
+      await expect(page.locator("h1")).toBeVisible()
+      await page
+        .locator("img")
+        .evaluateAll((imgs) =>
+          Promise.all(imgs.map((img) => img.decode().catch(() => {}))),
+        )
+      await page.screenshot({
+        path: `artifacts/ui-review/${name}-${width === 1440 ? "desktop" : "mobile"}-v3.png`,
+        fullPage: true,
+        timeout: 60000,
+      })
+      if (
+        await page.evaluate(
+          () => document.documentElement.scrollWidth > innerWidth,
+        )
+      )
+        throw Error(`Overflow ${path}`)
+    }
+  }
+  await page.setViewportSize({ width: 1440, height: 1000 })
+  await page.goto("http://127.0.0.1:4173/splash")
+  await page
+    .locator(".splash-art img")
+    .first()
+    .evaluate((img) => img.decode())
+  await expect(page.locator(".splash-preview")).toBeVisible()
+  for (const [time, name] of [
+    [200, "start"],
+    [950, "parts"],
+    [2300, "complete"],
+  ]) {
+    await page.evaluate((time) => {
+      document.querySelectorAll(".splash-preview").forEach((root) => {
+        root.getAnimations({ subtree: true }).forEach((a) => {
+          a.pause()
+          a.currentTime = time
+        })
+      })
+    }, time)
+    await page.screenshot({
+      path: `artifacts/ui-review/splash-${name}-v3.png`,
+      fullPage: true,
+      timeout: 60000,
+    })
+  }
+  await page.emulateMedia({ reducedMotion: "reduce" })
+  await page.reload()
+  await expect(page.locator(".splash-preview")).toBeVisible()
+  if (
+    (await page
+      .locator(".splash-preview .splash-complete")
+      .evaluate((el) => getComputedStyle(el).opacity)) !== "1"
+  )
+    throw Error("Reduced motion logo hidden")
+  if (errors.length) throw Error(JSON.stringify(errors))
+  console.log(
+    JSON.stringify({
+      passed: true,
+      pages: pages.length,
+      checks: [
+        "desktop and mobile page coverage",
+        "source search",
+        "governance records",
+        "public proof verified missing invalid malformed",
+        "all auth screens",
+        "404",
+        "splash sequence",
+        "reduced motion",
+      ],
+      errors,
+    }),
+  )
+  await browser.close()
+})().catch((e) => {
+  console.error(e)
+  process.exit(1)
+})

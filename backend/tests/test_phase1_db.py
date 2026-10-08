@@ -21,8 +21,8 @@ pytestmark = pytest.mark.skipif(
 
 def test_document_version_binding(db):
     from app.core.pipeline import ingest_document, save_upload
-    from app.models import Audit, Claim, Document, User
     from app.core.security import get_password_hash
+    from app.models import Audit, Claim, Document, User
 
     user = User(
         email=f"dbtest-{uuid.uuid4().hex[:8]}@example.com",
@@ -74,7 +74,7 @@ def test_document_version_binding(db):
 
 
 def _wait_for_terminal(audit_id: uuid.UUID, timeout: float = 60.0) -> str:
-    from sqlmodel import Session, select
+    from sqlmodel import Session
 
     from app.core.db import engine
     from app.models import Audit
@@ -93,11 +93,12 @@ def _wait_for_terminal(audit_id: uuid.UUID, timeout: float = 60.0) -> str:
 
 
 def test_audit_job_completes_and_persists_chain(db):
+    from sqlmodel import select
+
     from app.core.jobs import submit_audit_job
     from app.core.pipeline import save_upload, verify_passport_token
     from app.core.security import get_password_hash
     from app.models import Audit, AuditLogEntry, Passport, User
-    from sqlmodel import select
 
     user = User(
         email=f"jobtest-{uuid.uuid4().hex[:8]}@example.com",
@@ -127,9 +128,7 @@ def test_audit_job_completes_and_persists_chain(db):
     assert audit.failed_stage is None
     assert audit.error_message is None
 
-    passport = db.exec(
-        select(Passport).where(Passport.audit_id == audit.id)
-    ).first()
+    passport = db.exec(select(Passport).where(Passport.audit_id == audit.id)).first()
     assert passport is not None
     assert 8 <= len(passport.verify_token) <= 12
     assert passport.document_hash == audit.source_set_hash
@@ -166,7 +165,7 @@ def test_failed_job_persists_error_and_stage(db):
     db.commit()
     db.refresh(audit)
 
-    def exploding_pipeline(session, audit_id, tracker: StageTracker) -> None:
+    def exploding_pipeline(_session, _audit_id, tracker: StageTracker) -> None:
         tracker.set("canonical")
         raise StageError("canonical", "boom at canonical stage")
 
@@ -235,7 +234,9 @@ def test_api_audit_lifecycle_serialization(client, superuser_token_headers):
     assert doc["is_current"] is True
 
     # flags contract (empty in Phase 1)
-    response = client.get(f"/api/v1/audits/{audit_id}/flags", headers=superuser_token_headers)
+    response = client.get(
+        f"/api/v1/audits/{audit_id}/flags", headers=superuser_token_headers
+    )
     assert response.status_code == 200
     assert response.json() == {"data": [], "count": 0}
 

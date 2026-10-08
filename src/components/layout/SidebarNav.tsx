@@ -1,13 +1,13 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { 
-  LayoutDashboard, 
-  ListFilter, 
-  FolderLock, 
-  Database, 
-  ShieldAlert, 
-  BarChart3, 
-  Sliders, 
+import {
+  LayoutDashboard,
+  ListFilter,
+  FolderLock,
+  Database,
+  ShieldAlert,
+  BarChart3,
+  Sliders,
   PlusCircle,
   ExternalLink
 } from 'lucide-react';

@@ -1,4 +1,4 @@
-from PIL import Image, ImageDraw, ImageFont
+from PIL import Image, ImageDraw
 import pytesseract
 from pathlib import Path
 
@@ -29,6 +29,8 @@ try:
     if "hin" in langs:
         print("OCR_HINDI: PASS (Hindi traineddata found)")
     else:
-        print("OCR_HINDI: NOT_READY (Hindi traineddata not installed, English available)")
+        print(
+            "OCR_HINDI: NOT_READY (Hindi traineddata not installed, English available)"
+        )
 except Exception:
     print("OCR_HINDI: NOT_READY (Tesseract binary not installed)")

@@ -1,6 +1,6 @@
 /**
  * TATHYA (तथ्य) CENTRALIZED DESIGN TOKEN SYSTEM
- * 
+ *
  * Strict enterprise trust/compliance design tokens.
  * All components and views derive styling from this central specification.
  */

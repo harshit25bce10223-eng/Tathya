@@ -1,10 +1,13 @@
-"""Phase 1 audit pipeline.
+"""Phase 1-3 audit pipeline.
 
 Stages (persisted as audits.failed_stage on error):
-    ingest     - parse + canonicalize every document of the audit
-    canonical  - deterministic sentence/offset validation
-    hash_chain - source_set_hash + chained audit_log entry
-    passport   - issue ECDSA-signed passport with public verify token
+    ingest         - parse + canonicalize every document of the audit
+    canonical      - deterministic sentence/offset validation
+    extract_facts  - structured fact extraction from documents
+    grounding      - claim verification against evidence
+    risk_scan      - deterministic risk detection (PII, secrets, URLs, commitments)
+    hash_chain     - source_set_hash + chained audit_log entry
+    passport       - issue ECDSA-signed passport with public verify token
 
 No trust-core scoring here (later phases).
 """
@@ -27,8 +30,11 @@ from app.core.canonical import (
     text_hash,
 )
 from app.core.config import settings
+from app.core.facts import extract_facts
+from app.core.grounding import ground_claims
 from app.core.jobs import StageError, StageTracker
 from app.core.parsers import ParserError, parse_file
+from app.core.risk_scan import scan_audit_risks
 from app.core.security import (
     GENESIS_HASH,
     compute_entry_hash,
@@ -59,11 +65,9 @@ def save_upload(audit_id: uuid.UUID, filename: str, data: bytes) -> Path:
     return path
 
 
-def next_version_no(session: Session, audit_id: uuid.UUID, filename: str) -> int:
+def next_version_no(session: Session, audit_id: uuid.UUID) -> int:
     current = session.exec(
-        select(func.count())
-        .select_from(Document)
-        .where(Document.audit_id == audit_id, Document.filename == filename)
+        select(func.count()).select_from(Document).where(Document.audit_id == audit_id)
     ).one()
     return int(current) + 1
 
@@ -102,12 +106,14 @@ def ingest_document(
     digest = text_hash(normalized)
 
     _demote_previous_versions(session, audit.id, filename)
-    version_no = next_version_no(session, audit.id, filename)
+    version_no = next_version_no(session, audit.id)
 
     try:
-        relative_path = str(path.resolve().relative_to(
-            Path(settings.STORAGE_DIR).expanduser().resolve()
-        ))
+        relative_path = str(
+            path.resolve().relative_to(
+                Path(settings.STORAGE_DIR).expanduser().resolve()
+            )
+        )
     except ValueError:
         relative_path = str(path.resolve())
 
@@ -191,6 +197,37 @@ def run_audit_pipeline(
         for sentence in sentences:
             if len(sentence.sentence_id) != 64:
                 raise StageError("canonical", "invalid sentence id produced")
+
+    # ---- extract facts --------------------------------------------------
+    tracker.set("extract_facts")
+    documents = session.exec(
+        select(Document).where(Document.audit_id == audit_id)
+    ).all()
+    for document in documents:
+        try:
+            extract_facts(session, document)
+        except Exception as exc:
+            logger.exception("fact extraction failed for document %s", document.id)
+            raise StageError("extract_facts", f"fact extraction failed: {exc}") from exc
+    session.commit()
+
+    # ---- grounding ------------------------------------------------------
+    tracker.set("grounding")
+    try:
+        ground_claims(session, audit_id)
+    except Exception as exc:
+        logger.exception("grounding failed for audit %s", audit_id)
+        raise StageError("grounding", f"grounding failed: {exc}") from exc
+    session.commit()
+
+    # ---- risk scan ------------------------------------------------------
+    tracker.set("risk_scan")
+    try:
+        scan_audit_risks(session, audit_id)
+    except Exception as exc:
+        logger.exception("risk scan failed for audit %s", audit_id)
+        raise StageError("risk_scan", f"risk scan failed: {exc}") from exc
+    session.commit()
 
     # ---- hash chain -----------------------------------------------------
     tracker.set("hash_chain")
@@ -289,7 +326,7 @@ def issue_passport(session: Session, audit: Audit) -> Passport:
     private_pem, _ = ensure_keypair(
         settings.ECDSA_PRIVATE_KEY_PATH, settings.ECDSA_PUBLIC_KEY_PATH
     )
-    message = f"{audit.source_set_hash}:{chain_head}".encode("utf-8")
+    message = f"{audit.source_set_hash}:{chain_head}".encode()
     signature = sign_message(private_pem, message)
 
     token = _unique_token(session)
@@ -359,10 +396,8 @@ def verify_passport_token(
     return passport, audit, ok, reason
 
 
-def recompute_signature_message(
-    document_hash: str, chain_head: str
-) -> bytes:
-    return f"{document_hash}:{chain_head}".encode("utf-8")
+def recompute_signature_message(document_hash: str, chain_head: str) -> bytes:
+    return f"{document_hash}:{chain_head}".encode()
 
 
 __all__ = [

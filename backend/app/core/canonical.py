@@ -180,9 +180,7 @@ def normalize_text(raw: str) -> tuple[str, list[dict]]:
     return normalized, segments
 
 
-def _segments_from_raw(
-    raw_starts: list[int], raw_ends: list[int]
-) -> list[dict]:
+def _segments_from_raw(raw_starts: list[int], raw_ends: list[int]) -> list[dict]:
     """Group normalized chars into compact [norm -> raw] segments.
 
     Chars join one segment only while the mapping stays 1:1 and the raw
@@ -261,9 +259,7 @@ def denormalize_span(
     return raw_start, raw_end
 
 
-def _raw_to_norm_boundary(
-    segments: list[dict], raw_pos: int, left: bool
-) -> int:
+def _raw_to_norm_boundary(segments: list[dict], raw_pos: int, left: bool) -> int:
     """Map one raw offset to a normalized offset (inverse direction).
 
     Boundary semantics (deterministic):
@@ -361,7 +357,6 @@ def build_blocks(normalized_text: str) -> list[Block]:
 
         if stripped.startswith("#"):
             btype = "heading"
-            block_text = stripped
             blocks.append(
                 Block(
                     block_id=f"blk-{block_index:04d}",
@@ -457,12 +452,63 @@ _INITIALS = re.compile(r"(?:[A-Z]\.)+[A-Z]?$")
 # compact (dot-free) forms are compared, so "e.g" and "eg" both match
 _SENTENCE_ABBREVIATIONS = frozenset(
     {
-        "no", "nos", "rs", "inr", "usd", "eur", "gbp", "pvt", "ltd", "inc",
-        "co", "corp", "mr", "mrs", "ms", "dr", "prof", "st", "sr", "jr",
-        "vs", "etc", "eg", "ie", "viz", "approx", "min", "max", "govt",
-        "dept", "sec", "cl", "fig", "art", "para", "sub", "m/s", "bros",
-        "jan", "feb", "mar", "apr", "jun", "jul", "aug", "sept", "sep",
-        "oct", "nov", "dec", "vol", "pp", "ed", "al", "est", "ca", "cs",
+        "no",
+        "nos",
+        "rs",
+        "inr",
+        "usd",
+        "eur",
+        "gbp",
+        "pvt",
+        "ltd",
+        "inc",
+        "co",
+        "corp",
+        "mr",
+        "mrs",
+        "ms",
+        "dr",
+        "prof",
+        "st",
+        "sr",
+        "jr",
+        "vs",
+        "etc",
+        "eg",
+        "ie",
+        "viz",
+        "approx",
+        "min",
+        "max",
+        "govt",
+        "dept",
+        "sec",
+        "cl",
+        "fig",
+        "art",
+        "para",
+        "sub",
+        "m/s",
+        "bros",
+        "jan",
+        "feb",
+        "mar",
+        "apr",
+        "jun",
+        "jul",
+        "aug",
+        "sept",
+        "sep",
+        "oct",
+        "nov",
+        "dec",
+        "vol",
+        "pp",
+        "ed",
+        "al",
+        "est",
+        "ca",
+        "cs",
     }
 )
 
@@ -493,9 +539,7 @@ def _split_sentence_spans(text: str) -> list[tuple[int, int]]:
         cuts.append(match.end())
     cuts.append(len(text))
     return [
-        (cuts[i], cuts[i + 1])
-        for i in range(len(cuts) - 1)
-        if cuts[i] < cuts[i + 1]
+        (cuts[i], cuts[i + 1]) for i in range(len(cuts) - 1) if cuts[i] < cuts[i + 1]
     ]
 
 
@@ -519,9 +563,7 @@ def compute_sentence_id(
 
     SHA256(document_version_id + block_index + normalized_sentence_text + occurrence)
     """
-    payload = (
-        f"{document_version_id}{block_index}{sentence_text}{occurrence_index}"
-    )
+    payload = f"{document_version_id}{block_index}{sentence_text}{occurrence_index}"
     return hashlib.sha256(payload.encode("utf-8")).hexdigest()
 
 

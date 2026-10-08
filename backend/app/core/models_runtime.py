@@ -43,7 +43,10 @@ def resolve_device() -> str:
         if pref == "auto":
             if torch.cuda.is_available():
                 _device = "cuda"
-            elif getattr(torch.backends, "mps", None) and torch.backends.mps.is_available():
+            elif (
+                getattr(torch.backends, "mps", None)
+                and torch.backends.mps.is_available()
+            ):
                 _device = "mps"
             else:
                 _device = "cpu"
@@ -179,9 +182,7 @@ def runtime_status() -> dict[str, Any]:
     if settings.USE_HHEM:
         status["hhem_cached"] = _model_cached(settings.HHEM_MODEL)
 
-    status["embeddings"] = (
-        "ready" if status["embedding_cached"] else "not_cached"
-    )
+    status["embeddings"] = "ready" if status["embedding_cached"] else "not_cached"
     status["reranker"] = "ready" if status["reranker_cached"] else "not_cached"
     if settings.USE_HHEM:
         status["hhem"] = "ready" if status["hhem_cached"] else "not_cached"

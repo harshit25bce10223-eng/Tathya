@@ -38,9 +38,10 @@ from app.core.security import (
 
 def test_text_hash_is_sha256_of_normalized_text():
     normalized = "Contract value is INR 42,00,000."
-    assert text_hash(normalized) == __import__("hashlib").sha256(
-        normalized.encode("utf-8")
-    ).hexdigest()
+    assert (
+        text_hash(normalized)
+        == __import__("hashlib").sha256(normalized.encode("utf-8")).hexdigest()
+    )
 
 
 def test_text_hash_changes_when_text_changes():

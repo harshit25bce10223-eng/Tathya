@@ -5,8 +5,8 @@ import { Audit } from '../api/types';
 import { QueueTable } from '../components/queue/QueueTable';
 import { TrustScoreChart } from '../components/charts/TrustScoreChart';
 import { Button } from '../components/ui/Button';
-import { 
-  ArrowRight, 
+import {
+  ArrowRight,
   Plus,
   Clock,
   AlertOctagon,

@@ -6,6 +6,7 @@ snapshot_download (no hf-xet, standard HTTP).
 Run from project root:
     .venv/Scripts/python.exe scripts/download_models.py
 """
+
 import os
 import sys
 import time
@@ -32,6 +33,7 @@ MODELS = [
     },
 ]
 
+
 def format_bytes(b: int) -> str:
     for unit in ["B", "KB", "MB", "GB"]:
         if b < 1024:
@@ -41,11 +43,11 @@ def format_bytes(b: int) -> str:
 
 
 def download_model(repo_id: str, label: str, ignore_patterns: list[str]) -> bool:
-    print(f"\n{'='*60}")
+    print(f"\n{'=' * 60}")
     print(f"Downloading: {label}")
     print(f"  repo_id : {repo_id}")
     print(f"  cache   : {CACHE_DIR}")
-    print(f"{'='*60}")
+    print(f"{'=' * 60}")
 
     try:
         from huggingface_hub import snapshot_download
@@ -70,12 +72,12 @@ def download_model(repo_id: str, label: str, ignore_patterns: list[str]) -> bool
             for dp, _, files in os.walk(path)
             for f in files
         )
-        print(f"  ✓ Downloaded to: {path}")
-        print(f"  ✓ Total size   : {format_bytes(total)}")
-        print(f"  ✓ Time elapsed : {elapsed:.1f}s")
+        print(f"  [OK] Downloaded to: {path}")
+        print(f"  [OK] Total size   : {format_bytes(total)}")
+        print(f"  [OK] Time elapsed : {elapsed:.1f}s")
         return True
     except Exception as e:
-        print(f"  ✗ FAILED: {e}")
+        print(f"  [FAIL] FAILED: {e}")
         return False
 
 
@@ -83,16 +85,17 @@ def smoke_test_bge_m3() -> bool:
     print("\n--- Smoke test: BGE-M3 load ---")
     try:
         from sentence_transformers import SentenceTransformer
+
         model = SentenceTransformer(
             "BAAI/bge-m3",
             cache_folder=CACHE_DIR,
             device="cpu",
         )
         vecs = model.encode(["Tathya fact-checks AI documents."])
-        print(f"  ✓ BGE-M3 encode OK, vector dim={len(vecs[0])}")
+        print(f"  [OK] BGE-M3 encode OK, vector dim={len(vecs[0])}")
         return True
     except Exception as e:
-        print(f"  ✗ BGE-M3 smoke test FAILED: {e}")
+        print(f"  [FAIL] BGE-M3 smoke test FAILED: {e}")
         return False
 
 
@@ -100,15 +103,16 @@ def smoke_test_reranker() -> bool:
     print("\n--- Smoke test: BGE-Reranker load ---")
     try:
         from sentence_transformers import CrossEncoder
+
         model = CrossEncoder(
             "BAAI/bge-reranker-v2-m3",
             max_length=512,
         )
         score = model.predict([("query", "document text here")])
-        print(f"  ✓ BGE-Reranker predict OK, score={score}")
+        print(f"  [OK] BGE-Reranker predict OK, score={score}")
         return True
     except Exception as e:
-        print(f"  ✗ BGE-Reranker smoke test FAILED: {e}")
+        print(f"  [FAIL] BGE-Reranker smoke test FAILED: {e}")
         return False
 
 
@@ -116,12 +120,15 @@ def smoke_test_hhem() -> bool:
     print("\n--- Smoke test: HHEM load ---")
     try:
         from sentence_transformers import CrossEncoder
+
         model = CrossEncoder("vectara/hallucination_evaluation_model")
-        scores = model.predict([("The capital of France is Paris.", "Paris is the capital of France.")])
-        print(f"  ✓ HHEM predict OK, score={scores}")
+        scores = model.predict(
+            [("The capital of France is Paris.", "Paris is the capital of France.")]
+        )
+        print(f"  [OK] HHEM predict OK, score={scores}")
         return True
     except Exception as e:
-        print(f"  ✗ HHEM smoke test FAILED: {e}")
+        print(f"  [FAIL] HHEM smoke test FAILED: {e}")
         return False
 
 
@@ -131,17 +138,17 @@ if __name__ == "__main__":
         ok = download_model(m["repo_id"], m["label"], m["ignore_patterns"])
         results[m["label"]] = "DOWNLOADED" if ok else "FAILED"
 
-    print("\n\n" + "="*60)
+    print("\n\n" + "=" * 60)
     print("DOWNLOAD RESULTS")
-    print("="*60)
+    print("=" * 60)
     for label, status in results.items():
-        icon = "✓" if status == "DOWNLOADED" else "✗"
+        icon = "[OK]" if status == "DOWNLOADED" else "[FAIL]"
         print(f"  {icon} {label}: {status}")
 
     # Run smoke tests only if downloads passed
-    print("\n" + "="*60)
+    print("\n" + "=" * 60)
     print("SMOKE TESTS")
-    print("="*60)
+    print("=" * 60)
     smoke_results = {}
 
     if results.get("BGE-M3 (embedding)") == "DOWNLOADED":
@@ -159,12 +166,18 @@ if __name__ == "__main__":
     else:
         smoke_results["HHEM"] = "SKIPPED (download failed)"
 
-    print("\n" + "="*60)
+    print("\n" + "=" * 60)
     print("SMOKE TEST RESULTS")
-    print("="*60)
+    print("=" * 60)
     for label, status in smoke_results.items():
-        icon = "✓" if status == "PASS" else ("⚠" if "SKIPPED" in status else "✗")
+        icon = (
+            "[OK]"
+            if status == "PASS"
+            else ("[SKIP]" if "SKIPPED" in status else "[FAIL]")
+        )
         print(f"  {icon} {label}: {status}")
 
-    any_fail = any(s == "FAILED" for s in results.values()) or any(s == "FAIL" for s in smoke_results.values())
+    any_fail = any(s == "FAILED" for s in results.values()) or any(
+        s == "FAIL" for s in smoke_results.values()
+    )
     sys.exit(1 if any_fail else 0)

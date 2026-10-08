@@ -1,4 +1,3 @@
-import os
 import json
 from pathlib import Path
 
@@ -51,7 +50,9 @@ Project Milestone 4: Final hardware delivery and deployment.
 Agreed Schedule Date: 22 December 2026.
 Note: 15 December is the internal QA code freeze only; customer delivery is explicitly scheduled for 22 December 2026.
 """
-(hero_dir / "src_project_schedule_signoff.md").write_text(src2_content, encoding="utf-8")
+(hero_dir / "src_project_schedule_signoff.md").write_text(
+    src2_content, encoding="utf-8"
+)
 
 # 4. Source Document 3: Master Service Agreement Baseline (Warranty 12 mos vs 5 yrs, Liability cap)
 src3_content = """# MASTER SERVICE LEVEL AGREEMENT (TERMS OF SERVICE)
@@ -66,7 +67,9 @@ src4_content = """# VENDOR DIRECTORY & DATA PRIVACY SPECIFICATION
 Public contact point: support@orion-solutions.com.
 Confidentiality Note: Individual government identifiers (such as Aadhaar or PAN) and private personal mobile numbers of key personnel must never be published in external commercial agreements.
 """
-(hero_dir / "src_vendor_privacy_guidelines.md").write_text(src4_content, encoding="utf-8")
+(hero_dir / "src_vendor_privacy_guidelines.md").write_text(
+    src4_content, encoding="utf-8"
+)
 
 # Hero manifest with planted issues documented
 hero_manifest = {
@@ -76,25 +79,68 @@ hero_manifest = {
         "src_purchase_order_approved.md",
         "src_project_schedule_signoff.md",
         "src_msa_terms_baseline.md",
-        "src_vendor_privacy_guidelines.md"
+        "src_vendor_privacy_guidelines.md",
     ],
     "planted_issues": [
-        {"id": "ISSUE-1", "type": "financial_mismatch", "claim": "₹50,00,000", "source_fact": "₹41,60,000 in PO"},
-        {"id": "ISSUE-2", "type": "date_mismatch", "claim": "15 December 2026", "source_fact": "22 December 2026 in Schedule"},
-        {"id": "ISSUE-3", "type": "payment_terms_mismatch", "claim": "30 days", "source_fact": "Net 45 days in PO"},
-        {"id": "ISSUE-4", "type": "sla_unsupported", "claim": "99.9% uptime", "source_fact": "99.5% standard tier in MSA"},
-        {"id": "ISSUE-5", "type": "warranty_mismatch", "claim": "5 years", "source_fact": "12 months in MSA"},
-        {"id": "ISSUE-6", "type": "pii_leak", "claim": "Aadhaar: 4321 8765 1290", "source_fact": "Aadhaar exposure violates privacy policy"},
-        {"id": "ISSUE-7", "type": "unlimited_liability", "claim": "unlimited liability", "source_fact": "MSA Clause 9.3 caps liability"}
-    ]
+        {
+            "id": "ISSUE-1",
+            "type": "financial_mismatch",
+            "claim": "₹50,00,000",
+            "source_fact": "₹41,60,000 in PO",
+        },
+        {
+            "id": "ISSUE-2",
+            "type": "date_mismatch",
+            "claim": "15 December 2026",
+            "source_fact": "22 December 2026 in Schedule",
+        },
+        {
+            "id": "ISSUE-3",
+            "type": "payment_terms_mismatch",
+            "claim": "30 days",
+            "source_fact": "Net 45 days in PO",
+        },
+        {
+            "id": "ISSUE-4",
+            "type": "sla_unsupported",
+            "claim": "99.9% uptime",
+            "source_fact": "99.5% standard tier in MSA",
+        },
+        {
+            "id": "ISSUE-5",
+            "type": "warranty_mismatch",
+            "claim": "5 years",
+            "source_fact": "12 months in MSA",
+        },
+        {
+            "id": "ISSUE-6",
+            "type": "pii_leak",
+            "claim": "Aadhaar: 4321 8765 1290",
+            "source_fact": "Aadhaar exposure violates privacy policy",
+        },
+        {
+            "id": "ISSUE-7",
+            "type": "unlimited_liability",
+            "claim": "unlimited liability",
+            "source_fact": "MSA Clause 9.3 caps liability",
+        },
+    ],
 }
-(hero_dir / "hero_manifest.json").write_text(json.dumps(hero_manifest, indent=2), encoding="utf-8")
-print(f"[PASS] Hero Pack created with 1 hero doc + 4 source docs + 7 planted issues.")
+(hero_dir / "hero_manifest.json").write_text(
+    json.dumps(hero_manifest, indent=2), encoding="utf-8"
+)
+print("[PASS] Hero Pack created with 1 hero doc + 4 source docs + 7 planted issues.")
 
 # -----------------------------------------------------------------------------
 # EVALUATION & SYNTHETIC DATASETS SKELETON
 # -----------------------------------------------------------------------------
-packs = ["Contract", "GST_Invoice", "Financial_Summary", "Project_Status", "Hinglish_Summary"]
+packs = [
+    "Contract",
+    "GST_Invoice",
+    "Financial_Summary",
+    "Project_Status",
+    "Hinglish_Summary",
+]
 splits = ["tuning", "test", "injector"]
 
 for split in splits:
@@ -104,8 +150,29 @@ for split in splits:
         pack_dir = split_dir / pack
         pack_dir.mkdir(parents=True, exist_ok=True)
         # Create 1 clean and 2 flawed variants
-        (pack_dir / "clean_v1.json").write_text(json.dumps({"variant": "clean", "type": pack, "issues": []}, indent=2), encoding="utf-8")
-        (pack_dir / "flawed_v1.json").write_text(json.dumps({"variant": "flawed", "type": pack, "issues": ["planted_numeric_diff"]}, indent=2), encoding="utf-8")
-        (pack_dir / "flawed_v2.json").write_text(json.dumps({"variant": "flawed", "type": pack, "issues": ["planted_date_diff", "planted_pii"]}, indent=2), encoding="utf-8")
+        (pack_dir / "clean_v1.json").write_text(
+            json.dumps({"variant": "clean", "type": pack, "issues": []}, indent=2),
+            encoding="utf-8",
+        )
+        (pack_dir / "flawed_v1.json").write_text(
+            json.dumps(
+                {"variant": "flawed", "type": pack, "issues": ["planted_numeric_diff"]},
+                indent=2,
+            ),
+            encoding="utf-8",
+        )
+        (pack_dir / "flawed_v2.json").write_text(
+            json.dumps(
+                {
+                    "variant": "flawed",
+                    "type": pack,
+                    "issues": ["planted_date_diff", "planted_pii"],
+                },
+                indent=2,
+            ),
+            encoding="utf-8",
+        )
 
-print(f"[PASS] Synthetic Evaluation Packs initialized: 5 domains across tuning/test/injector splits.")
+print(
+    "[PASS] Synthetic Evaluation Packs initialized: 5 domains across tuning/test/injector splits."
+)

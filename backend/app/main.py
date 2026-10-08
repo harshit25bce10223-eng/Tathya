@@ -3,6 +3,7 @@ from pathlib import Path
 import sentry_sdk
 from fastapi import FastAPI
 from fastapi.routing import APIRoute
+from fastapi.staticfiles import StaticFiles
 from starlette.middleware.cors import CORSMiddleware
 
 from app.api.main import api_router
@@ -36,6 +37,5 @@ app.add_middleware(
 app.include_router(api_router, prefix=settings.API_V1_STR)
 app.include_router(health_router)  # root: /health, /demo/readiness
 
-
-app.frontend("/", directory=FRONTEND_DIR)
-
+if FRONTEND_DIR.exists():
+    app.mount("/", StaticFiles(directory=FRONTEND_DIR, html=True), name="frontend")

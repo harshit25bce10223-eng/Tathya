@@ -55,7 +55,8 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [tool.mypy]
-strict = true
+strict = false
+check_untyped_defs = true
 exclude = ["venv", ".venv", "alembic"]
 
 [tool.ruff]

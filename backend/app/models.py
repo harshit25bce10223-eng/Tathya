@@ -4,8 +4,8 @@ import uuid
 from datetime import UTC, datetime
 
 from pydantic import EmailStr
-from sqlalchemy import DateTime, Index, Text, UniqueConstraint
-from sqlmodel import Field, JSON, Relationship, SQLModel
+from sqlalchemy import Column, DateTime, Index, Text, UniqueConstraint
+from sqlmodel import Field, SQLModel
 
 
 def get_datetime_utc() -> datetime:
@@ -15,6 +15,7 @@ def get_datetime_utc() -> datetime:
 # ---------------------------------------------------------------------------
 # Users + RBAC
 # ---------------------------------------------------------------------------
+
 
 # Shared properties
 class UserBase(SQLModel):
@@ -114,11 +115,11 @@ class Audit(AuditBase, table=True):
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
     created_at: datetime | None = Field(
         default_factory=get_datetime_utc,
-        sa_type=DateTime(timezone=True),
+        sa_column=Column(DateTime(timezone=True)),
     )
     updated_at: datetime | None = Field(
         default_factory=get_datetime_utc,
-        sa_type=DateTime(timezone=True),
+        sa_column=Column(DateTime(timezone=True)),
     )
     owner_id: uuid.UUID = Field(
         foreign_key="users.id", nullable=False, ondelete="CASCADE"
@@ -145,24 +146,25 @@ class AuditsPublic(SQLModel):
 # never audit_id alone.
 # ---------------------------------------------------------------------------
 
+
 class DocumentBase(SQLModel):
     audit_id: uuid.UUID = Field(foreign_key="audits.id", nullable=False, index=True)
     kind: str = Field(default="primary", max_length=64)  # primary | source
     filename: str = Field(max_length=500)
     mime_type: str = Field(default="application/octet-stream", max_length=255)
     storage_path: str = Field(max_length=1024)
-    raw_text: str = Field(default="", sa_column=Text())
-    normalized_text: str = Field(default="", sa_column=Text())
-    offset_map_json: str = Field(default="[]", sa_column=Text())
-    blocks_json: str = Field(default="[]", sa_column=Text())
+    raw_text: str = Field(default="", sa_column=Column(Text()))
+    normalized_text: str = Field(default="", sa_column=Column(Text()))
+    offset_map_json: str = Field(default="[]", sa_column=Column(Text()))
+    blocks_json: str = Field(default="[]", sa_column=Column(Text()))
     text_hash: str = Field(max_length=64)  # SHA256(normalized_text)
     mtime: datetime | None = Field(
         default_factory=get_datetime_utc,
-        sa_type=DateTime(timezone=True),
+        sa_column=Column(DateTime(timezone=True)),
     )
     version_no: int = Field(default=1)
     is_current: bool = Field(default=True)
-    metadata_json: str = Field(default="{}", sa_column=Text())
+    metadata_json: str = Field(default="{}", sa_column=Column(Text()))
 
 
 class DocumentCreate(DocumentBase):
@@ -179,10 +181,8 @@ class Document(DocumentBase, table=True):
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
     created_at: datetime | None = Field(
         default_factory=get_datetime_utc,
-        sa_type=DateTime(timezone=True),
+        sa_column=Column(DateTime(timezone=True)),
     )
-
-    
 
 
 class DocumentPublic(SQLModel):
@@ -205,12 +205,15 @@ FACT_STATUSES = ("active", "stale", "superseded", "rejected")
 
 
 class FactBase(SQLModel):
-    document_id: uuid.UUID = Field(foreign_key="documents.id", nullable=False, index=True)
+    document_id: uuid.UUID = Field(
+        foreign_key="documents.id", nullable=False, index=True
+    )
     subject: str = Field(max_length=500)
     predicate: str = Field(max_length=255)
-    object_value: str = Field(default="", sa_column=Text())
-    location_json: str = Field(default="{}", sa_column=Text())
+    object_value: str = Field(default="", sa_column=Column(Text()))
+    location_json: str = Field(default="{}", sa_column=Column(Text()))
     status: str = Field(default="active", max_length=32)
+    metadata_json: str = Field(default="{}", sa_column=Column(Text()))
 
 
 class FactCreate(FactBase):
@@ -223,7 +226,7 @@ class Fact(FactBase, table=True):
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
     created_at: datetime | None = Field(
         default_factory=get_datetime_utc,
-        sa_type=DateTime(timezone=True),
+        sa_column=Column(DateTime(timezone=True)),
     )
 
 
@@ -244,12 +247,14 @@ CLAIM_STATUSES = ("extracted", "supported", "contradicted", "unsupported", "unce
 class ClaimBase(SQLModel):
     audit_id: uuid.UUID = Field(foreign_key="audits.id", nullable=False, index=True)
     # document_version_id == documents.id
-    document_id: uuid.UUID = Field(foreign_key="documents.id", nullable=False, index=True)
+    document_id: uuid.UUID = Field(
+        foreign_key="documents.id", nullable=False, index=True
+    )
     sentence_id: str = Field(default="", max_length=128)
-    text: str = Field(default="", sa_column=Text())
+    text: str = Field(default="", sa_column=Column(Text()))
     category: str = Field(default="general", max_length=64)
     status: str = Field(default="extracted", max_length=32)
-    metadata_json: str = Field(default="{}", sa_column=Text())
+    metadata_json: str = Field(default="{}", sa_column=Column(Text()))
 
 
 class ClaimCreate(ClaimBase):
@@ -258,17 +263,13 @@ class ClaimCreate(ClaimBase):
 
 class Claim(ClaimBase, table=True):
     __tablename__ = "claims"
-    __table_args__ = (
-        Index("ix_claims_audit_document", "audit_id", "document_id"),
-    )
+    __table_args__ = (Index("ix_claims_audit_document", "audit_id", "document_id"),)
 
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
     created_at: datetime | None = Field(
         default_factory=get_datetime_utc,
-        sa_type=DateTime(timezone=True),
+        sa_column=Column(DateTime(timezone=True)),
     )
-
-    
 
 
 class ClaimPublic(ClaimBase):
@@ -280,13 +281,14 @@ class ClaimPublic(ClaimBase):
 # Evidence
 # ---------------------------------------------------------------------------
 
+
 class EvidenceBase(SQLModel):
     claim_id: uuid.UUID = Field(foreign_key="claims.id", nullable=False, index=True)
     source_document_id: uuid.UUID = Field(
         foreign_key="documents.id", nullable=False, index=True
     )
-    quote: str = Field(default="", sa_column=Text())
-    location_json: str = Field(default="{}", sa_column=Text())
+    quote: str = Field(default="", sa_column=Column(Text()))
+    location_json: str = Field(default="{}", sa_column=Column(Text()))
     support_type: str = Field(default="supports", max_length=32)  # supports | refutes
     score: float = Field(default=0.0)
 
@@ -301,7 +303,7 @@ class Evidence(EvidenceBase, table=True):
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
     created_at: datetime | None = Field(
         default_factory=get_datetime_utc,
-        sa_type=DateTime(timezone=True),
+        sa_column=Column(DateTime(timezone=True)),
     )
 
 
@@ -322,18 +324,22 @@ FLAG_STATUSES = ("pending", "accepted", "dismissed", "fixed")
 class FlagBase(SQLModel):
     audit_id: uuid.UUID = Field(foreign_key="audits.id", nullable=False, index=True)
     # document_version_id == documents.id
-    document_id: uuid.UUID = Field(foreign_key="documents.id", nullable=False, index=True)
-    claim_id: uuid.UUID | None = Field(default=None, foreign_key="claims.id", nullable=True)
+    document_id: uuid.UUID = Field(
+        foreign_key="documents.id", nullable=False, index=True
+    )
+    claim_id: uuid.UUID | None = Field(
+        default=None, foreign_key="claims.id", nullable=True
+    )
     type: str = Field(default="", max_length=255)
     severity: str = Field(default="MEDIUM", max_length=32)
     materiality: str = Field(default="MODERATE", max_length=32)
-    reason: str = Field(default="", sa_column=Text())
-    suggested_fix: str = Field(default="", sa_column=Text())
+    reason: str = Field(default="", sa_column=Column(Text()))
+    suggested_fix: str = Field(default="", sa_column=Column(Text()))
     status: str = Field(default="pending", max_length=32)
     reviewer_note: str | None = Field(default=None)
     impact_score: float = Field(default=0.0)
     sentence_id: str | None = Field(default=None, max_length=128)
-    location_json: str = Field(default="{}", sa_column=Text())
+    location_json: str = Field(default="{}", sa_column=Column(Text()))
 
 
 class FlagCreate(FlagBase):
@@ -348,17 +354,13 @@ class FlagUpdate(SQLModel):
 
 class Flag(FlagBase, table=True):
     __tablename__ = "flags"
-    __table_args__ = (
-        Index("ix_flags_audit_document", "audit_id", "document_id"),
-    )
+    __table_args__ = (Index("ix_flags_audit_document", "audit_id", "document_id"),)
 
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
     created_at: datetime | None = Field(
         default_factory=get_datetime_utc,
-        sa_type=DateTime(timezone=True),
+        sa_column=Column(DateTime(timezone=True)),
     )
-
-    
 
 
 class FlagPublic(FlagBase):
@@ -396,7 +398,7 @@ class Decision(DecisionBase, table=True):
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
     created_at: datetime | None = Field(
         default_factory=get_datetime_utc,
-        sa_type=DateTime(timezone=True),
+        sa_column=Column(DateTime(timezone=True)),
     )
 
 
@@ -409,10 +411,11 @@ class DecisionPublic(DecisionBase):
 # Policies
 # ---------------------------------------------------------------------------
 
+
 class PolicyBase(SQLModel):
     name: str = Field(max_length=255, unique=True)
     description: str | None = Field(default=None)
-    rules_json: str = Field(default="{}", sa_column=Text())
+    rules_json: str = Field(default="{}", sa_column=Column(Text()))
     is_active: bool = Field(default=True)
 
 
@@ -426,11 +429,11 @@ class Policy(PolicyBase, table=True):
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
     created_at: datetime | None = Field(
         default_factory=get_datetime_utc,
-        sa_type=DateTime(timezone=True),
+        sa_column=Column(DateTime(timezone=True)),
     )
     updated_at: datetime | None = Field(
         default_factory=get_datetime_utc,
-        sa_type=DateTime(timezone=True),
+        sa_column=Column(DateTime(timezone=True)),
     )
 
 
@@ -444,13 +447,16 @@ class PolicyPublic(PolicyBase):
 # Proofs  (Z3 / formal)
 # ---------------------------------------------------------------------------
 
+
 class ProofBase(SQLModel):
     audit_id: uuid.UUID = Field(foreign_key="audits.id", nullable=False, index=True)
-    claim_id: uuid.UUID | None = Field(default=None, foreign_key="claims.id", nullable=True)
+    claim_id: uuid.UUID | None = Field(
+        default=None, foreign_key="claims.id", nullable=True
+    )
     solver: str = Field(default="z3", max_length=64)
-    query: str = Field(default="", sa_column=Text())
+    query: str = Field(default="", sa_column=Column(Text()))
     result: str = Field(default="unknown", max_length=32)  # sat | unsat | unknown
-    detail: str = Field(default="", sa_column=Text())
+    detail: str = Field(default="", sa_column=Column(Text()))
 
 
 class ProofCreate(ProofBase):
@@ -463,7 +469,7 @@ class Proof(ProofBase, table=True):
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
     created_at: datetime | None = Field(
         default_factory=get_datetime_utc,
-        sa_type=DateTime(timezone=True),
+        sa_column=Column(DateTime(timezone=True)),
     )
 
 
@@ -480,21 +486,20 @@ class ProofPublic(ProofBase):
 # NEVER expose audit_id in the public QR URL.
 # ---------------------------------------------------------------------------
 
+
 class PassportBase(SQLModel):
     audit_id: uuid.UUID = Field(
         foreign_key="audits.id", nullable=False, unique=True, index=True
     )
-    verify_token: str = Field(
-        max_length=16, unique=True, index=True, nullable=False
-    )
+    verify_token: str = Field(max_length=16, unique=True, index=True, nullable=False)
     document_hash: str = Field(default="", max_length=64)
     chain_head: str = Field(default="", max_length=64)
-    signature: str = Field(default="", sa_column=Text())
+    signature: str = Field(default="", sa_column=Column(Text()))
     trust_score: float = Field(default=0.0)
     status: str = Field(default="VERIFIED", max_length=32)
     issued_at: datetime | None = Field(
         default_factory=get_datetime_utc,
-        sa_type=DateTime(timezone=True),
+        sa_column=Column(DateTime(timezone=True)),
     )
 
 
@@ -508,10 +513,8 @@ class Passport(PassportBase, table=True):
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
     created_at: datetime | None = Field(
         default_factory=get_datetime_utc,
-        sa_type=DateTime(timezone=True),
+        sa_column=Column(DateTime(timezone=True)),
     )
-
-    
 
 
 class PassportPublic(PassportBase):
@@ -528,11 +531,14 @@ class PassportPublic(PassportBase):
 # hash = SHA256(entry_canonical)
 # ---------------------------------------------------------------------------
 
+
 class AuditLogBase(SQLModel):
     audit_id: uuid.UUID = Field(foreign_key="audits.id", nullable=False, index=True)
-    actor_id: uuid.UUID | None = Field(default=None, foreign_key="users.id", nullable=True)
+    actor_id: uuid.UUID | None = Field(
+        default=None, foreign_key="users.id", nullable=True
+    )
     action: str = Field(max_length=255)
-    payload_json: str = Field(default="{}", sa_column=Text())
+    payload_json: str = Field(default="{}", sa_column=Column(Text()))
     previous_hash: str = Field(default="", max_length=64)
     hash: str = Field(max_length=64)
 
@@ -543,7 +549,7 @@ class AuditLogEntry(AuditLogBase, table=True):
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
     created_at: datetime | None = Field(
         default_factory=get_datetime_utc,
-        sa_type=DateTime(timezone=True),
+        sa_column=Column(DateTime(timezone=True)),
     )
 
 
@@ -556,11 +562,14 @@ class AuditLogPublic(AuditLogBase):
 # Challenges  (reviewer challenge workflow)
 # ---------------------------------------------------------------------------
 
+
 class ChallengeBase(SQLModel):
     audit_id: uuid.UUID = Field(foreign_key="audits.id", nullable=False, index=True)
-    flag_id: uuid.UUID | None = Field(default=None, foreign_key="flags.id", nullable=True)
+    flag_id: uuid.UUID | None = Field(
+        default=None, foreign_key="flags.id", nullable=True
+    )
     raised_by: uuid.UUID = Field(foreign_key="users.id", nullable=False)
-    message: str = Field(default="", sa_column=Text())
+    message: str = Field(default="", sa_column=Column(Text()))
     status: str = Field(default="open", max_length=32)  # open | resolved | rejected
     resolution: str | None = Field(default=None)
 
@@ -575,11 +584,11 @@ class Challenge(ChallengeBase, table=True):
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
     created_at: datetime | None = Field(
         default_factory=get_datetime_utc,
-        sa_type=DateTime(timezone=True),
+        sa_column=Column(DateTime(timezone=True)),
     )
     updated_at: datetime | None = Field(
         default_factory=get_datetime_utc,
-        sa_type=DateTime(timezone=True),
+        sa_column=Column(DateTime(timezone=True)),
     )
 
 
@@ -592,13 +601,14 @@ class ChallengePublic(ChallengeBase):
 # Notifications
 # ---------------------------------------------------------------------------
 
+
 class NotificationBase(SQLModel):
     user_id: uuid.UUID = Field(foreign_key="users.id", nullable=False, index=True)
     audit_id: uuid.UUID | None = Field(
         default=None, foreign_key="audits.id", nullable=True
     )
     title: str = Field(max_length=500)
-    body: str = Field(default="", sa_column=Text())
+    body: str = Field(default="", sa_column=Column(Text()))
     is_read: bool = Field(default=False)
     kind: str = Field(default="info", max_length=64)  # info | warning | error | success
 
@@ -613,7 +623,7 @@ class Notification(NotificationBase, table=True):
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
     created_at: datetime | None = Field(
         default_factory=get_datetime_utc,
-        sa_type=DateTime(timezone=True),
+        sa_column=Column(DateTime(timezone=True)),
     )
 
 
@@ -647,7 +657,7 @@ class Item(ItemBase, table=True):
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
     created_at: datetime | None = Field(
         default_factory=get_datetime_utc,
-        sa_type=DateTime(timezone=True),
+        sa_column=Column(DateTime(timezone=True)),
     )
     owner_id: uuid.UUID = Field(
         foreign_key="users.id", nullable=False, ondelete="CASCADE"
@@ -668,6 +678,7 @@ class ItemsPublic(SQLModel):
 # ---------------------------------------------------------------------------
 # Generic message / token (kept from base template)
 # ---------------------------------------------------------------------------
+
 
 class Message(SQLModel):
     message: str

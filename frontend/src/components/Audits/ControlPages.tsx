@@ -250,7 +250,7 @@ export function MetricsPage() {
                 ).length
                 return (
                   <div className="volume-row" key={day}>
-                    <span>{formatDate(day + "T00:00:00+05:30")}</span>
+                    <span>{formatDate(`${day}T00:00:00+05:30`)}</span>
                     <div>
                       <span
                         style={{

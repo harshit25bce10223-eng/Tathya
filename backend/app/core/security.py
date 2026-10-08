@@ -61,6 +61,7 @@ def verify_password(
 def get_password_hash(password: str) -> str:
     return password_hash.hash(password)
 
+
 # ---------------------------------------------------------------------------
 # Hash chain
 # ---------------------------------------------------------------------------
@@ -193,9 +194,7 @@ def sign_message(private_key_pem: bytes, message: bytes) -> str:
     return der_sig.hex()
 
 
-def verify_signature(
-    public_key_pem: bytes, message: bytes, signature_hex: str
-) -> bool:
+def verify_signature(public_key_pem: bytes, message: bytes, signature_hex: str) -> bool:
     """Verify ECDSA P-256 + SHA-256 signature. Returns True/False."""
     try:
         key = load_public_key(public_key_pem)

@@ -81,9 +81,7 @@ class LLMCache:
             with self._lock:
                 self.dir.mkdir(parents=True, exist_ok=True)
                 tmp = path.with_suffix(".tmp")
-                tmp.write_text(
-                    json.dumps(value, ensure_ascii=False), encoding="utf-8"
-                )
+                tmp.write_text(json.dumps(value, ensure_ascii=False), encoding="utf-8")
                 tmp.replace(path)
         except OSError:
             pass  # cache is best-effort
@@ -105,7 +103,9 @@ def _schema_instruction(schema: dict[str, Any]) -> str:
 def _call_openai(request: LLMRequest) -> dict[str, Any]:
     from openai import OpenAI
 
-    client = OpenAI(api_key=settings.OPENAI_API_KEY, timeout=settings.LLM_TIMEOUT_SECONDS)
+    client = OpenAI(
+        api_key=settings.OPENAI_API_KEY, timeout=settings.LLM_TIMEOUT_SECONDS
+    )
     response = client.chat.completions.create(
         model=settings.OPENAI_MODEL,
         temperature=request.temperature,

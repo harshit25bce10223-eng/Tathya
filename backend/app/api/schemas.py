@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import uuid
 from datetime import datetime
+from typing import Any
 
 from pydantic import BaseModel, Field
 
@@ -18,13 +19,15 @@ from app.models import (  # noqa: F401 - re-exported contract types
     ClaimPublic,
     DecisionPublic,
     DocumentPublic,
-    EvidencePublic as EvidencePublicModel,
     FactPublic,
     FlagPublic,
     FlagsPublic,
     PassportPublic,
     PolicyPublic,
     ProofPublic,
+)
+from app.models import (
+    EvidencePublic as EvidencePublicModel,
 )
 
 
@@ -55,6 +58,44 @@ class DecisionsPublic(BaseModel):
 
 class ProofsPublic(BaseModel):
     data: list[ProofPublic]
+    count: int
+
+
+# Phase 3 - enriched contracts for frontend
+
+
+class GroundingDetail(BaseModel):
+    """Grounding verification detail for a claim."""
+
+    status: str  # supported, contradicted, unsupported, uncertain
+    evidence_ids: list[uuid.UUID] = []
+    primary_evidence_id: uuid.UUID | None = None
+    reason: str = ""
+    confidence: float = 0.0
+    source_metadata: dict[str, Any] = {}
+
+
+class ClaimWithGrounding(ClaimPublic):
+    """Claim with grounding verification detail."""
+
+    grounding: GroundingDetail | None = None
+    evidence: list[EvidencePublicModel] = []
+
+
+class ClaimsWithGroundingPublic(BaseModel):
+    data: list[ClaimWithGrounding]
+    count: int
+
+
+class FlagWithEvidence(FlagPublic):
+    """Flag with associated evidence for frontend display."""
+
+    evidence: list[EvidencePublicModel] = []
+    claim_text: str | None = None
+
+
+class FlagsWithEvidencePublic(BaseModel):
+    data: list[FlagWithEvidence]
     count: int
 
 
@@ -101,6 +142,7 @@ class AuditSummary(BaseModel):
     flag_count: int
     open_flag_count: int
     claim_count: int
+    fact_count: int
     passport: PassportPublic | None = None
     verify_token: str | None = None
 

@@ -15,12 +15,17 @@ from sqlmodel import Session, func, select
 
 from app.api.deps import CurrentUser, ReviewerDep, SessionDep
 from app.api.schemas import (
-    AuditSummary,
     AuditsPublic,
+    AuditSummary,
+    ClaimsWithGroundingPublic,
+    ClaimWithGrounding,
     DecisionPublic,
     DecisionRequest,
     DocumentsPublic,
-    FlagsPublic,
+    EvidencePublic,
+    FactsPublic,
+    FlagsWithEvidencePublic,
+    FlagWithEvidence,
     JobStatus,
     PassportPublic,
     RescoreResult,
@@ -28,6 +33,7 @@ from app.api.schemas import (
 )
 from app.core import security
 from app.core.config import settings
+from app.core.facts import get_facts_for_audit
 from app.core.jobs import submit_audit_job
 from app.core.pipeline import (
     append_chain_entry,
@@ -42,6 +48,8 @@ from app.models import (
     Claim,
     Decision,
     Document,
+    Evidence,
+    Fact,
     Flag,
     Passport,
     User,
@@ -141,7 +149,7 @@ async def create_audit(
     session: SessionDep,
     current_user: CurrentUser,
     title: Annotated[str, Form()] = "Untitled audit",
-    files: Annotated[list[UploadFile], File()] = [],
+    files: Annotated[list[UploadFile] | None, File()] = None,
 ) -> AuditPublic:
     """Create an audit, ingest any uploaded documents, enqueue the job."""
     audit = Audit(title=title, owner_id=current_user.id, status="queued")
@@ -189,6 +197,15 @@ def get_audit(
     claim_count = session.exec(
         select(func.count()).select_from(Claim).where(Claim.audit_id == audit_id)
     ).one()
+    fact_count = session.exec(
+        select(func.count())
+        .select_from(Fact)
+        .where(
+            Fact.document_id.in_(
+                select(Document.id).where(Document.audit_id == audit_id)
+            )
+        )
+    ).one()
     passport = session.exec(
         select(Passport).where(Passport.audit_id == audit_id)
     ).first()
@@ -198,6 +215,7 @@ def get_audit(
         flag_count=int(flag_count),
         open_flag_count=int(open_count),
         claim_count=int(claim_count),
+        fact_count=int(fact_count),
         passport=passport,
         verify_token=passport.verify_token if passport else None,
     )
@@ -239,9 +257,7 @@ async def upload_documents(
     await _ingest_uploads(session, audit, files)
     _recompute_source_set_hash(session, audit_id)
     submit_audit_job(audit.id)
-    all_docs = session.exec(
-        select(Document).where(Document.audit_id == audit_id)
-    ).all()
+    all_docs = session.exec(select(Document).where(Document.audit_id == audit_id)).all()
     return DocumentsPublic(data=all_docs, count=len(all_docs))
 
 
@@ -262,21 +278,146 @@ def run_audit(
 
 
 # ---------------------------------------------------------------------------
+# Facts (Phase 3)
+# ---------------------------------------------------------------------------
+
+
+@router.get("/{audit_id}/facts", response_model=FactsPublic)
+def list_facts(
+    audit_id: uuid.UUID, session: SessionDep, current_user: CurrentUser
+) -> FactsPublic:
+    _get_audit(session, audit_id, current_user)
+    facts = get_facts_for_audit(session, audit_id)
+    return FactsPublic(data=facts, count=len(facts))
+
+
+# ---------------------------------------------------------------------------
+# Claims with grounding (Phase 3)
+# ---------------------------------------------------------------------------
+
+
+@router.get("/{audit_id}/claims", response_model=ClaimsWithGroundingPublic)
+def list_claims_with_grounding(
+    audit_id: uuid.UUID, session: SessionDep, current_user: CurrentUser
+) -> ClaimsWithGroundingPublic:
+    _get_audit(session, audit_id, current_user)
+    claims = session.exec(
+        select(Claim).where(Claim.audit_id == audit_id).order_by(Claim.created_at)  # type: ignore[attr-defined]
+    ).all()
+
+    enriched_claims = []
+    for claim in claims:
+        # Get evidence for this claim
+        evidence = session.exec(
+            select(Evidence).where(Evidence.claim_id == claim.id)
+        ).all()
+
+        # Parse grounding from metadata
+        grounding = None
+        try:
+            meta = json.loads(claim.metadata_json or "{}")
+            g = meta.get("grounding")
+            if g:
+                from app.api.schemas import GroundingDetail
+
+                grounding = GroundingDetail(**g)
+        except Exception:
+            pass
+
+        enriched_claims.append(
+            ClaimWithGrounding(
+                id=claim.id,
+                audit_id=claim.audit_id,
+                document_id=claim.document_id,
+                sentence_id=claim.sentence_id,
+                text=claim.text,
+                category=claim.category,
+                status=claim.status,
+                metadata_json=claim.metadata_json,
+                created_at=claim.created_at,
+                grounding=grounding,
+                evidence=evidence,
+            )
+        )
+
+    return ClaimsWithGroundingPublic(data=enriched_claims, count=len(enriched_claims))
+
+
+# ---------------------------------------------------------------------------
+# Evidence (Phase 3)
+# ---------------------------------------------------------------------------
+
+
+@router.get("/{audit_id}/evidence", response_model=EvidencePublic)
+def list_evidence(
+    audit_id: uuid.UUID, session: SessionDep, current_user: CurrentUser
+) -> EvidencePublic:
+    _get_audit(session, audit_id, current_user)
+    # Get all claim IDs for this audit
+    claim_ids = session.exec(select(Claim.id).where(Claim.audit_id == audit_id)).all()
+
+    if not claim_ids:
+        return EvidencePublic(data=[], count=0)
+
+    evidence = session.exec(
+        select(Evidence).where(Evidence.claim_id.in_(claim_ids))
+    ).all()
+    return EvidencePublic(data=evidence, count=len(evidence))
+
+
+# ---------------------------------------------------------------------------
 # Flags + decisions (reviewer workflow)
 # ---------------------------------------------------------------------------
 
 
-@router.get("/{audit_id}/flags", response_model=FlagsPublic)
+@router.get("/{audit_id}/flags", response_model=FlagsWithEvidencePublic)
 def list_flags(
     audit_id: uuid.UUID, session: SessionDep, current_user: CurrentUser
-) -> FlagsPublic:
+) -> FlagsWithEvidencePublic:
     _get_audit(session, audit_id, current_user)
     flags = session.exec(
-        select(Flag)
-        .where(Flag.audit_id == audit_id)
-        .order_by(Flag.created_at)  # type: ignore[attr-defined]
+        select(Flag).where(Flag.audit_id == audit_id).order_by(Flag.created_at)  # type: ignore[attr-defined]
     ).all()
-    return FlagsPublic(data=flags, count=len(flags))
+
+    enriched_flags = []
+    for flag in flags:
+        # Get evidence for this flag's claim (if any)
+        evidence = []
+        if flag.claim_id:
+            evidence = session.exec(
+                select(Evidence).where(Evidence.claim_id == flag.claim_id)
+            ).all()
+
+        # Get claim text
+        claim_text = None
+        if flag.claim_id:
+            claim = session.get(Claim, flag.claim_id)
+            if claim:
+                claim_text = claim.text
+
+        enriched_flags.append(
+            FlagWithEvidence(
+                id=flag.id,
+                audit_id=flag.audit_id,
+                document_id=flag.document_id,
+                claim_id=flag.claim_id,
+                type=flag.type,
+                severity=flag.severity,
+                materiality=flag.materiality,
+                reason=flag.reason,
+                suggested_fix=flag.suggested_fix,
+                status=flag.status,
+                reviewer_note=flag.reviewer_note,
+                impact_score=flag.impact_score,
+                sentence_id=flag.sentence_id,
+                location_json=flag.location_json,
+                created_at=flag.created_at,
+                evidence=evidence,
+                claim_text=claim_text,
+            )
+        )
+
+    return FlagsWithEvidencePublic(data=enriched_flags, count=len(enriched_flags))
 
 
 @router.post("/{audit_id}/flags/{flag_id}/decision", response_model=DecisionPublic)
@@ -418,7 +559,7 @@ def verify_passport(verify_token: str, session: SessionDep) -> VerificationResul
         _, public_pem = security.ensure_keypair(
             settings.ECDSA_PRIVATE_KEY_PATH, settings.ECDSA_PUBLIC_KEY_PATH
         )
-        message = f"{passport.document_hash}:{passport.chain_head}".encode("utf-8")
+        message = f"{passport.document_hash}:{passport.chain_head}".encode()
         signature_valid = security.verify_signature(
             public_pem, message, passport.signature
         )

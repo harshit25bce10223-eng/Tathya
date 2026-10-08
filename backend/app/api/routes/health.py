@@ -71,9 +71,8 @@ def demo_readiness() -> dict[str, Any]:
     """Demo readiness checklist (local paths and booleans only)."""
     hero_pack_loaded = _exists("storage/hero_pack/hero_manifest.json")
     cache_ready = _exists("data/cache/hero_cached_result.json")
-    passport_key_ready = (
-        _exists(settings.ECDSA_PRIVATE_KEY_PATH)
-        and _exists(settings.ECDSA_PUBLIC_KEY_PATH)
+    passport_key_ready = _exists(settings.ECDSA_PRIVATE_KEY_PATH) and _exists(
+        settings.ECDSA_PUBLIC_KEY_PATH
     )
     db_ready = _db_status() == "up"
     llm_ready = llm_adapter.is_configured()

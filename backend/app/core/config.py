@@ -20,15 +20,17 @@ class Settings(BaseSettings):
         extra="ignore",
     )
     API_V1_STR: str = "/api/v1"
-    SECRET_KEY: str
+    SECRET_KEY: str = "changethis_secret_key_at_least_32_chars_long"
     # 60 minutes * 24 hours * 8 days = 8 days
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 8
     FRONTEND_HOST: str = "http://localhost:5173"
     FASTAPI_ENV: Literal["development"] | None = None
 
-    PROJECT_NAME: str
+    PROJECT_NAME: str = "Tathya Fact Verification Engine"
     SENTRY_DSN: HttpUrl | None = None
-    DATABASE_URL: PostgresDsn
+    DATABASE_URL: PostgresDsn = PostgresDsn(
+        "postgresql+psycopg://postgres:changethis@localhost:5432/app"
+    )
 
     @field_validator("DATABASE_URL", mode="before")
     @classmethod
@@ -45,13 +47,15 @@ class Settings(BaseSettings):
     SMTP_HOST: str | None = None
     SMTP_USER: str | None = None
     SMTP_PASSWORD: str | None = None
-    EMAILS_FROM_EMAIL: EmailStr | None = None
+    EMAILS_FROM_EMAIL: EmailStr | None = "info@example.com"
     EMAILS_FROM_NAME: str | None = None
 
     @model_validator(mode="after")
     def _set_default_emails_from(self) -> Self:
         if not self.EMAILS_FROM_NAME:
             self.EMAILS_FROM_NAME = self.PROJECT_NAME
+        if not self.EMAILS_FROM_EMAIL:
+            self.EMAILS_FROM_EMAIL = "info@example.com"
         return self
 
     EMAIL_RESET_TOKEN_EXPIRE_HOURS: int = 48
@@ -62,8 +66,8 @@ class Settings(BaseSettings):
         return bool(self.SMTP_HOST and self.EMAILS_FROM_EMAIL)
 
     EMAIL_TEST_USER: EmailStr = "test@example.com"
-    FIRST_SUPERUSER: EmailStr
-    FIRST_SUPERUSER_PASSWORD: str
+    FIRST_SUPERUSER: EmailStr = "admin@tathya.ai"
+    FIRST_SUPERUSER_PASSWORD: str = "changethis"
 
     # ------------------------------------------------------------------
     # Tathya Phase 1 settings
