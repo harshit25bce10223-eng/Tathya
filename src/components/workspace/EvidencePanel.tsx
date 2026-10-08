@@ -1,5 +1,5 @@
 import React from 'react';
-import { Flag, DocumentLocation } from '../../api/types';
+import { Flag, DocumentLocation, SourceDocument } from '../../api/types';
 import { 
   AlertOctagon, 
   HelpCircle, 
@@ -7,55 +7,81 @@ import {
   Building, 
   MapPin, 
   ShieldCheck, 
-  CheckCircle,
-  FileQuestion,
-  FileX2,
-  Sparkles,
-  Layers,
-  FileSpreadsheet,
-  FileText
+  CheckCircle, 
+  FileQuestion, 
+  FileX2, 
+  Sparkles, 
+  Layers, 
+  FileSpreadsheet, 
+  FileText,
+  BadgeAlert,
+  ArrowRight
 } from 'lucide-react';
 
 interface EvidencePanelProps {
   flag: Flag | null;
   onNavigateToClaim?: (claimId: string) => void;
+  sourceDocument?: SourceDocument;
 }
 
-export const EvidencePanel: React.FC<EvidencePanelProps> = ({ flag, onNavigateToClaim }) => {
+export const EvidencePanel: React.FC<EvidencePanelProps> = ({ 
+  flag, 
+  onNavigateToClaim,
+  sourceDocument 
+}) => {
   if (!flag) {
     return (
       <div className="h-full flex flex-col items-center justify-center p-8 text-center text-tathya-text-muted">
         <FileQuestion className="w-10 h-10 mb-2 opacity-40 text-slate-500" />
-        <h4 className="text-xs font-semibold text-white mb-1">No Claim Selected</h4>
+        <h4 className="text-xs font-semibold text-white mb-1">No Finding Selected</h4>
         <p className="text-xs text-tathya-text-muted max-w-xs">
-          Select a finding or highlighted sentence in the document viewer to inspect canonical ground truth evidence.
+          Select a finding or document highlight to inspect grounding evidence, canonical source quotes, and authority level.
         </p>
       </div>
     );
   }
 
+  // Explicit distinct verification relationship
   const getVerificationStatusHeader = () => {
-    switch (flag.severity) {
-      case 'CRITICAL':
-      case 'HIGH':
+    const status = flag.verificationStatus || (
+      flag.severity === 'CRITICAL' || flag.severity === 'HIGH' ? 'CONTRADICTED' : 
+      flag.severity === 'MEDIUM' ? 'UNSUPPORTED' : 'UNCERTAIN'
+    );
+
+    switch (status) {
+      case 'CONTRADICTED':
         return (
           <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-red-950/70 border border-red-700/60 text-red-300 text-xs font-bold uppercase tracking-wider">
             <FileX2 className="w-4 h-4 text-red-400" />
             CONTRADICTED BY GROUND TRUTH
           </div>
         );
-      case 'MEDIUM':
+      case 'UNSUPPORTED':
         return (
           <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-amber-950/70 border border-amber-700/60 text-amber-300 text-xs font-bold uppercase tracking-wider">
             <AlertOctagon className="w-4 h-4 text-amber-400" />
-            UNSUPPORTED / UNVERIFIED CLAIM
+            UNSUPPORTED (NO GROUND TRUTH FOUND)
+          </div>
+        );
+      case 'UNCERTAIN':
+        return (
+          <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-900 border border-amber-800/60 text-amber-300 text-xs font-bold uppercase tracking-wider">
+            <HelpCircle className="w-4 h-4 text-amber-400" />
+            UNCERTAIN / INCONCLUSIVE EVIDENCE
+          </div>
+        );
+      case 'SUPPORTED':
+        return (
+          <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-emerald-950/70 border border-emerald-700/60 text-emerald-300 text-xs font-bold uppercase tracking-wider">
+            <CheckCircle className="w-4 h-4 text-emerald-400" />
+            SUPPORTED BY AUTHORITATIVE SOURCE
           </div>
         );
       default:
         return (
-          <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-amber-950/70 border border-amber-700/60 text-amber-300 text-xs font-bold uppercase tracking-wider">
-            <HelpCircle className="w-4 h-4 text-amber-400" />
-            UNCERTAIN CLAIM
+          <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-700 text-slate-300 text-xs font-bold uppercase tracking-wider">
+            <HelpCircle className="w-4 h-4 text-slate-400" />
+            REVIEW REQUIRED
           </div>
         );
     }
@@ -100,7 +126,7 @@ export const EvidencePanel: React.FC<EvidencePanelProps> = ({ flag, onNavigateTo
 
   return (
     <div className="space-y-4">
-      {/* 1. Header & Claim Verification Status */}
+      {/* 1. Header & Verification Relationship */}
       <div className="flex items-center justify-between gap-2">
         {getVerificationStatusHeader()}
         <span className="text-xs font-mono text-tathya-text-muted">
@@ -108,22 +134,24 @@ export const EvidencePanel: React.FC<EvidencePanelProps> = ({ flag, onNavigateTo
         </span>
       </div>
 
-      {/* 2. Document Claim Under Audit with navigation hook */}
+      {/* 2. Document Claim Under Audit with Jump Link */}
       <div className="p-3.5 rounded-xl bg-tathya-surface border border-tathya-surface-border">
         <div className="flex items-center justify-between mb-1.5">
-          <span className="text-[10px] uppercase font-bold tracking-wider text-tathya-text-muted">
-            Target Document Claim
-          </span>
+          <div className="flex items-center gap-1.5 text-[10px] uppercase font-bold tracking-wider text-tathya-text-muted">
+            <FileText className="w-3 h-3 text-tathya-accent" />
+            <span>AI Synthesized Document Claim</span>
+          </div>
           {onNavigateToClaim && (
             <button
               onClick={() => onNavigateToClaim(flag.claimId)}
-              className="text-[11px] text-tathya-accent hover:underline font-medium"
+              className="text-[11px] text-tathya-accent hover:underline font-medium flex items-center gap-0.5"
             >
-              Scroll to document text →
+              <span>Jump to document text</span>
+              <ArrowRight className="w-3 h-3" />
             </button>
           )}
         </div>
-        <p className="text-xs font-medium text-white leading-relaxed font-mono">
+        <p className="text-xs font-medium text-white leading-relaxed font-mono bg-black/30 p-2.5 rounded border border-slate-800">
           "{flag.claim}"
         </p>
       </div>
@@ -152,11 +180,11 @@ export const EvidencePanel: React.FC<EvidencePanelProps> = ({ flag, onNavigateTo
           </div>
         )}
 
-        {/* Authority Metadata Grid */}
+        {/* Authority & Version Metadata Grid */}
         <div className="grid grid-cols-2 gap-2 text-[11px] pt-1">
           <div className="flex items-center gap-1.5 text-tathya-text-secondary">
             <Building className="w-3.5 h-3.5 text-tathya-text-muted flex-shrink-0" />
-            <span className="truncate">{flag.evidence.sourceName}</span>
+            <span className="truncate font-medium text-slate-200">{flag.evidence.sourceName}</span>
           </div>
           <div className="flex items-center gap-1.5 text-tathya-text-secondary">
             <MapPin className="w-3.5 h-3.5 text-tathya-text-muted flex-shrink-0" />
@@ -173,6 +201,14 @@ export const EvidencePanel: React.FC<EvidencePanelProps> = ({ flag, onNavigateTo
           </div>
         </div>
 
+        {/* Source Authority & Immutable Version tag */}
+        {sourceDocument && (
+          <div className="pt-2 border-t border-tathya-surface-border flex items-center justify-between text-[10px] text-tathya-text-muted font-mono">
+            <span>Version: <strong className="text-slate-300">{sourceDocument.version}</strong></span>
+            <span>Status: <strong className="text-emerald-400">{sourceDocument.authorityLabel}</strong></span>
+          </div>
+        )}
+
         {/* Retrieval ranking info (BGE-M3 / reranker top evidence) */}
         {flag.evidence.relevanceScore !== undefined && (
           <div className="pt-2 border-t border-tathya-surface-border flex items-center justify-between text-[10px] text-tathya-text-muted">
@@ -187,7 +223,7 @@ export const EvidencePanel: React.FC<EvidencePanelProps> = ({ flag, onNavigateTo
         )}
       </div>
 
-      {/* 4. Counter-Evidence (if present) */}
+      {/* 4. Counter-Evidence / Superseded Source */}
       {flag.counterEvidence && (
         <div className="p-3.5 rounded-xl bg-tathya-surface border border-tathya-surface-border space-y-2">
           <div className="flex items-center justify-between text-amber-400 text-xs font-semibold uppercase tracking-wider">

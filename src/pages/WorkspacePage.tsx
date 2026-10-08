@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { api } from '../api/client';
-import { Audit } from '../api/types';
+import { Audit, SeverityLevel } from '../api/types';
 import { DocumentViewer } from '../components/workspace/DocumentViewer';
 import { ScoreRing } from '../components/workspace/ScoreRing';
 import { TrustWaterfall } from '../components/workspace/TrustWaterfall';
@@ -9,6 +9,7 @@ import { WhatToCheckPanel } from '../components/workspace/WhatToCheckPanel';
 import { FlagCard } from '../components/workspace/FlagCard';
 import { EvidencePanel } from '../components/workspace/EvidencePanel';
 import { ReviewerActionBar } from '../components/workspace/ReviewerActionBar';
+import { ResultSummaryBar } from '../components/workspace/ResultSummaryBar';
 import { StatusBadge, SeverityBadge } from '../components/brand/TrustBadge';
 import { EvidenceGraphFoundation } from '../components/graph/EvidenceGraphFoundation';
 import { EmptyState } from '../components/ui/EmptyState';
@@ -18,10 +19,11 @@ import {
   ExternalLink, 
   AlertTriangle,
   Loader2,
-  FileText,
   AlertOctagon,
-  Layers,
-  Sparkles
+  Eye,
+  CheckCircle2,
+  FileCheck2,
+  Filter
 } from 'lucide-react';
 
 export const WorkspacePage: React.FC = () => {
@@ -32,7 +34,10 @@ export const WorkspacePage: React.FC = () => {
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [selectedFlagId, setSelectedFlagId] = useState<string | null>(null);
   
-  // Right panel mobile/desktop mode selector
+  // Phase 3 Filter state for findings & document
+  const [activeSeverityFilter, setActiveSeverityFilter] = useState<SeverityLevel | 'ALL' | 'UNCERTAIN'>('ALL');
+
+  // Right panel tab selector
   const [activeRightTab, setActiveRightTab] = useState<'EVIDENCE' | 'WATERFALL' | 'GRAPH'>('EVIDENCE');
   // Mobile column switcher ('DOC' | 'FLAGS' | 'EVIDENCE')
   const [mobileView, setMobileView] = useState<'DOC' | 'FLAGS' | 'EVIDENCE'>('DOC');
@@ -78,12 +83,14 @@ export const WorkspacePage: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="h-[calc(100vh-3.75rem)] flex flex-col items-center justify-center p-8 text-center">
-        <Loader2 className="w-8 h-8 text-tathya-accent animate-spin mb-3" />
-        <h3 className="text-sm font-semibold text-white">Loading Investigation Workspace...</h3>
-        <p className="text-xs text-tathya-text-muted mt-1 font-mono">
-          Retrieving {auditId || 'audit'} canonical text, claims, and ground truth...
-        </p>
+      <div className="h-[calc(100vh-3.75rem)] flex flex-col items-center justify-center p-8 text-center space-y-4">
+        <Loader2 className="w-8 h-8 text-tathya-accent animate-spin mx-auto" />
+        <div className="space-y-1">
+          <h3 className="text-sm font-semibold text-white">Loading Trust Pipeline Workspace...</h3>
+          <p className="text-xs text-tathya-text-muted font-mono">
+            Retrieving {auditId || 'audit'} canonical text, claim heatmap, and ground truth anchors...
+          </p>
+        </div>
       </div>
     );
   }
@@ -102,12 +109,37 @@ export const WorkspacePage: React.FC = () => {
     );
   }
 
-  const selectedFlag = audit.flags.find((f) => f.id === selectedFlagId) || (audit.flags[0] || null);
+  // Calculate or retrieve backend result summary
+  const summary = audit.resultSummary || {
+    claimsChecked: audit.claims.length || 4,
+    evidenceMatched: audit.sourceDocuments.length > 0 ? (audit.claims.length || 4) : 0,
+    contradictions: audit.flags.filter(f => f.severity === 'CRITICAL' || f.severity === 'HIGH').length,
+    unsupportedClaims: audit.flags.filter(f => f.severity === 'MEDIUM').length,
+    uncertainClaims: audit.flags.filter(f => f.severity === 'LOW').length,
+    criticalFindings: audit.flags.filter(f => f.severity === 'CRITICAL').length,
+    highFindings: audit.flags.filter(f => f.severity === 'HIGH').length,
+    mediumFindings: audit.flags.filter(f => f.severity === 'MEDIUM').length,
+    lowFindings: audit.flags.filter(f => f.severity === 'LOW').length,
+    resultState: audit.status === 'PROCESSING' 
+      ? 'PROCESSING' 
+      : audit.flags.length > 0 
+      ? 'FINDINGS_PRESENT' 
+      : 'NO_FINDINGS',
+  };
+
+  // Filter findings according to activeSeverityFilter
+  const filteredFlags = audit.flags.filter(f => {
+    if (activeSeverityFilter === 'ALL') return true;
+    if (activeSeverityFilter === 'UNCERTAIN') return f.status === 'PENDING' || f.severity === 'LOW';
+    return f.severity === activeSeverityFilter;
+  });
+
+  const selectedFlag = audit.flags.find((f) => f.id === selectedFlagId) || (filteredFlags[0] || audit.flags[0] || null);
 
   return (
     <div className="flex flex-col h-[calc(100vh-3.75rem)] overflow-hidden">
       {/* 1. TOP BREADCRUMB & AUDIT CONTROL HEADER */}
-      <div className="flex-shrink-0 px-4 py-2.5 border-b border-tathya-surface-border bg-tathya-surface/90 backdrop-blur flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 z-20">
+      <div className="flex-shrink-0 px-4 py-2 border-b border-tathya-surface-border bg-tathya-surface/90 backdrop-blur flex flex-col sm:flex-row sm:items-center justify-between gap-2 z-20">
         <div className="flex items-center gap-2 min-w-0">
           <Link to="/control/queue" className="text-xs text-tathya-text-muted hover:text-white transition-colors">
             Review Queue
@@ -131,7 +163,7 @@ export const WorkspacePage: React.FC = () => {
               onClick={() => setMobileView('DOC')}
               className={`px-2.5 py-1 rounded font-medium ${mobileView === 'DOC' ? 'bg-tathya-surface text-white' : 'text-slate-400'}`}
             >
-              Document
+              Document & Heatmap
             </button>
             <button
               onClick={() => setMobileView('FLAGS')}
@@ -159,11 +191,21 @@ export const WorkspacePage: React.FC = () => {
         </div>
       </div>
 
-      {/* 2. THREE-COLUMN ENTERPRISE AUDIT WORKSPACE */}
+      {/* 2. PHASE 3 RESULT SUMMARY BAR */}
+      <div className="flex-shrink-0 px-4 py-2 border-b border-tathya-surface-border bg-tathya-surface/40">
+        <ResultSummaryBar 
+          summary={summary} 
+          activeFilter={activeSeverityFilter}
+          onFilterChange={(flt) => setActiveSeverityFilter(flt)}
+          documentVersion={audit.aiDocument.version || 'v3.2'}
+        />
+      </div>
+
+      {/* 3. THREE-COLUMN ENTERPRISE AUDIT WORKSPACE */}
       <div className="flex-1 flex overflow-hidden">
         
-        {/* COLUMN 1: DOCUMENT VIEWER */}
-        <div className={`w-full xl:w-5/12 h-full p-3 sm:p-4 border-r border-tathya-surface-border overflow-hidden ${
+        {/* COLUMN 1: DOCUMENT VIEWER WITH INTEGRATED HEATMAP */}
+        <div className={`w-full xl:w-5/12 h-full p-2.5 sm:p-3 border-r border-tathya-surface-border overflow-hidden ${
           mobileView === 'DOC' ? 'block' : 'hidden xl:block'
         }`}>
           <DocumentViewer
@@ -176,10 +218,11 @@ export const WorkspacePage: React.FC = () => {
               setMobileView('EVIDENCE');
             }}
             pageCount={audit.aiDocument.pageCount}
+            activeFilter={activeSeverityFilter}
           />
         </div>
 
-        {/* COLUMN 2: FLAGS & WHAT TO CHECK */}
+        {/* COLUMN 2: FINDINGS LIST & WHAT TO CHECK */}
         <div className={`w-full xl:w-3/12 h-full flex flex-col bg-tathya-surface border-r border-tathya-surface-border overflow-hidden ${
           mobileView === 'FLAGS' ? 'block' : 'hidden xl:flex'
         }`}>
@@ -188,7 +231,7 @@ export const WorkspacePage: React.FC = () => {
             <div className="flex items-center gap-1.5">
               <AlertOctagon className="w-4 h-4 text-amber-400" />
               <span className="text-xs font-bold text-white uppercase tracking-wider">
-                Findings ({audit.flags.length})
+                Prioritized Findings ({filteredFlags.length})
               </span>
             </div>
             <SeverityBadge severity={audit.priority} />
@@ -209,20 +252,37 @@ export const WorkspacePage: React.FC = () => {
 
             {/* List of Flag Cards */}
             <div className="space-y-2.5 pt-1">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-tathya-text-muted block">
-                Contradiction & Variance List
-              </span>
-              {audit.flags.map((flag) => (
-                <FlagCard
-                  key={flag.id}
-                  flag={flag}
-                  isSelected={selectedFlagId === flag.id}
-                  onSelect={() => {
-                    setSelectedFlagId(flag.id);
-                    setMobileView('EVIDENCE');
-                  }}
-                />
-              ))}
+              <div className="flex items-center justify-between text-[10px] font-bold uppercase tracking-wider text-tathya-text-muted">
+                <span>Findings ({filteredFlags.length})</span>
+                {activeSeverityFilter !== 'ALL' && (
+                  <button 
+                    onClick={() => setActiveSeverityFilter('ALL')}
+                    className="text-tathya-accent hover:underline font-mono"
+                  >
+                    Clear Filter
+                  </button>
+                )}
+              </div>
+
+              {filteredFlags.length > 0 ? (
+                filteredFlags.map((flag) => (
+                  <FlagCard
+                    key={flag.id}
+                    flag={flag}
+                    isSelected={selectedFlagId === flag.id}
+                    onSelect={() => {
+                      setSelectedFlagId(flag.id);
+                      setMobileView('EVIDENCE');
+                    }}
+                  />
+                ))
+              ) : (
+                <div className="p-6 text-center text-xs text-tathya-text-muted bg-tathya-surface-elevated/50 rounded-xl border border-tathya-surface-border">
+                  <CheckCircle2 className="w-6 h-6 text-emerald-400 mx-auto mb-1.5 opacity-80" />
+                  <p className="font-semibold text-white">No findings in this category</p>
+                  <p className="mt-0.5">Filter: {activeSeverityFilter}</p>
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -232,11 +292,11 @@ export const WorkspacePage: React.FC = () => {
           mobileView === 'EVIDENCE' ? 'block' : 'hidden xl:flex'
         }`}>
           {/* Top Score Banner */}
-          <div className="flex-shrink-0 p-3.5 border-b border-tathya-surface-border bg-tathya-surface flex items-center justify-between gap-3">
+          <div className="flex-shrink-0 p-3 border-b border-tathya-surface-border bg-tathya-surface flex items-center justify-between gap-3">
             <ScoreRing 
               score={audit.trustScore} 
               initialScore={audit.initialScore} 
-              size={84} 
+              size={80} 
               strokeWidth={7}
               state="available"
             />
@@ -244,7 +304,7 @@ export const WorkspacePage: React.FC = () => {
             <div className="flex-1 space-y-1 text-left">
               <div className="flex items-center gap-2">
                 <span className="text-[11px] font-bold uppercase tracking-wider text-white">
-                  Trust Evaluation
+                  Deterministic Score
                 </span>
                 <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-slate-900 border border-slate-700 text-slate-300">
                   {audit.riskBand}
@@ -256,7 +316,7 @@ export const WorkspacePage: React.FC = () => {
                   : 'All business claims reconciled 100% against approved ground truth.'}
               </p>
               <div className="text-[10px] font-mono text-tathya-text-muted">
-                Initial: 100 → Current: <span className="font-bold text-white">{audit.trustScore}</span> / 100
+                Initial: 100 → Reviewed: <span className="font-bold text-white">{audit.trustScore}</span> / 100
               </div>
             </div>
           </div>
@@ -288,6 +348,7 @@ export const WorkspacePage: React.FC = () => {
               <EvidencePanel 
                 flag={selectedFlag} 
                 onNavigateToClaim={() => setMobileView('DOC')}
+                sourceDocument={audit.sourceDocuments[0]}
               />
             )}
 

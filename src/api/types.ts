@@ -1,14 +1,24 @@
 /**
  * TATHYA (तथ्य) API & DOMAIN CONTRACT TYPES
  * Centralized strictly typed definitions for all frontend models.
- * Phase 2: Ingestion + Retrieval experience.
+ * Phase 3: Trust Pipeline UI (Heatmap, Highlights, Results, Evidence Review).
  */
 
 export type SeverityLevel = 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW' | 'INFORMATIONAL';
 export type MaterialityLevel = 'MATERIAL' | 'HIGH' | 'MODERATE' | 'LOW';
 export type ClaimVerificationStatus = 'SUPPORTED' | 'CONTRADICTED' | 'UNSUPPORTED' | 'UNCERTAIN';
 
-/** Phase 2: Full processing status lifecycle */
+/** Phase 3: Trust Pipeline Result States */
+export type TrustResultState =
+  | 'PROCESSING'
+  | 'READY'
+  | 'PARTIAL'
+  | 'FAILED'
+  | 'NO_FINDINGS'
+  | 'FINDINGS_PRESENT'
+  | 'UNCERTAIN';
+
+/** Full processing status lifecycle */
 export type ProcessingStatus =
   | 'QUEUED'
   | 'UPLOADING'
@@ -32,13 +42,25 @@ export type AuditStatus =
 
 export type FlagStatus = 'PENDING' | 'ACCEPTED' | 'DISMISSED' | 'FIXED';
 
-/** Phase 2: Document location — backend-canonical, never LLM-derived */
+/** Document location — backend-canonical, never LLM-derived */
 export type DocumentLocation =
   | { type: 'pdf'; page: number; bbox?: [number, number, number, number] }
   | { type: 'docx'; paragraph: number; charStart: number; charEnd: number }
   | { type: 'xlsx'; sheet: string; cell: string }
   | { type: 'text'; charStart: number; charEnd: number }
   | { type: 'unknown'; description: string };
+
+/** Phase 3: Location-aware heatmap region model */
+export interface HeatmapRegion {
+  id: string;
+  sectionIndex: number;
+  sectionTitle: string;
+  location: DocumentLocation;
+  highestSeverity?: SeverityLevel;
+  findingCount: number;
+  flagIds: string[];
+  clean: boolean;
+}
 
 export interface SourceDocument {
   id: string;
@@ -50,6 +72,8 @@ export interface SourceDocument {
   authorityLabel: string;
   freshnessDate: string;
   version: string;
+  approvalStatus?: 'APPROVED' | 'PENDING' | 'SUPERSEDED' | 'REJECTED';
+  modifiedDate?: string;
   hash: string;
 }
 
@@ -62,6 +86,7 @@ export interface GroundTruthEvidence {
   location: string; // human-readable e.g. "Section 4.2 · Page 18"
   documentLocation?: DocumentLocation; // structured backend location
   relevanceScore?: number; // 0-1 from reranker, optional
+  relationship?: 'SUPPORTED' | 'CONTRADICTED' | 'UNSUPPORTED' | 'UNCERTAIN';
 }
 
 export interface CounterEvidence {
@@ -98,6 +123,7 @@ export interface Flag {
   status: FlagStatus;
   reviewerNote?: string;
   impactScore: number; // negative point deduction
+  verificationStatus?: ClaimVerificationStatus;
 }
 
 export interface WhatToCheckItem {
@@ -119,7 +145,7 @@ export interface TrustWaterfallStep {
   severity: SeverityLevel | 'NEUTRAL';
 }
 
-/** Phase 2: Processing stage for ingestion progress UI */
+/** Processing stage for ingestion progress UI */
 export interface IngestionStage {
   status: ProcessingStatus;
   label: string;
@@ -127,16 +153,33 @@ export interface IngestionStage {
   completedAt?: string;
 }
 
+/** Phase 3: Comprehensive backend-driven verification result summary */
+export interface VerificationResultSummary {
+  claimsChecked: number;
+  evidenceMatched: number;
+  contradictions: number;
+  unsupportedClaims: number;
+  uncertainClaims: number;
+  criticalFindings: number;
+  highFindings: number;
+  mediumFindings: number;
+  lowFindings: number;
+  resultState: TrustResultState;
+}
+
 export interface Audit {
   id: string;
   title: string;
   documentName: string;
+  documentVersion?: string; // Immutable version support
   documentType: 'Procurement Contract' | 'Master Services Agreement' | 'Financial Report' | 'Technical Spec' | 'Compliance Filing';
   language: string;
   uploadedAt: string;
   updatedAt: string;
   status: AuditStatus;
-  processingStatus?: ProcessingStatus; // Phase 2: granular pipeline state
+  processingStatus?: ProcessingStatus;
+  resultState?: TrustResultState; // Phase 3 trust result state
+  resultSummary?: VerificationResultSummary; // Phase 3 counts summary
   priority: SeverityLevel;
   trustScore: number;
   initialScore: number;
@@ -144,6 +187,7 @@ export interface Audit {
   findingsCount: number;
   aiDocument: {
     name: string;
+    version?: string;
     size: string;
     hash: string;
     pageCount: number;
