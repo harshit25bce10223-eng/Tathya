@@ -13,23 +13,34 @@ export function Logo({
   asLink = true,
 }: LogoProps) {
   const content = (
-    <span className={cn("brand-lockup inline-flex", className)}>
-      <span className="brand-mark">
-        <img
-          src="/assets/images/tathya-logo.png"
-          alt=""
-          className="original-brand-icon"
-        />
-      </span>
+    <span
+      className={cn("brand-lockup inline-flex", className)}
+      role="img"
+      aria-label="Tathya"
+    >
+      <img
+        src="/assets/images/tathya-mark-v2.png"
+        alt=""
+        width={40}
+        height={40}
+        className={cn(
+          "brand-icon-v2",
+          variant === "full" && "hidden",
+          variant === "responsive" &&
+            "hidden group-data-[collapsible=icon]:block",
+        )}
+      />
       {variant !== "icon" && (
-        <span
+        <img
+          src="/assets/images/tathya-logo-v2.png"
+          alt="Tathya — Every fact, checked"
+          width={216}
+          height={72}
           className={cn(
-            "brand-word",
+            "brand-logo-v2",
             variant === "responsive" && "group-data-[collapsible=icon]:hidden",
           )}
-        >
-          tathya<span>तथ्य · EVERY FACT, CHECKED</span>
-        </span>
+        />
       )}
     </span>
   )

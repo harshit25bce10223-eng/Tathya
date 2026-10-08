@@ -1754,10 +1754,6 @@ body {
   position: relative;
 }
 
-.splash-complete,
-.original-brand-icon {
-  filter: url(#brand-paper);
-}
 .splash-actions {
   display: flex;
   align-items: center;
@@ -1892,4 +1888,48 @@ body {
     transform: none;
     stroke-dashoffset: 0;
   }
+}
+
+/* Approved Tathya identity: transparent lockup and compact verification mark. */
+.brand-logo-v2 {
+  display: block;
+  width: 216px;
+  max-width: 100%;
+  height: auto;
+  object-fit: contain;
+}
+.brand-icon-v2 {
+  width: 40px;
+  height: 40px;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+.brand-icon-v2.hidden,
+.brand-logo-v2.hidden {
+  display: none;
+}
+[data-collapsible="icon"] .brand-logo-v2 {
+  display: none;
+}
+[data-collapsible="icon"] .brand-icon-v2 {
+  display: block;
+}
+.auth-story .brand-logo-v2,
+.auth-story .brand-icon-v2,
+.dark .brand-logo-v2,
+.dark .brand-icon-v2 {
+  filter: brightness(0) invert(1);
+}
+.brand-splash {
+  background: #f8f7f3;
+}
+.brand-splash .splash-art {
+  width: min(88vw, 620px);
+  aspect-ratio: 3;
+}
+.splash-art img {
+  object-fit: contain;
+}
+.splash-caption {
+  color: #17634f;
 }
