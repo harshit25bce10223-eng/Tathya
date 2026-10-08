@@ -244,6 +244,14 @@ class TathyaApiClient {
       flag.reviewerNote = decision.note || 'Applied suggested fix';
     }
 
+    if (!flag.decisionHistory) flag.decisionHistory = [];
+    flag.decisionHistory.push({
+      action: decision.action,
+      reviewerNote: decision.note,
+      timestamp: new Date().toISOString(),
+      reviewedBy: 'Lokesh (Lead Reviewer)'
+    });
+
     const rescoreResult = await this.rescoreAudit(auditId);
     return { audit: rescoreResult, updatedFlag: flag };
   }
@@ -265,6 +273,9 @@ class TathyaApiClient {
     score = Math.max(0, Math.min(100, score));
     audit.trustScore = score;
     audit.riskBand = score >= 80 ? 'Trustworthy' : score >= 50 ? 'Review Needed' : 'High Risk';
+    audit.reviewedScore = score;
+    audit.reviewedRiskBand = audit.riskBand;
+    audit.reviewerDecisionCount = (audit.reviewerDecisionCount || 0) + 1;
     audit.findingsCount = activeFlags.length;
     audit.status = activeFlags.length === 0 ? 'VERIFIED' : 'REVIEW REQUIRED';
     audit.updatedAt = new Date().toISOString();
@@ -306,30 +317,51 @@ class TathyaApiClient {
    */
   async verifyPassport(token: string): Promise<VerificationResult> {
     await new Promise((res) => setTimeout(res, 300));
-    const passport = mockPassports[token] || {
-      token,
-      auditId: 'AUD-REGISTERED',
-      documentName: 'AI_Procurement_Summary_v3.pdf',
-      documentHash: 'sha256:7b91c84f39ae62463e271917f8a3d5b74100cde19ef652a9f4c391219b188c0a',
-      claimTreeRoot: 'sha256chain:9e8a7c6b5d4e3f2a1b0c9d8e7f6a5b4c3d2e1f0a9b8c7d6e5f4a3b2c1d0e9f8a',
-      signature: '3045022100e4c8f9021a88b5d32c918a24ef9876543210fedcba9876543210abcdef012345',
-      signedBy: 'TATHYA-CORE-VALIDATOR-NODE-01 (ECDSA-P256-SHA256)',
-      signedAt: '2026-10-08T19:15:22Z',
-      trustScore: 42,
-      status: 'VERIFIED',
-      totalClaimsChecked: 14,
-      verifiedClaimsCount: 10,
-      unresolvedFlagsCount: 4
-    };
+
+    if (token === 'NETWORK-ERROR-TEST') {
+      throw new Error('Network request failed');
+    }
+
+    if (token.startsWith('TAMPER-')) {
+      const p = mockPassports['PASSPORT-88219-AUD1042-CRIT'];
+      return {
+        valid: false,
+        outcome: 'TAMPERED',
+        passport: p,
+        verifiedAt: new Date().toISOString(),
+        verifierNode: 'TATHYA-PUBLIC-ATTESTATION-NODE-4',
+        errorMessage: 'Document hash mismatch detected',
+        auditTrail: [
+          { step: 'Document SHA-256 Digest Validation', status: 'FAIL', detail: 'Hash mismatch detected' },
+          { step: 'Claim Hash Chain Inclusion Proof', status: 'WARN', detail: 'Unable to verify' }
+        ]
+      };
+    }
+
+    if (token.startsWith('INVALID-') || (!mockPassports[token] && token !== 'PASSPORT-88219-AUD1042-CRIT')) {
+      const p = mockPassports['PASSPORT-88219-AUD1042-CRIT'];
+      return {
+        valid: false,
+        outcome: 'INVALID',
+        passport: p,
+        verifiedAt: new Date().toISOString(),
+        verifierNode: 'TATHYA-PUBLIC-ATTESTATION-NODE-4',
+        errorMessage: 'Token not found or has expired',
+        auditTrail: []
+      };
+    }
+
+    const passport = mockPassports[token] || mockPassports['PASSPORT-88219-AUD1042-CRIT'];
 
     return {
       valid: true,
+      outcome: 'VERIFIED',
       passport,
       verifiedAt: new Date().toISOString(),
       verifierNode: 'TATHYA-PUBLIC-ATTESTATION-NODE-4',
       auditTrail: [
         { step: 'Document SHA-256 Digest Validation', status: 'PASS', detail: 'Hash matches cryptographic manifest' },
-        { step: 'Claim Hash Chain Inclusion Proof', status: 'PASS', detail: '14/14 claim digests verified in sequence' },
+        { step: 'Claim Hash Chain Inclusion Proof', status: 'PASS', detail: 'Claim digests verified in sequence' },
         { step: 'ECDSA P-256 Validator Signature Verification', status: 'PASS', detail: 'ECDSA P-256 / prime256v1 key signature confirmed' },
         { step: 'Fact Reconciliation Anchor', status: passport.unresolvedFlagsCount > 0 ? 'WARN' : 'PASS', detail: `${passport.unresolvedFlagsCount} unaddressed commercial/date variances logged` }
       ]

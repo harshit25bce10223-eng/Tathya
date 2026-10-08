@@ -107,6 +107,38 @@ export interface Claim {
   variance?: string;
 }
 
+export interface MaterialityDetail {
+  category: string;
+  impactRationale: string;
+  financialExposure?: string;
+  legalExposure?: string;
+  isProvisional: boolean;
+  methodologyVersion?: string;
+}
+
+export interface PolicyFinding {
+  policyName: string;
+  policyStatus: 'VIOLATED' | 'AT_RISK' | 'COMPLIANT' | 'NOT_CONFIGURED' | 'EVALUATION_FAILED';
+  rationale: string;
+  consequence?: string;
+  relevantClause?: string;
+}
+
+export interface OmissionFinding {
+  description: string;
+  relatedSection?: string;
+  whyItMatters: string;
+  confidence: 'HIGH' | 'MEDIUM' | 'LOW' | 'UNCERTAIN';
+  requiresHumanReview: boolean;
+}
+
+export interface DecisionHistoryEntry {
+  action: 'ACCEPT' | 'DISMISS' | 'FIX';
+  reviewerNote?: string;
+  timestamp: string;
+  reviewedBy?: string;
+}
+
 export interface Flag {
   id: string;
   auditId: string;
@@ -124,6 +156,10 @@ export interface Flag {
   reviewerNote?: string;
   impactScore: number; // negative point deduction
   verificationStatus?: ClaimVerificationStatus;
+  materialityDetail?: MaterialityDetail;
+  policyFindings?: PolicyFinding[];
+  omissionFindings?: OmissionFinding[];
+  decisionHistory?: DecisionHistoryEntry[];
 }
 
 export interface WhatToCheckItem {
@@ -240,14 +276,19 @@ export interface Passport {
   signedBy: string; // ECDSA P-256 / prime256v1
   signedAt: string;
   trustScore: number;
+  reviewedScore?: number | null; // Phase 5
+  reviewedRiskBand?: string | null; // Phase 5
   status: 'VERIFIED' | 'REVOKED' | 'TAMPER_DETECTED';
   totalClaimsChecked: number;
   verifiedClaimsCount: number;
   unresolvedFlagsCount: number;
 }
 
+export type VerificationOutcome = 'VERIFIED' | 'TAMPERED' | 'INVALID' | 'NETWORK_ERROR';
+
 export interface VerificationResult {
   valid: boolean;
+  outcome: VerificationOutcome;
   passport: Passport;
   verifiedAt: string;
   verifierNode: string;
@@ -256,4 +297,5 @@ export interface VerificationResult {
     status: 'PASS' | 'WARN' | 'FAIL';
     detail: string;
   }[];
+  errorMessage?: string;
 }

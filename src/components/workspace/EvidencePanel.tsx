@@ -204,8 +204,8 @@ export const EvidencePanel: React.FC<EvidencePanelProps> = ({
         {/* Source Authority & Immutable Version tag */}
         {sourceDocument && (
           <div className="pt-2 border-t border-tathya-surface-border flex items-center justify-between text-[10px] text-tathya-text-muted font-mono">
-            <span>Version: <strong className="text-slate-300">{sourceDocument.version}</strong></span>
-            <span>Status: <strong className="text-emerald-400">{sourceDocument.authorityLabel}</strong></span>
+            <span>Version: <strong className={sourceDocument.authority === "SUPERSEDED" ? "text-slate-500 line-through" : "text-slate-300"}>{sourceDocument.version}</strong></span>
+            <span>Status: <strong className={sourceDocument.authority === "SUPERSEDED" ? "text-slate-500 line-through" : "text-emerald-400"}>{sourceDocument.authorityLabel}</strong></span>
           </div>
         )}
 
@@ -229,18 +229,49 @@ export const EvidencePanel: React.FC<EvidencePanelProps> = ({
           <div className="flex items-center justify-between text-amber-400 text-xs font-semibold uppercase tracking-wider">
             <span className="flex items-center gap-2">
               <AlertOctagon className="w-3.5 h-3.5" />
-              Counter-Evidence / Deprecated Source
+              Counter-Evidence
             </span>
             {renderLocationBadge(flag.counterEvidence.documentLocation)}
           </div>
-          <div className="p-2.5 rounded bg-black/20 text-xs italic text-slate-300 leading-relaxed font-mono">
-            {flag.counterEvidence.quote}
+          <div className="flex gap-2">
+             <div className="w-1 bg-amber-500/50 rounded-full"></div>
+             <div className="flex-1 p-2.5 rounded bg-amber-950/20 text-xs italic text-amber-200 leading-relaxed font-mono">
+               {flag.counterEvidence.quote}
+             </div>
           </div>
           <div className="text-[11px] text-tathya-text-muted flex items-center justify-between">
             <span>Source: {flag.counterEvidence.sourceName}</span>
             <span>{flag.counterEvidence.location}</span>
           </div>
+          <div className="mt-1 flex items-center justify-between">
+             <span className="px-1.5 py-0.5 rounded text-[9px] uppercase font-bold border border-amber-500/30 bg-amber-500/10 text-amber-400">
+               {flag.verificationStatus === "CONTRADICTED" ? "CONTRADICTING" : "UNCERTAIN"}
+             </span>
+             <span className="text-[9px] text-tathya-text-muted">Potential contradiction. Does not definitively disprove.</span>
+          </div>
         </div>
+      )}
+
+      {/* Omission Findings */}
+      {flag.omissionFindings && flag.omissionFindings.length > 0 && (
+         <div className="p-3.5 rounded-xl bg-tathya-surface border border-tathya-surface-border space-y-3">
+           <div className="flex items-center gap-2 text-sky-400 text-xs font-semibold uppercase tracking-wider">
+             <FileQuestion className="w-3.5 h-3.5" />
+             Potential Omissions
+           </div>
+           {flag.omissionFindings.map((om, idx) => (
+             <div key={idx} className="p-3 rounded bg-tathya-bg border border-tathya-surface-border text-xs">
+               <div className="font-medium text-slate-200 mb-1">Potential omission detected: {om.description}</div>
+               <div className="text-tathya-text-muted mb-2"><span className="text-slate-400">Why it matters:</span> {om.whyItMatters}</div>
+               <div className="flex gap-2 items-center">
+                 <span className="px-1.5 py-0.5 rounded text-[10px] uppercase font-bold border bg-slate-800 text-slate-300 border-slate-700">Confidence: {om.confidence}</span>
+                 {om.requiresHumanReview && (
+                   <span className="px-1.5 py-0.5 rounded text-[10px] uppercase font-bold bg-amber-400/10 text-amber-400 border border-amber-400/30">Requires Human Review</span>
+                 )}
+               </div>
+             </div>
+           ))}
+         </div>
       )}
 
       {/* 5. Material Reason Explanation */}
@@ -265,3 +296,4 @@ export const EvidencePanel: React.FC<EvidencePanelProps> = ({
     </div>
   );
 };
+

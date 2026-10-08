@@ -9,6 +9,7 @@ import { TrustWaterfall } from '../components/workspace/TrustWaterfall';
 import { WhatToCheckPanel } from '../components/workspace/WhatToCheckPanel';
 import { FlagCard } from '../components/workspace/FlagCard';
 import { EvidencePanel } from '../components/workspace/EvidencePanel';
+import { MaterialityPanel } from '../components/workspace/MaterialityPanel';
 import { ReviewerActionBar } from '../components/workspace/ReviewerActionBar';
 import { ResultSummaryBar } from '../components/workspace/ResultSummaryBar';
 import { StatusBadge, SeverityBadge } from '../components/brand/TrustBadge';
@@ -39,7 +40,7 @@ export const WorkspacePage: React.FC = () => {
   const [activeSeverityFilter, setActiveSeverityFilter] = useState<SeverityLevel | 'ALL' | 'UNCERTAIN'>('ALL');
 
   // Right panel tab selector
-  const [activeRightTab, setActiveRightTab] = useState<'EVIDENCE' | 'WATERFALL' | 'GRAPH'>('EVIDENCE');
+  const [activeRightTab, setActiveRightTab] = useState<'EVIDENCE' | 'WATERFALL' | 'GRAPH' | 'POLICY'>('EVIDENCE');
   // Mobile column switcher ('DOC' | 'FLAGS' | 'EVIDENCE')
   const [mobileView, setMobileView] = useState<'DOC' | 'FLAGS' | 'EVIDENCE'>('DOC');
 
@@ -395,6 +396,7 @@ export const WorkspacePage: React.FC = () => {
               { id: 'EVIDENCE', label: 'Ground Truth Evidence' },
               { id: 'WATERFALL', label: 'Trust Waterfall' },
               { id: 'GRAPH', label: 'Evidence Graph' },
+              { id: 'POLICY', label: 'POLICY & MATERIALITY' },
             ].map((tab) => (
               <button
                 key={tab.id}
@@ -437,6 +439,16 @@ export const WorkspacePage: React.FC = () => {
                 <EvidenceGraphFoundation auditId={audit.id} />
               </div>
             )}
+
+            {activeRightTab === 'POLICY' && selectedFlag && (
+              <div className="space-y-2.5 h-full">
+                <MaterialityPanel 
+                  materialityDetail={selectedFlag.materialityDetail}
+                  policyFindings={selectedFlag.policyFindings}
+                  omissionFindings={selectedFlag.omissionFindings}
+                />
+              </div>
+            )}
           </div>
 
           {/* Fixed Reviewer Action Bar at Bottom of Column 3 */}
@@ -445,6 +457,9 @@ export const WorkspacePage: React.FC = () => {
               <ReviewerActionBar
                 flagId={selectedFlag.id}
                 onAction={handleReviewerAction}
+                materialityDetail={selectedFlag.materialityDetail}
+                policyFindings={selectedFlag.policyFindings}
+                decisionHistory={selectedFlag.decisionHistory}
               />
             )}
           </div>
@@ -453,3 +468,5 @@ export const WorkspacePage: React.FC = () => {
     </div>
   );
 };
+
+

@@ -158,7 +158,10 @@ Either party may terminate for convenience with 30 days written notice. Indemnif
         suggestedFix: 'Replace ₹24,800,000 with the binding approved amount: ₹20,640,000.',
         whatToCheck: 'Verify latest approved commercial value against Finance PO v2',
         status: 'PENDING',
-        impactScore: -28
+        impactScore: -28,
+          materialityDetail: { category: 'Commercial', impactRationale: 'Financial loss exposure from liability cap breach', isProvisional: false },
+          policyFindings: [{ policyName: 'PROCUREMENT_CEILING_POLICY', policyStatus: 'VIOLATED', rationale: 'Liability exceeds approved cap' }],
+          decisionHistory: []
       },
       {
         id: 'FLG-102',
@@ -180,7 +183,10 @@ Either party may terminate for convenience with 30 days written notice. Indemnif
         suggestedFix: 'Change Stage 1 completion date to 15 Nov 2026 as legally required in Schedule Rev4.',
         whatToCheck: 'Confirm contractual delivery date with Lead Architect schedule',
         status: 'PENDING',
-        impactScore: -14
+        impactScore: -14,
+          materialityDetail: { category: 'Operational', impactRationale: 'Significant schedule delay risk', isProvisional: true },
+          policyFindings: [{ policyName: 'MILESTONE_GOVERNANCE', policyStatus: 'AT_RISK', rationale: 'Schedule mismatch detected' }],
+          decisionHistory: []
       },
       {
         id: 'FLG-103',
@@ -202,7 +208,10 @@ Either party may terminate for convenience with 30 days written notice. Indemnif
         suggestedFix: 'Align SLA guarantee with standard contract tier: 99.5% monthly availability.',
         whatToCheck: 'Review unsupported uptime guarantee against SLA Terms v1.2',
         status: 'PENDING',
-        impactScore: -10
+        impactScore: -10,
+          materialityDetail: { category: 'Operational', impactRationale: 'Unattainable SLA commitment', isProvisional: false },
+          omissionFindings: [{ description: 'SLA escalation matrix is missing from the AI summary', whyItMatters: 'Required for determining SLA penalty enforcement procedures', confidence: 'HIGH', requiresHumanReview: true }],
+          decisionHistory: []
       },
       {
         id: 'FLG-104',
@@ -224,7 +233,10 @@ Either party may terminate for convenience with 30 days written notice. Indemnif
         suggestedFix: 'Remove unencrypted staging replication clause; replace with AES-256 tokenized pipeline requirement.',
         whatToCheck: 'Audit PII staging protocol and eliminate non-compliant staging storage',
         status: 'PENDING',
-        impactScore: -6
+        impactScore: -6,
+          materialityDetail: { category: 'Regulatory', impactRationale: 'Data privacy compliance failure', isProvisional: false },
+          policyFindings: [{ policyName: 'DATA_PRIVACY_POLICY', policyStatus: 'VIOLATED', rationale: 'PII staging unencrypted' }],
+          decisionHistory: []
       }
     ],
     whatToCheck: [
@@ -544,7 +556,9 @@ export const mockPassports: Record<string, Passport> = {
     status: 'VERIFIED',
     totalClaimsChecked: 14,
     verifiedClaimsCount: 10,
-    unresolvedFlagsCount: 4
+    unresolvedFlagsCount: 4,
+    reviewedScore: null,
+    reviewedRiskBand: null
   },
   'PASSPORT-94102-AUD1104-VERIFIED': {
     token: 'PASSPORT-94102-AUD1104-VERIFIED',
@@ -559,6 +573,9 @@ export const mockPassports: Record<string, Passport> = {
     status: 'VERIFIED',
     totalClaimsChecked: 28,
     verifiedClaimsCount: 28,
-    unresolvedFlagsCount: 0
+    unresolvedFlagsCount: 0,
+    reviewedScore: null,
+    reviewedRiskBand: null
   }
 };
+
