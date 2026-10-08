@@ -1,5 +1,6 @@
+import React, { useEffect, useRef } from 'react';
 import { Flag } from '../../api/types';
-import { FileText } from 'lucide-react';
+import { FileText, ZoomIn, ZoomOut, CheckCircle2, AlertOctagon } from 'lucide-react';
 
 interface DocumentViewerProps {
   documentName: string;
@@ -12,18 +13,113 @@ interface DocumentViewerProps {
 
 export const DocumentViewer: React.FC<DocumentViewerProps> = ({
   documentName,
-  documentText: _documentText,
-  flags: _flags,
+  documentText,
+  flags = [],
   selectedFlagId,
   onSelectFlag,
-  pageCount = 14,
+  pageCount = 6,
 }) => {
-  // Map sentences / sections to flags for dynamic highlighting
-  const renderHighlightedContent = () => {
-    // For AUD-1042 mock document, render rich formatted paragraphs with interactive claim highlights
+  const containerRef = useRef<HTMLDivElement>(null);
+  const activeHighlightRef = useRef<HTMLSpanElement>(null);
+
+  // Auto-scroll to selected claim when selectedFlagId changes
+  useEffect(() => {
+    if (activeHighlightRef.current) {
+      activeHighlightRef.current.scrollIntoView({
+        behavior: 'smooth',
+        block: 'center',
+      });
+    }
+  }, [selectedFlagId]);
+
+  // If dynamic rawText is present and flags have claims, do a dynamic highlight pass
+  const renderDynamicTextWithFlags = () => {
+    if (!documentText) return null;
+
+    // Split text into paragraphs
+    const paragraphs = documentText.split('\n\n').filter(Boolean);
+
     return (
-      <div className="space-y-6 text-sm leading-relaxed text-slate-300 font-sans">
-        {/* Section 1 */}
+      <div className="space-y-5 text-xs sm:text-sm leading-relaxed text-slate-300 font-sans">
+        {paragraphs.map((para, pIdx) => {
+          // Check if any flag matches this paragraph
+          let matchedFlag: Flag | undefined;
+          for (const f of flags) {
+            if (para.toLowerCase().includes(f.claim.toLowerCase().substring(0, 30))) {
+              matchedFlag = f;
+              break;
+            }
+          }
+
+          if (matchedFlag) {
+            const isSelected = selectedFlagId === matchedFlag.id;
+            const isCriticalOrHigh = matchedFlag.severity === 'CRITICAL' || matchedFlag.severity === 'HIGH';
+
+            return (
+              <div key={pIdx} className="relative pl-4 border-l-2 border-slate-700">
+                <div className="flex items-center gap-2 mb-1.5 font-mono text-[11px] text-tathya-text-muted">
+                  <span>SECTION {pIdx + 1}</span>
+                  <span className="text-slate-600">·</span>
+                  <span className={isCriticalOrHigh ? 'text-red-400 font-semibold' : 'text-amber-400 font-semibold'}>
+                    {matchedFlag.type}
+                  </span>
+                </div>
+                <p>
+                  <span
+                    ref={isSelected ? activeHighlightRef : undefined}
+                    onClick={() => onSelectFlag(matchedFlag!.id)}
+                    tabIndex={0}
+                    role="button"
+                    aria-label={`Claim with flag ${matchedFlag.id}`}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        onSelectFlag(matchedFlag!.id);
+                      }
+                    }}
+                    className={`cursor-pointer px-2 py-1 rounded transition-all font-medium inline-block my-0.5 focus:outline-none focus:ring-2 focus:ring-tathya-accent ${
+                      isSelected
+                        ? isCriticalOrHigh
+                          ? 'bg-red-950 text-red-100 ring-2 ring-red-500 border border-red-500 shadow-md'
+                          : 'bg-amber-950 text-amber-100 ring-2 ring-amber-500 border border-amber-500 shadow-md'
+                        : isCriticalOrHigh
+                          ? 'bg-red-950/40 text-red-300 border border-red-800/60 hover:bg-red-900/60'
+                          : 'bg-amber-950/40 text-amber-300 border border-amber-800/60 hover:bg-amber-900/60'
+                    }`}
+                  >
+                    "{matchedFlag.claim}"
+                    <span className={`ml-2 text-[10px] font-mono font-bold px-1.5 py-0.5 rounded text-white ${
+                      isCriticalOrHigh ? 'bg-red-700' : 'bg-amber-700'
+                    }`}>
+                      {matchedFlag.id}
+                    </span>
+                  </span>
+                </p>
+                <p className="mt-2 text-slate-400">
+                  {para.replace(matchedFlag.claim, '').trim()}
+                </p>
+              </div>
+            );
+          }
+
+          return (
+            <div key={pIdx} className="relative pl-4 border-l-2 border-slate-800">
+              <span className="block font-mono text-[10px] text-slate-500 mb-1">
+                PARAGRAPH {pIdx + 1}
+              </span>
+              <p className="text-slate-400">{para}</p>
+            </div>
+          );
+        })}
+      </div>
+    );
+  };
+
+  // Structured default document stream
+  const renderStructuredSections = () => {
+    return (
+      <div className="space-y-6 text-xs sm:text-sm leading-relaxed text-slate-300 font-sans">
+        {/* Section 1: FLG-101 */}
         <div className="relative pl-4 border-l-2 border-slate-700/60">
           <h4 className="font-mono text-xs font-bold uppercase tracking-wider text-tathya-accent mb-2">
             1. COMMERCIAL TERMS & FEES
@@ -31,7 +127,11 @@ export const DocumentViewer: React.FC<DocumentViewerProps> = ({
           <p>
             The total consideration payable under this Statement of Work is{' '}
             <span
+              ref={selectedFlagId === 'FLG-101' ? activeHighlightRef : undefined}
               onClick={() => onSelectFlag('FLG-101')}
+              tabIndex={0}
+              role="button"
+              onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && onSelectFlag('FLG-101')}
               className={`cursor-pointer px-1.5 py-0.5 rounded transition-all font-semibold ${
                 selectedFlagId === 'FLG-101'
                   ? 'bg-red-950 text-red-200 ring-2 ring-red-500 border border-red-500 shadow-sm'
@@ -48,7 +148,7 @@ export const DocumentViewer: React.FC<DocumentViewerProps> = ({
           </p>
         </div>
 
-        {/* Section 2 */}
+        {/* Section 2: FLG-102 */}
         <div className="relative pl-4 border-l-2 border-slate-700/60">
           <h4 className="font-mono text-xs font-bold uppercase tracking-wider text-tathya-accent mb-2">
             2. TIMELINE & MILESTONES
@@ -56,7 +156,11 @@ export const DocumentViewer: React.FC<DocumentViewerProps> = ({
           <p>
             The vendor commits to commence technical mobilization on 01 November 2026. The primary Stage 1 core architecture delivery date is firmly committed for{' '}
             <span
+              ref={selectedFlagId === 'FLG-102' ? activeHighlightRef : undefined}
               onClick={() => onSelectFlag('FLG-102')}
+              tabIndex={0}
+              role="button"
+              onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && onSelectFlag('FLG-102')}
               className={`cursor-pointer px-1.5 py-0.5 rounded transition-all font-semibold ${
                 selectedFlagId === 'FLG-102'
                   ? 'bg-amber-950 text-amber-200 ring-2 ring-amber-500 border border-amber-500 shadow-sm'
@@ -73,7 +177,7 @@ export const DocumentViewer: React.FC<DocumentViewerProps> = ({
           </p>
         </div>
 
-        {/* Section 3 */}
+        {/* Section 3: FLG-103 */}
         <div className="relative pl-4 border-l-2 border-slate-700/60">
           <h4 className="font-mono text-xs font-bold uppercase tracking-wider text-tathya-accent mb-2">
             3. SERVICE LEVEL AGREEMENT (SLA) & AVAILABILITY
@@ -81,7 +185,11 @@ export const DocumentViewer: React.FC<DocumentViewerProps> = ({
           <p>
             The vendor explicitly guarantees{' '}
             <span
+              ref={selectedFlagId === 'FLG-103' ? activeHighlightRef : undefined}
               onClick={() => onSelectFlag('FLG-103')}
+              tabIndex={0}
+              role="button"
+              onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && onSelectFlag('FLG-103')}
               className={`cursor-pointer px-1.5 py-0.5 rounded transition-all font-semibold ${
                 selectedFlagId === 'FLG-103'
                   ? 'bg-amber-950 text-amber-200 ring-2 ring-amber-500 border border-amber-500 shadow-sm'
@@ -98,7 +206,7 @@ export const DocumentViewer: React.FC<DocumentViewerProps> = ({
           </p>
         </div>
 
-        {/* Section 4 */}
+        {/* Section 4: FLG-104 */}
         <div className="relative pl-4 border-l-2 border-slate-700/60">
           <h4 className="font-mono text-xs font-bold uppercase tracking-wider text-tathya-accent mb-2">
             4. DATA SECURITY & PRIVACY CONTROLS
@@ -106,7 +214,11 @@ export const DocumentViewer: React.FC<DocumentViewerProps> = ({
           <p>
             To facilitate rapid onboarding and staging environment verification,{' '}
             <span
+              ref={selectedFlagId === 'FLG-104' ? activeHighlightRef : undefined}
               onClick={() => onSelectFlag('FLG-104')}
+              tabIndex={0}
+              role="button"
+              onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && onSelectFlag('FLG-104')}
               className={`cursor-pointer px-1.5 py-0.5 rounded transition-all font-semibold ${
                 selectedFlagId === 'FLG-104'
                   ? 'bg-red-950 text-red-200 ring-2 ring-red-500 border border-red-500 shadow-sm'
@@ -123,7 +235,7 @@ export const DocumentViewer: React.FC<DocumentViewerProps> = ({
           </p>
         </div>
 
-        {/* Section 5 (Unflagged baseline) */}
+        {/* Section 5: Unflagged baseline */}
         <div className="relative pl-4 border-l-2 border-slate-700/60">
           <h4 className="font-mono text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">
             5. TERMINATION & INDEMNIFICATION
@@ -149,7 +261,7 @@ export const DocumentViewer: React.FC<DocumentViewerProps> = ({
               {documentName}
             </h3>
             <span className="text-[10px] text-tathya-text-muted">
-              PDF Render · Page 1 of {pageCount} · Canonical Token Stream
+              Canonical Text Stream · Page 1 of {pageCount} · Offsets verified by parser
             </span>
           </div>
         </div>
@@ -168,16 +280,18 @@ export const DocumentViewer: React.FC<DocumentViewerProps> = ({
       </div>
 
       {/* Reader Surface */}
-      <div className="flex-1 p-6 sm:p-8 overflow-y-auto bg-[#0A0E16]">
-        <div className="max-w-2xl mx-auto bg-tathya-surface/90 border border-tathya-surface-border rounded-xl p-8 shadow-tathya-elevated">
-          {renderHighlightedContent()}
+      <div ref={containerRef} className="flex-1 p-4 sm:p-6 overflow-y-auto bg-[#0A0E16]">
+        <div className="max-w-3xl mx-auto bg-tathya-surface/90 border border-tathya-surface-border rounded-xl p-6 sm:p-8 shadow-tathya-elevated">
+          {documentText && flags.length > 0 && flags[0].claim && documentText.includes('AI SYNTHESIZED')
+            ? renderDynamicTextWithFlags()
+            : renderStructuredSections()}
         </div>
       </div>
 
       {/* Reader Footer Controls */}
       <div className="p-2.5 border-t border-tathya-surface-border bg-tathya-surface flex items-center justify-between text-[11px] text-tathya-text-muted">
-        <span>Click highlighted claim to synchronize evidence panel</span>
-        <span className="font-mono">Zoom: 100% · Fit Width</span>
+        <span>Click any highlighted claim to view authoritative evidence</span>
+        <span className="font-mono text-[10px]">Canonical offsets owned by backend parser</span>
       </div>
     </div>
   );

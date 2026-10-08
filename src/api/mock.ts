@@ -96,7 +96,7 @@ Either party may terminate for convenience with 30 days written notice. Indemnif
         status: 'CONTRADICTED',
         expectedTruth: '₹20,640,000 (Commercial Cap in Approved PO v2)',
         variance: '+₹4,160,000 (+₹41.6L unauthorized excess)',
-        documentOffset: { page: 1, paragraph: 1, startChar: 40, endChar: 110 }
+        documentLocation: { type: 'pdf', page: 1 }
       },
       {
         id: 'CLM-02',
@@ -106,7 +106,7 @@ Either party may terminate for convenience with 30 days written notice. Indemnif
         status: 'CONTRADICTED',
         expectedTruth: '15 Nov 2026 (Stage 1 Strict Milestone)',
         variance: '+37 days unapproved delivery slippage',
-        documentOffset: { page: 1, paragraph: 2, startChar: 70, endChar: 160 }
+        documentLocation: { type: 'pdf', page: 1 }
       },
       {
         id: 'CLM-03',
@@ -116,7 +116,7 @@ Either party may terminate for convenience with 30 days written notice. Indemnif
         status: 'UNSUPPORTED',
         expectedTruth: '99.5% uptime commitment in approved SLA schedule',
         variance: 'AI hallucinated 4-nines availability (not agreed)',
-        documentOffset: { page: 2, paragraph: 1, startChar: 30, endChar: 140 }
+        documentLocation: { type: 'pdf', page: 2 }
       },
       {
         id: 'CLM-04',
@@ -126,7 +126,7 @@ Either party may terminate for convenience with 30 days written notice. Indemnif
         status: 'CONTRADICTED',
         expectedTruth: 'Clause 14.1 mandates 100% encryption-at-rest and tokenization before replication',
         variance: 'Severe regulatory breach (GDPR / DPDP Act 2023 violation)',
-        documentOffset: { page: 2, paragraph: 2, startChar: 60, endChar: 190 }
+        documentLocation: { type: 'pdf', page: 2 }
       }
     ],
     flags: [
@@ -521,9 +521,9 @@ export const mockPassports: Record<string, Passport> = {
     auditId: 'AUD-1042',
     documentName: 'AI_Procurement_Summary_v3.pdf',
     documentHash: 'sha256:7b91c84f39ae62463e271917f8a3d5b74100cde19ef652a9f4c391219b188c0a',
-    merkleRoot: 'merkle:9e8a7c6b5d4e3f2a1b0c9d8e7f6a5b4c3d2e1f0a9b8c7d6e5f4a3b2c1d0e9f8a',
+    claimTreeRoot: 'sha256chain:9e8a7c6b5d4e3f2a1b0c9d8e7f6a5b4c3d2e1f0a9b8c7d6e5f4a3b2c1d0e9f8a',
     signature: '3045022100e4c8f9021a88b5d32c918a24ef9876543210fedcba9876543210abcdef01234502207b6a5c4d3e2f1a0b9c8d7e6f5a4b3c2d1e0f9a8b7c6d5e4f3a2b1c0d9e8f7a6b',
-    signedBy: 'TATHYA-CORE-VALIDATOR-NODE-01 (ECDSA-SECP256K1)',
+    signedBy: 'TATHYA-CORE-VALIDATOR-NODE-01 (ECDSA-P256-SHA256)',
     signedAt: '2026-10-08T19:15:22Z',
     trustScore: 42,
     status: 'VERIFIED',
@@ -536,9 +536,9 @@ export const mockPassports: Record<string, Passport> = {
     auditId: 'AUD-1104',
     documentName: 'Q3_Financial_Audit_Report_Certified.pdf',
     documentHash: 'sha256:c0ffee123456789abcdef0123456789abcdef0123456789abcdef0123456789a',
-    merkleRoot: 'merkle:11223344556677889900aabbccddeeff11223344556677889900aabbccddeeff',
+    claimTreeRoot: 'sha256chain:11223344556677889900aabbccddeeff11223344556677889900aabbccddeeff',
     signature: '3046022100abc8f9021a88b5d32c918a24ef9876543210fedcba9876543210abcdef0123450221008b6a5c4d3e2f1a0b9c8d7e6f5a4b3c2d1e0f9a8b7c6d5e4f3a2b1c0d9e8f7a6c',
-    signedBy: 'TATHYA-ENTERPRISE-TRUST-SEAL (ECDSA-SECP256K1)',
+    signedBy: 'TATHYA-ENTERPRISE-TRUST-SEAL (ECDSA-P256-SHA256)',
     signedAt: '2026-10-08T16:45:10Z',
     trustScore: 94,
     status: 'VERIFIED',

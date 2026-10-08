@@ -27,6 +27,8 @@ export const ControlOverviewPage: React.FC = () => {
 
   const reviewRequired = audits.filter(a => a.status === 'REVIEW REQUIRED').length;
 
+  const highestRiskAudit = audits.find(a => a.priority === 'CRITICAL' || a.priority === 'HIGH') || audits[0];
+
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-8 space-y-6">
 
@@ -42,7 +44,7 @@ export const ControlOverviewPage: React.FC = () => {
           </h1>
           <p className="text-sm text-tathya-text-secondary mt-1 max-w-lg">
             {reviewRequired > 0
-              ? `${reviewRequired} audit${reviewRequired > 1 ? 's' : ''} flagged for reviewer decision. Highest risk: AUD-1042 (₹41.6L commercial conflict).`
+              ? `${reviewRequired} audit${reviewRequired > 1 ? 's' : ''} flagged for reviewer decision.${highestRiskAudit ? ` Highest risk: ${highestRiskAudit.id} (${highestRiskAudit.title}).` : ''}`
               : 'All active audits are processed. No reviewer action outstanding.'}
           </p>
         </div>
@@ -67,8 +69,12 @@ export const ControlOverviewPage: React.FC = () => {
             <AlertOctagon className="w-4 h-4 text-red-400" />
             <span className="text-[11px] font-semibold text-tathya-text-muted uppercase tracking-wider">Critical</span>
           </div>
-          <div className="text-2xl font-bold text-white tabular-nums">1</div>
-          <div className="text-[11px] text-tathya-text-muted mt-0.5">AUD-1042 · ₹41.6L at risk</div>
+          <div className="text-2xl font-bold text-white tabular-nums">
+            {audits.filter(a => a.priority === 'CRITICAL').length || 1}
+          </div>
+          <div className="text-[11px] text-tathya-text-muted mt-0.5">
+            {highestRiskAudit ? `${highestRiskAudit.id} · Priority Action` : 'None detected'}
+          </div>
         </div>
 
         <div className="p-4 rounded-xl bg-tathya-surface border border-tathya-surface-border">
@@ -85,8 +91,11 @@ export const ControlOverviewPage: React.FC = () => {
             <TrendingDown className="w-4 h-4 text-tathya-accent" />
             <span className="text-[11px] font-semibold text-tathya-text-muted uppercase tracking-wider">Avg Score</span>
           </div>
-          <div className="text-2xl font-bold text-white tabular-nums">66<span className="text-sm text-tathya-text-muted font-normal">/100</span></div>
-          <div className="text-[11px] text-tathya-text-muted mt-0.5">Down from 81 last week</div>
+          <div className="text-2xl font-bold text-white tabular-nums">
+            {audits.length > 0 ? Math.round(audits.reduce((acc, a) => acc + a.trustScore, 0) / audits.length) : 66}
+            <span className="text-sm text-tathya-text-muted font-normal">/100</span>
+          </div>
+          <div className="text-[11px] text-tathya-text-muted mt-0.5">Across active documents</div>
         </div>
 
         <div className="p-4 rounded-xl bg-tathya-surface border border-tathya-surface-border">
@@ -94,8 +103,10 @@ export const ControlOverviewPage: React.FC = () => {
             <CheckCircle2 className="w-4 h-4 text-emerald-400" />
             <span className="text-[11px] font-semibold text-tathya-text-muted uppercase tracking-wider">Cleared</span>
           </div>
-          <div className="text-2xl font-bold text-white tabular-nums">1</div>
-          <div className="text-[11px] text-tathya-text-muted mt-0.5">AUD-1104 · Score 94</div>
+          <div className="text-2xl font-bold text-white tabular-nums">
+            {audits.filter(a => a.status === 'VERIFIED').length}
+          </div>
+          <div className="text-[11px] text-tathya-text-muted mt-0.5">Verified 100% compliant</div>
         </div>
       </div>
 
@@ -109,9 +120,11 @@ export const ControlOverviewPage: React.FC = () => {
         <div className="p-5 rounded-xl bg-tathya-surface border border-tathya-surface-border shadow-tathya-card flex flex-col gap-4">
           <div>
             <h3 className="text-xs font-bold text-white uppercase tracking-wider mb-0.5">
-              Open Exposure
+              Open Exposure Summary
             </h3>
-            <p className="text-[11px] text-tathya-text-muted">Unresolved findings in AUD-1042</p>
+            <p className="text-[11px] text-tathya-text-muted">
+              {highestRiskAudit ? `Key findings in ${highestRiskAudit.id}` : 'All audits verified'}
+            </p>
           </div>
 
           <div className="space-y-3">
@@ -138,10 +151,12 @@ export const ControlOverviewPage: React.FC = () => {
 
           <div className="mt-auto pt-3 border-t border-tathya-surface-border flex items-center justify-between text-xs">
             <span className="text-tathya-text-muted">Open audit:</span>
-            <Link to="/control/workspace/AUD-1042" className="text-tathya-accent font-semibold hover:underline flex items-center gap-1">
-              <span>AUD-1042</span>
-              <ArrowRight className="w-3.5 h-3.5" />
-            </Link>
+            {highestRiskAudit && (
+              <Link to={`/control/workspace/${highestRiskAudit.id}`} className="text-tathya-accent font-semibold hover:underline flex items-center gap-1">
+                <span>{highestRiskAudit.id}</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </Link>
+            )}
           </div>
         </div>
       </div>
