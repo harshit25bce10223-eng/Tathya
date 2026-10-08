@@ -195,7 +195,9 @@ const AddUser = () => {
                         onCheckedChange={field.onChange}
                       />
                     </FormControl>
-                    <FormLabel className="font-normal">Is superuser?</FormLabel>
+                    <FormLabel className="font-normal">
+                      Superuser access
+                    </FormLabel>
                   </FormItem>
                 )}
               />
@@ -211,7 +213,9 @@ const AddUser = () => {
                         onCheckedChange={field.onChange}
                       />
                     </FormControl>
-                    <FormLabel className="font-normal">Is active?</FormLabel>
+                    <FormLabel className="font-normal">
+                      Active account
+                    </FormLabel>
                   </FormItem>
                 )}
               />

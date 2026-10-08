@@ -17,7 +17,7 @@ export const Route = createFileRoute("/_layout/settings")({
   head: () => ({
     meta: [
       {
-        title: "Settings - FastAPI Template",
+        title: "Settings - Tathya",
       },
     ],
   }),
@@ -34,12 +34,15 @@ function UserSettings() {
   }
 
   return (
-    <div className="flex flex-col gap-6">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight">User Settings</h1>
-        <p className="text-muted-foreground">
-          Manage your account settings and preferences
-        </p>
+    <div className="product-page">
+      <div className="product-heading">
+        <div>
+          <span className="eyebrow">YOUR ACCOUNT</span>
+          <h1 className="text-2xl font-bold tracking-tight">User Settings</h1>
+          <p className="text-muted-foreground">
+            Manage your account settings and preferences
+          </p>
+        </div>
       </div>
 
       <Tabs defaultValue="my-profile">
@@ -51,7 +54,11 @@ function UserSettings() {
           ))}
         </TabsList>
         {finalTabs.map((tab) => (
-          <TabsContent key={tab.value} value={tab.value}>
+          <TabsContent
+            className="product-panel p-6 mt-6"
+            key={tab.value}
+            value={tab.value}
+          >
             <tab.component />
           </TabsContent>
         ))}

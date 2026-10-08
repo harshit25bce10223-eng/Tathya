@@ -1,29 +1,24 @@
 import { Link } from "@tanstack/react-router"
-import { Button } from "@/components/ui/button"
-
-const ErrorComponent = () => {
+import { Logo } from "./Logo"
+export default function ErrorComponent() {
   return (
-    <div
-      className="flex min-h-screen items-center justify-center flex-col p-4"
-      data-testid="error-component"
-    >
-      <div className="flex items-center z-10">
-        <div className="flex flex-col ml-4 items-center justify-center p-4">
-          <span className="text-6xl md:text-8xl font-bold leading-none mb-4">
-            Error
-          </span>
-          <span className="text-2xl font-bold mb-2">Oops!</span>
-        </div>
-      </div>
-
-      <p className="text-lg text-muted-foreground mb-4 text-center z-10">
-        Something went wrong. Please try again.
+    <main className="standalone-state">
+      <Logo asLink={false} />
+      <span className="eyebrow">SOMETHING WENT WRONG</span>
+      <h1>We couldn’t open this page.</h1>
+      <p>
+        Please try again. If the problem continues, return to your workspace.
       </p>
-      <Link to="/">
-        <Button>Go Home</Button>
+      <Link to="/" className="primary-link">
+        Return to workspace
       </Link>
-    </div>
+      <button
+        className="back-link"
+        type="button"
+        onClick={() => window.location.reload()}
+      >
+        Try again
+      </button>
+    </main>
   )
 }
-
-export default ErrorComponent
