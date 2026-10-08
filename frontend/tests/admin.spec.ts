@@ -56,7 +56,7 @@ test.describe("Admin user management", () => {
     await page.getByPlaceholder("Password").first().fill(password)
     await page.getByPlaceholder("Password").last().fill(password)
     await page.getByLabel("Superuser access").check()
-    await page.getByLabel("Is active?").check()
+    await page.getByLabel("Active account").check()
 
     await page.getByRole("button", { name: "Save" }).click()
 
