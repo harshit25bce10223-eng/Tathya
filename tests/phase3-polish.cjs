@@ -80,6 +80,3 @@ const path=require('node:path');
  if(errors.length)throw Error(errors.join('\n'));
  console.log(JSON.stringify({passed:true,checks,uncaughtErrors:errors},null,2));await browser.close();
 })().catch(e=>{console.error(e);process.exit(1)});
-
-
-

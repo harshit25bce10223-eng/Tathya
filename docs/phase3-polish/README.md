@@ -1,7 +1,9 @@
 # TATHYA — Phase 3 visual polish
 
-Branch: `feat/dhanesh-web-ux`  
-Base: `8152756` (existing Phase 3 implementation)  
+Branch: `feat/dhanesh-web-ux`
+Base: `8152756` (existing Phase 3 implementation)
+
+Polish commit: `d66d70e` (report-only follow-up follows this commit).
 Owner: Dhanesh web UI/UX
 
 This change polishes the existing result, heatmap, finding, evidence and review workspace presentation. It preserves the branch's navy/amber identity and centralized tokens. It does not replace the active frontend on main.
@@ -83,7 +85,6 @@ Harshit should supply authoritative result summaries/states, explicit verificati
 | Browser QA | PASS scoped regression; no uncaught errors |
 | Backend dependency | TEMP ADAPTER |
 | Remaining blockers | Canonical locations, authoritative states/counts, source navigation, live integration |
-| GitHub push | Recorded in final delivery with commit hash |
+| GitHub push | PASS; visual polish commit `d66d70e` |
 
 The PASS labels above apply only to the stated tested scope. Inherited gaps are deliberately reported instead of being silently rewritten during a functionality-preserving polish.
-
