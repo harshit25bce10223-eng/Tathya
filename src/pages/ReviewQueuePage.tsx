@@ -21,6 +21,15 @@ export const ReviewQueuePage: React.FC = () => {
   const [selectedRiskFilter, setSelectedRiskFilter] = useState<'ALL' | 'CRITICAL' | 'HIGH' | 'NORMAL'>('ALL');
   const [selectedStatusFilter, setSelectedStatusFilter] = useState<'ALL' | 'REVIEW REQUIRED' | 'VERIFIED' | 'PROCESSING'>('ALL');
 
+  // Phase 4: severity order for deterministic sort
+  const SEVERITY_ORDER: Record<string, number> = {
+    CRITICAL: 0,
+    HIGH: 1,
+    MEDIUM: 2,
+    LOW: 3,
+    INFORMATIONAL: 4,
+  };
+
   const fetchAudits = async () => {
     try {
       setLoading(true);
@@ -37,23 +46,29 @@ export const ReviewQueuePage: React.FC = () => {
     fetchAudits();
   }, []);
 
-  // Filter logic
-  const filteredAudits = audits.filter((a) => {
-    const matchesSearch =
-      a.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      a.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      a.documentName.toLowerCase().includes(searchQuery.toLowerCase());
+  // Filter then sort by severity descending (Phase 4)
+  const filteredAudits = audits
+    .filter((a) => {
+      const matchesSearch =
+        a.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        a.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        a.documentName.toLowerCase().includes(searchQuery.toLowerCase());
 
-    const matchesRisk = selectedRiskFilter === 'ALL' || a.priority === selectedRiskFilter;
-    const matchesStatus = selectedStatusFilter === 'ALL' || a.status === selectedStatusFilter;
+      const matchesRisk = selectedRiskFilter === 'ALL' || a.priority === selectedRiskFilter;
+      const matchesStatus = selectedStatusFilter === 'ALL' || a.status === selectedStatusFilter;
 
-    return matchesSearch && matchesRisk && matchesStatus;
-  });
+      return matchesSearch && matchesRisk && matchesStatus;
+    })
+    .sort(
+      (a, b) =>
+        (SEVERITY_ORDER[a.priority] ?? 99) - (SEVERITY_ORDER[b.priority] ?? 99)
+    );
 
   // Metric counts
   const criticalCount = audits.filter((a) => a.priority === 'CRITICAL').length;
   const reviewNeededCount = audits.filter((a) => a.status === 'REVIEW REQUIRED').length;
   const verifiedCount = audits.filter((a) => a.status === 'VERIFIED').length;
+  const processingCount = audits.filter((a) => a.status === 'PROCESSING').length; // Phase 4
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-8 space-y-6">
@@ -96,7 +111,7 @@ export const ReviewQueuePage: React.FC = () => {
       </div>
 
       {/* 2. OPERATIONAL KPI SUMMARY CARDS */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 sm:gap-4">
         <div className="p-4 rounded-xl bg-tathya-surface border border-tathya-surface-border">
           <span className="text-[11px] font-bold uppercase tracking-wider text-tathya-text-muted block mb-1">
             Total Audits
@@ -125,6 +140,18 @@ export const ReviewQueuePage: React.FC = () => {
           </div>
           <div className="text-2xl font-bold font-tabular text-amber-300">{reviewNeededCount}</div>
           <span className="text-[11px] text-amber-400/80 mt-1 block">Pending Auditor Decision</span>
+        </div>
+
+        {/* Phase 4 — Processing card */}
+        <div className="p-4 rounded-xl bg-tathya-surface border border-slate-700/50">
+          <div className="flex items-center justify-between mb-1">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
+              Processing
+            </span>
+            <Loader2 className="w-4 h-4 text-slate-400 animate-spin" />
+          </div>
+          <div className="text-2xl font-bold font-tabular text-white">{processingCount}</div>
+          <span className="text-[11px] text-tathya-text-muted mt-1 block">Ingestion in progress</span>
         </div>
 
         <div className="p-4 rounded-xl bg-tathya-surface border border-emerald-900/40">
@@ -172,7 +199,7 @@ export const ReviewQueuePage: React.FC = () => {
           </div>
 
           <div className="flex items-center gap-1 bg-tathya-surface-elevated p-1 rounded-lg border border-tathya-surface-border text-xs">
-            {(['ALL', 'REVIEW REQUIRED', 'VERIFIED'] as const).map((status) => (
+            {(['ALL', 'REVIEW REQUIRED', 'VERIFIED', 'PROCESSING'] as const).map((status) => (
               <button
                 key={status}
                 onClick={() => setSelectedStatusFilter(status)}
