@@ -6,7 +6,7 @@ Base: `8152756` (existing Phase 3 implementation)
 Polish commit: `d66d70e` (report-only follow-up follows this commit).
 Owner: Dhanesh web UI/UX
 
-This change polishes the existing result, heatmap, finding, evidence and review workspace presentation. It preserves the branch's navy/amber identity and centralized tokens. It does not replace the active frontend on main.
+This change polishes the existing result, heatmap, finding, evidence and review workspace presentation. It now matches the approved Phase 1/2 warm ivory, forest teal, restrained saffron and editorial typography. A scoped paper theme also covers the shell so the workspace does not sit inside a mismatched dark navigation frame. It does not replace the active frontend on main.
 
 ## Changes
 
@@ -16,7 +16,7 @@ This change polishes the existing result, heatmap, finding, evidence and review 
 - Desktop panel proportions are 40% document, 29% findings and 31% evidence.
 - Tablet/mobile retain the existing panel switcher with corrected flex layout and scrollable content.
 - Heatmap exposes pressed state and keyboard tooltip; document scrolling respects reduced motion.
-- All styling is scoped to the workspace. Shared themes, layouts, API contracts, API client, score bands, upload flow, authentication, verifier, mobile and backend were not edited.
+- All styling is scoped to the workspace. API contracts, API client, score bands, upload flow, authentication behavior, verifier behavior, mobile and backend were not edited. AppShell only imports the approved visual stylesheet and adds its theme class; layout handlers are unchanged.
 
 ## Screenshots
 
