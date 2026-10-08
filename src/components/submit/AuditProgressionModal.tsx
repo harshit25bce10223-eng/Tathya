@@ -55,7 +55,7 @@ export const AuditProgressionModal: React.FC<AuditProgressionModalProps> = ({
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fadeIn">
       <div className="w-full max-w-md bg-tathya-surface-elevated border border-tathya-surface-border rounded-xl shadow-tathya-elevated p-6 overflow-hidden">
         <div className="flex items-center gap-3 mb-5">
-          <div className="p-2.5 rounded-lg bg-sky-950/80 border border-sky-800/60 text-tathya-accent">
+          <div className="p-2.5 rounded-lg bg-amber-950/80 border border-amber-800/60 text-tathya-accent">
             <ShieldCheck className="w-6 h-6" />
           </div>
           <div>

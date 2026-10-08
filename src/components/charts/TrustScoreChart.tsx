@@ -47,8 +47,8 @@ export const TrustScoreChart: React.FC<TrustScoreChartProps> = ({
         <AreaChart data={data}>
           <defs>
             <linearGradient id="trustScoreGrad" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="5%" stopColor="#38BDF8" stopOpacity={0.35} />
-              <stop offset="95%" stopColor="#38BDF8" stopOpacity={0.0} />
+              <stop offset="5%" stopColor="#F59E0B" stopOpacity={0.35} />
+              <stop offset="95%" stopColor="#F59E0B" stopOpacity={0.0} />
             </linearGradient>
           </defs>
           <CartesianGrid strokeDasharray="3 3" stroke="#1E2C40" vertical={false} />
@@ -71,7 +71,7 @@ export const TrustScoreChart: React.FC<TrustScoreChartProps> = ({
           <Area 
             type="monotone" 
             dataKey="score" 
-            stroke="#38BDF8" 
+            stroke="#F59E0B" 
             strokeWidth={2.5} 
             fillOpacity={1} 
             fill="url(#trustScoreGrad)" 

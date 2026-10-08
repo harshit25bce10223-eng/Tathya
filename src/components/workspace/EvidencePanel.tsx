@@ -45,8 +45,8 @@ export const EvidencePanel: React.FC<EvidencePanelProps> = ({ flag }) => {
         );
       default:
         return (
-          <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-sky-950/70 border border-sky-700/60 text-sky-300 text-xs font-bold uppercase tracking-wider">
-            <HelpCircle className="w-4 h-4 text-sky-400" />
+          <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-amber-950/70 border border-amber-700/60 text-amber-300 text-xs font-bold uppercase tracking-wider">
+            <HelpCircle className="w-4 h-4 text-amber-400" />
             UNCERTAIN CLAIM
           </div>
         );
@@ -139,8 +139,8 @@ export const EvidencePanel: React.FC<EvidencePanelProps> = ({ flag }) => {
       </div>
 
       {/* 6. What To Check / Action */}
-      <div className="p-3.5 rounded-xl bg-sky-950/20 border border-sky-900/40">
-        <span className="text-[10px] uppercase font-bold tracking-wider text-sky-400 block mb-1">
+      <div className="p-3.5 rounded-xl bg-amber-950/20 border border-amber-900/40">
+        <span className="text-[10px] uppercase font-bold tracking-wider text-amber-400 block mb-1">
           Reviewer Directive
         </span>
         <p className="text-xs text-white leading-relaxed font-medium">

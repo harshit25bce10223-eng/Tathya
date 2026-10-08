@@ -65,8 +65,8 @@ export const StatusBadge: React.FC<StatusBadgeProps> = ({ status, className = ''
       );
     case 'PROCESSING':
       return (
-        <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded text-xs font-medium bg-sky-950/60 text-sky-300 border border-sky-800/50 ${className}`}>
-          <RotateCw className="w-3 h-3 text-sky-400 animate-spin" />
+        <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded text-xs font-medium bg-amber-950/60 text-amber-300 border border-amber-800/50 ${className}`}>
+          <RotateCw className="w-3 h-3 text-amber-400 animate-spin" />
           PROCESSING
         </span>
       );
@@ -125,8 +125,8 @@ export const SeverityBadge: React.FC<SeverityBadgeProps> = ({ severity, classNam
       );
     case 'MEDIUM':
       return (
-        <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-medium tracking-wide bg-sky-950/60 text-sky-300 border border-sky-800/50 ${className}`}>
-          <Info className="w-2.5 h-2.5 text-sky-400" />
+        <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-medium tracking-wide bg-amber-950/60 text-amber-300 border border-amber-800/50 ${className}`}>
+          <Info className="w-2.5 h-2.5 text-amber-400" />
           MEDIUM
         </span>
       );

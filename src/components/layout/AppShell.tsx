@@ -80,7 +80,7 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
 
           {/* Reviewer / Enterprise Identity */}
           <div className="flex items-center gap-2 pl-2 border-l border-tathya-surface-border">
-            <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-sky-950 to-slate-800 border border-tathya-accent/40 flex items-center justify-center text-xs font-bold text-tathya-accent">
+            <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-amber-950 to-slate-800 border border-tathya-accent/40 flex items-center justify-center text-xs font-bold text-tathya-accent">
               <UserCheck className="w-4 h-4 text-tathya-accent" />
             </div>
             <div className="hidden xl:flex flex-col text-left">

@@ -141,7 +141,7 @@ export const DocumentViewer: React.FC<DocumentViewerProps> = ({
       {/* Top Document Header Bar */}
       <div className="flex items-center justify-between p-3.5 border-b border-tathya-surface-border bg-tathya-surface-elevated/70">
         <div className="flex items-center gap-2.5 min-w-0">
-          <div className="p-1.5 rounded bg-sky-950/70 border border-sky-800/50 text-tathya-accent flex-shrink-0">
+          <div className="p-1.5 rounded bg-amber-950/70 border border-amber-800/50 text-tathya-accent flex-shrink-0">
             <FileText className="w-4 h-4" />
           </div>
           <div className="min-w-0">

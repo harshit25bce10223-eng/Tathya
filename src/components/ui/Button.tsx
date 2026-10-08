@@ -29,7 +29,7 @@ export const Button: React.FC<ButtonProps> = ({
   };
 
   const variantStyles = {
-    primary: 'bg-tathya-accent hover:bg-tathya-accent-hover text-slate-950 font-semibold shadow-sm hover:shadow active:bg-sky-500',
+    primary: 'bg-tathya-accent hover:bg-tathya-accent-hover text-slate-950 font-semibold shadow-sm hover:shadow active:bg-amber-500',
     secondary: 'bg-tathya-surface-elevated hover:bg-tathya-surface-hover text-tathya-text-primary border border-tathya-surface-border shadow-sm',
     danger: 'bg-red-600 hover:bg-red-700 text-white font-semibold shadow-sm border border-red-500/50',
     outline: 'bg-transparent hover:bg-tathya-surface-elevated text-tathya-text-primary border border-tathya-surface-border',

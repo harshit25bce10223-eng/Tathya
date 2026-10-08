@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useCallback } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AppShell } from './components/layout/AppShell';
 import { LoginPage } from './pages/LoginPage';
@@ -7,10 +7,16 @@ import { ControlOverviewPage } from './pages/ControlOverviewPage';
 import { ReviewQueuePage } from './pages/ReviewQueuePage';
 import { WorkspacePage } from './pages/WorkspacePage';
 import { VerifyPassportPage } from './pages/VerifyPassportPage';
+import { SplashScreen } from './components/brand/SplashScreen';
 
 export const App: React.FC = () => {
+  const [splashDone, setSplashDone] = useState(false);
+  const handleSplashDone = useCallback(() => setSplashDone(true), []);
+
   return (
-    <BrowserRouter>
+    <>
+      {!splashDone && <SplashScreen onDone={handleSplashDone} />}
+      <BrowserRouter>
       <Routes>
         {/* Public authentication and passport verification routes */}
         <Route path="/login" element={<LoginPage />} />
@@ -104,6 +110,7 @@ export const App: React.FC = () => {
         <Route path="*" element={<Navigate to="/control" replace />} />
       </Routes>
     </BrowserRouter>
+    </>
   );
 };
 
