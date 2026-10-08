@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router"
-
+import { ShieldCheck } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 interface LogoProps {
@@ -13,40 +13,28 @@ export function Logo({
   className,
   asLink = true,
 }: LogoProps) {
-  const fullLogo = "/assets/images/tathya-logo.svg"
-  const iconLogo = fullLogo
-
-  const content =
-    variant === "responsive" ? (
-      <>
-        <img
-          src={fullLogo}
-          alt="Tathya"
+  const content = (
+    <span className={cn("brand-lockup inline-flex", className)}>
+      <span className="brand-mark">
+        <ShieldCheck strokeWidth={1.7} />
+      </span>
+      {variant !== "icon" && (
+        <span
           className={cn(
-            "h-6 w-auto group-data-[collapsible=icon]:hidden",
-            className,
+            "brand-word",
+            variant === "responsive" && "group-data-[collapsible=icon]:hidden",
           )}
-        />
-        <img
-          src={iconLogo}
-          alt="Tathya"
-          className={cn(
-            "size-5 hidden group-data-[collapsible=icon]:block",
-            className,
-          )}
-        />
-      </>
-    ) : (
-      <img
-        src={variant === "full" ? fullLogo : iconLogo}
-        alt="Tathya"
-        className={cn(variant === "full" ? "h-6 w-auto" : "size-5", className)}
-      />
-    )
-
-  if (!asLink) {
-    return content
-  }
-
-  return <Link to="/">{content}</Link>
+        >
+          tathya<span>तथ्य · EVERY FACT, CHECKED</span>
+        </span>
+      )}
+    </span>
+  )
+  return asLink ? (
+    <Link to="/" aria-label="Tathya home">
+      {content}
+    </Link>
+  ) : (
+    content
+  )
 }

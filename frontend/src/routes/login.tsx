@@ -44,7 +44,7 @@ export const Route = createFileRoute("/login")({
   head: () => ({
     meta: [
       {
-        title: "Log In - Tathya",
+        title: "Sign in - Tathya",
       },
     ],
   }),
@@ -74,8 +74,14 @@ function Login() {
           onSubmit={form.handleSubmit(onSubmit)}
           className="flex flex-col gap-6"
         >
-          <div className="flex flex-col items-center gap-2 text-center">
-            <h1 className="text-2xl font-bold">Login to your account</h1>
+          <div className="flex flex-col items-start gap-3 mb-3">
+            <span className="eyebrow">YOUR VERIFICATION WORKSPACE</span>
+            <h1 className="text-3xl font-semibold tracking-tight">
+              Welcome back.
+            </h1>
+            <p className="text-sm leading-6 text-muted-foreground">
+              Sign in to keep your work grounded in facts.
+            </p>
           </div>
 
           <div className="grid gap-4">
@@ -84,11 +90,13 @@ function Login() {
               name="username"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Email</FormLabel>
+                  <FormLabel>Email address</FormLabel>
                   <FormControl>
                     <Input
                       data-testid="email-input"
-                      placeholder="user@example.com"
+                      placeholder="you@company.in"
+                      autoComplete="username"
+                      className="h-12"
                       type="email"
                       {...field}
                     />
@@ -107,15 +115,17 @@ function Login() {
                     <FormLabel>Password</FormLabel>
                     <RouterLink
                       to="/recover-password"
-                      className="ml-auto text-sm underline-offset-4 hover:underline"
+                      className="ml-auto text-xs font-medium text-primary underline-offset-4 hover:underline"
                     >
-                      Forgot your password?
+                      Forgot password?
                     </RouterLink>
                   </div>
                   <FormControl>
                     <PasswordInput
                       data-testid="password-input"
-                      placeholder="Password"
+                      placeholder="Enter your password"
+                      autoComplete="current-password"
+                      className="h-12"
                       {...field}
                     />
                   </FormControl>
@@ -124,15 +134,22 @@ function Login() {
               )}
             />
 
-            <LoadingButton type="submit" loading={loginMutation.isPending}>
-              Log In
+            <LoadingButton
+              type="submit"
+              loading={loginMutation.isPending}
+              className="h-12 mt-2"
+            >
+              Sign in to Tathya
             </LoadingButton>
           </div>
 
           <div className="text-center text-sm">
             Don't have an account yet?{" "}
-            <RouterLink to="/signup" className="underline underline-offset-4">
-              Sign up
+            <RouterLink
+              to="/signup"
+              className="font-semibold text-primary underline-offset-4 hover:underline"
+            >
+              Create an account
             </RouterLink>
           </div>
         </form>
