@@ -21,10 +21,10 @@ export async function logInUser(page: Page, email: string, password: string) {
 
   await page.getByTestId("email-input").fill(email)
   await page.getByTestId("password-input").fill(password)
-  await page.getByRole("button", { name: "Log In" }).click()
-  await page.waitForURL("/")
+  await page.getByRole("button", { name: "Sign in to Tathya" }).click()
+  await page.waitForURL("/control")
   await expect(
-    page.getByText("Welcome back, nice to see you again!"),
+    page.getByRole("heading", { name: "Control center", exact: true }),
   ).toBeVisible()
 }
 
