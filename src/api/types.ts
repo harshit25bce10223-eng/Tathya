@@ -6,13 +6,13 @@
 export type SeverityLevel = 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW' | 'INFORMATIONAL';
 export type MaterialityLevel = 'MATERIAL' | 'HIGH' | 'MODERATE' | 'LOW';
 export type ClaimVerificationStatus = 'SUPPORTED' | 'CONTRADICTED' | 'UNSUPPORTED' | 'UNCERTAIN';
-export type AuditStatus = 
-  | 'QUEUED' 
-  | 'PROCESSING' 
-  | 'COMPLETED' 
-  | 'FAILED' 
-  | 'REVIEW REQUIRED' 
-  | 'VERIFIED' 
+export type AuditStatus =
+  | 'QUEUED'
+  | 'PROCESSING'
+  | 'COMPLETED'
+  | 'FAILED'
+  | 'REVIEW REQUIRED'
+  | 'VERIFIED'
   | 'TAMPER DETECTED';
 
 export type FlagStatus = 'PENDING' | 'ACCEPTED' | 'DISMISSED' | 'FIXED';

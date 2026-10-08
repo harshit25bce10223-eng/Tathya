@@ -1,10 +1,10 @@
 import React from 'react';
 import { Flag } from '../../api/types';
 import { SeverityBadge, MaterialityBadge } from '../brand/TrustBadge';
-import { 
-  AlertTriangle, 
-  CheckCircle2, 
-  XCircle, 
+import {
+  AlertTriangle,
+  CheckCircle2,
+  XCircle,
   Wrench
 } from 'lucide-react';
 

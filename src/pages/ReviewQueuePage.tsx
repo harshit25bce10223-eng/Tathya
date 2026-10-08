@@ -3,12 +3,12 @@ import { api } from '../api/client';
 import { Audit } from '../api/types';
 import { QueueTable } from '../components/queue/QueueTable';
 import { Button } from '../components/ui/Button';
-import { 
-  Search, 
-  Plus, 
-  AlertOctagon, 
-  AlertTriangle, 
-  CheckCircle2, 
+import {
+  Search,
+  Plus,
+  AlertOctagon,
+  AlertTriangle,
+  CheckCircle2,
   Loader2,
   RefreshCw
 } from 'lucide-react';

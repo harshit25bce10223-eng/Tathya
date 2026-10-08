@@ -2,11 +2,11 @@ import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { TathyaLogo } from '../brand/TathyaLogo';
 import { SidebarNav } from './SidebarNav';
-import { 
-  Building2, 
-  ChevronDown, 
-  Bell, 
-  Menu, 
+import {
+  Building2,
+  ChevronDown,
+  Bell,
+  Menu,
   X,
   UserCheck
 } from 'lucide-react';
@@ -70,7 +70,7 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
           )}
 
           {/* Notifications / Alerts Indicator */}
-          <button 
+          <button
             className="relative p-2 rounded-lg text-tathya-text-secondary hover:text-white hover:bg-tathya-surface-hover transition-colors"
             aria-label="System notifications"
           >
@@ -103,7 +103,7 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
         {/* Mobile Slide-in Drawer */}
         {mobileMenuOpen && (
           <div className="lg:hidden fixed inset-0 z-50 flex">
-            <div 
+            <div
               className="fixed inset-0 bg-black/60 backdrop-blur-sm"
               onClick={() => setMobileMenuOpen(false)}
             />

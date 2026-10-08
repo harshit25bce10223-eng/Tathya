@@ -96,15 +96,15 @@ export const UploadDropzone: React.FC<UploadDropzoneProps> = ({
   if (selectedFile && !multiple) {
     return (
       <div className={`p-4 rounded-xl border transition-all ${
-        isAiDocument 
-          ? 'bg-tathya-surface-elevated border-tathya-accent/50 shadow-tathya-card' 
+        isAiDocument
+          ? 'bg-tathya-surface-elevated border-tathya-accent/50 shadow-tathya-card'
           : 'bg-tathya-surface border-tathya-surface-border'
       }`}>
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className={`p-2.5 rounded-lg border ${
-              isAiDocument 
-                ? 'bg-amber-950/70 border-amber-600/60 text-tathya-accent' 
+              isAiDocument
+                ? 'bg-amber-950/70 border-amber-600/60 text-tathya-accent'
                 : 'bg-slate-900 border-slate-700 text-slate-300'
             }`}>
               <FileText className="w-5 h-5" />
@@ -164,8 +164,8 @@ export const UploadDropzone: React.FC<UploadDropzoneProps> = ({
         />
 
         <div className={`p-3 rounded-full mb-3 border ${
-          isAiDocument 
-            ? 'bg-amber-950/80 border-amber-800/60 text-tathya-accent' 
+          isAiDocument
+            ? 'bg-amber-950/80 border-amber-800/60 text-tathya-accent'
             : 'bg-slate-900 border-slate-700 text-slate-400'
         }`}>
           <UploadCloud className="w-6 h-6" />

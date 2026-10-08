@@ -1,4 +1,3 @@
-import sys
 from pathlib import Path
 
 test_dir = Path("storage/test_docs")
@@ -7,17 +6,24 @@ test_dir.mkdir(parents=True, exist_ok=True)
 # 1. TXT & MD
 txt_file = test_dir / "sample.txt"
 txt_file.write_text("Tathya fact checking plain text verification.", encoding="utf-8")
-assert txt_file.read_text(encoding="utf-8") == "Tathya fact checking plain text verification."
+assert (
+    txt_file.read_text(encoding="utf-8")
+    == "Tathya fact checking plain text verification."
+)
 print("TXT: PASS")
 
 md_file = test_dir / "sample.md"
-md_file.write_text("# Tathya Title\n\n- Fact 1: Value is INR 41.6L\n- Fact 2: Date is 22 Dec", encoding="utf-8")
+md_file.write_text(
+    "# Tathya Title\n\n- Fact 1: Value is INR 41.6L\n- Fact 2: Date is 22 Dec",
+    encoding="utf-8",
+)
 assert "Fact 1: Value is INR 41.6L" in md_file.read_text(encoding="utf-8")
 print("MD: PASS")
 
 # 2. DOCX via python-docx
 try:
     import docx
+
     doc_path = test_dir / "sample.docx"
     doc = docx.Document()
     doc.add_heading("Procurement Agreement", 0)
@@ -36,6 +42,7 @@ except Exception as e:
 # 3. XLSX via openpyxl
 try:
     import openpyxl
+
     xlsx_path = test_dir / "sample.xlsx"
     wb = openpyxl.Workbook()
     ws = wb.active
@@ -56,12 +63,11 @@ except Exception as e:
 # 4. PDF via pdfplumber
 try:
     import pdfplumber
-    import pypdfium2
-    
+
     # We can create a minimal valid PDF using reportlab or pypdfium2 or minimal PDF bytes
     # Let's create a minimal valid PDF syntax
     pdf_path = test_dir / "sample.pdf"
-    
+
     # Minimal 1-page PDF 1.4 stream
     pdf_content = (
         b"%PDF-1.4\n"
@@ -83,6 +89,7 @@ except Exception as e:
 # 5. MarkItDown fallback
 try:
     from markitdown import MarkItDown
+
     md_converter = MarkItDown()
     result = md_converter.convert(str(txt_file))
     assert "Tathya fact checking" in result.text_content

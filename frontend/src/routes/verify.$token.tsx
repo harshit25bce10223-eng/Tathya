@@ -79,11 +79,11 @@ function VerifyPage() {
                     <h2>Document passport</h2>
                     <p>
                       {data.issued_at
-                        ? new Intl.DateTimeFormat("en-IN", {
+                        ? `${new Intl.DateTimeFormat("en-IN", {
                             dateStyle: "medium",
                             timeStyle: "short",
                             timeZone: "Asia/Kolkata",
-                          }).format(new Date(data.issued_at)) + " IST"
+                          }).format(new Date(data.issued_at))} IST`
                         : "Issue time unavailable"}
                     </p>
                   </div>

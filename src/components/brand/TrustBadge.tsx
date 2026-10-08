@@ -1,13 +1,13 @@
 import React from 'react';
 import { AuditStatus, SeverityLevel, MaterialityLevel } from '../../api/types';
-import { 
-  ShieldCheck, 
-  AlertTriangle, 
-  AlertOctagon, 
-  Clock, 
-  RotateCw, 
-  CheckCircle2, 
-  XCircle, 
+import {
+  ShieldCheck,
+  AlertTriangle,
+  AlertOctagon,
+  Clock,
+  RotateCw,
+  CheckCircle2,
+  XCircle,
   ShieldAlert,
   Info
 } from 'lucide-react';

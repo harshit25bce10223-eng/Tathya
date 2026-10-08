@@ -43,7 +43,7 @@ export const Modal: React.FC<ModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm animate-fadeIn">
-      <div 
+      <div
         className={`w-full ${maxWidthMap[maxWidth]} bg-tathya-surface-elevated border border-tathya-surface-border rounded-xl shadow-tathya-elevated overflow-hidden`}
         role="dialog"
         aria-modal="true"

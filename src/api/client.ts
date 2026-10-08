@@ -1,6 +1,6 @@
 /**
  * TATHYA (तथ्य) TYPED API CLIENT
- * 
+ *
  * Central API abstraction for frontend views.
  * Automatically delegates to Mock API during Phase 1 / offline,
  * and seamlessly switches to VITE_API_BASE_URL endpoints when active.
@@ -196,7 +196,7 @@ class TathyaApiClient {
     // Initial baseline is 100
     let score = 100;
     const activeFlags = audit.flags.filter((f) => f.status === 'PENDING' || f.status === 'ACCEPTED');
-    
+
     // Sum active flag deductions
     activeFlags.forEach((f) => {
       score += f.impactScore; // impactScore is negative

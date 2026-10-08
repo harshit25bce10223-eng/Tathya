@@ -6,9 +6,9 @@ import { UploadDropzone } from '../components/submit/UploadDropzone';
 import { SourceFileCard, UploadedSourceFile } from '../components/submit/SourceFileCard';
 import { AuditProgressionModal } from '../components/submit/AuditProgressionModal';
 import { Button } from '../components/ui/Button';
-import { 
-  ShieldCheck, 
-  ArrowRight, 
+import {
+  ShieldCheck,
+  ArrowRight,
   Sparkles,
   FileText
 } from 'lucide-react';

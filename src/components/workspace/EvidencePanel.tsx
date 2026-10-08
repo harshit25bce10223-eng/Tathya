@@ -1,12 +1,12 @@
 import React from 'react';
 import { Flag } from '../../api/types';
-import { 
-  AlertOctagon, 
-  HelpCircle, 
-  Clock, 
-  Building, 
-  MapPin, 
-  ShieldCheck, 
+import {
+  AlertOctagon,
+  HelpCircle,
+  Clock,
+  Building,
+  MapPin,
+  ShieldCheck,
   CheckCircle,
   FileQuestion,
   FileX2

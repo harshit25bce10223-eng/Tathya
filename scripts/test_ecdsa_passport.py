@@ -1,4 +1,3 @@
-import os
 from pathlib import Path
 from cryptography.hazmat.primitives.asymmetric import ec
 from cryptography.hazmat.primitives import hashes, serialization
@@ -19,7 +18,7 @@ if not private_key_path.exists():
     private_pem = private_key.private_bytes(
         encoding=serialization.Encoding.PEM,
         format=serialization.PrivateFormat.PKCS8,
-        encryption_algorithm=serialization.NoEncryption()
+        encryption_algorithm=serialization.NoEncryption(),
     )
     private_key_path.write_bytes(private_pem)
     # Also write to backend/secrets for backend usage
@@ -33,7 +32,7 @@ else:
 public_key = private_key.public_key()
 public_pem = public_key.public_bytes(
     encoding=serialization.Encoding.PEM,
-    format=serialization.PublicFormat.SubjectPublicKeyInfo
+    format=serialization.PublicFormat.SubjectPublicKeyInfo,
 )
 public_key_path.write_bytes(public_pem)
 (backend_secrets_dir / "passport_public.pem").write_bytes(public_pem)

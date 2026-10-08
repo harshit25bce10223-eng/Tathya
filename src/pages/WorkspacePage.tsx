@@ -12,10 +12,10 @@ import { ReviewerActionBar } from '../components/workspace/ReviewerActionBar';
 import { StatusBadge, SeverityBadge } from '../components/brand/TrustBadge';
 import { EvidenceGraphFoundation } from '../components/graph/EvidenceGraphFoundation';
 import { EmptyState } from '../components/ui/EmptyState';
-import { 
-  ShieldCheck, 
-  ChevronRight, 
-  ExternalLink, 
+import {
+  ShieldCheck,
+  ChevronRight,
+  ExternalLink,
   AlertTriangle,
   Loader2
 } from 'lucide-react';
@@ -145,7 +145,7 @@ export const WorkspacePage: React.FC = () => {
                 <SeverityBadge severity={audit.priority} />
               </div>
               <p className="text-xs text-tathya-text-secondary leading-relaxed">
-                {audit.findingsCount > 0 
+                {audit.findingsCount > 0
                   ? `${audit.findingsCount} material contradictions or unsupported claims require auditor decision.`
                   : 'All business claims reconciled 100% against approved ground truth.'}
               </p>
