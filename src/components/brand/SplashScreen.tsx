@@ -46,7 +46,7 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({ onDone }) => {
         className="relative z-10 flex flex-col items-center gap-5"
       >
         <img
-          src="/tathya_logo.svg"
+          src="/tathya-mark-v2.png"
           alt="Tathya"
           width={96}
           height={96}

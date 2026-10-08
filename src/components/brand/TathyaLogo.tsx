@@ -24,9 +24,9 @@ export const TathyaLogo: React.FC<TathyaLogoProps> = ({
 
   return (
     <div className={`flex items-center gap-2.5 select-none ${className}`}>
-      {/* Actual Tathya brand logo from /tathya_logo.svg */}
+      {/* Actual Tathya brand logo from /tathya-mark-v2.png */}
       <img
-        src="/tathya_logo.svg"
+        src="/tathya-mark-v2.png"
         alt="Tathya"
         width={currentSize.icon}
         height={currentSize.icon}
