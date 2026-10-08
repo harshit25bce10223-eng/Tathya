@@ -1,4 +1,4 @@
-# FastAPI Project - Frontend
+# Tathya — Frontend
 
 The frontend is built with [Vite](https://vitejs.dev/), [React](https://reactjs.org/), [TypeScript](https://www.typescriptlang.org/), [TanStack Query](https://tanstack.com/query), [TanStack Router](https://tanstack.com/router) and [Tailwind CSS](https://tailwindcss.com/).
 
@@ -20,24 +20,6 @@ Run `uv run bash scripts/prestart.sh` and `uv run fastapi dev` from the `backend
 To serve the frontend with FastAPI, run `bun run build` from the `frontend` directory and open `http://localhost:8000`.
 
 Check the file `package.json` to see other available options.
-
-### Removing the frontend
-
-If you are developing an API-only app and want to remove the frontend, you can do it easily:
-
-* Remove the `./frontend` directory.
-
-* In the `backend/app/main.py` file, remove the `app.frontend()` call.
-
-* In the `backend/Dockerfile` file, remove the frontend build stage and the `COPY --from=frontend-build` instruction.
-
-* In the `compose.override.yml` file, remove the `playwright` service.
-
-* In the `.github/workflows/deploy.yml` file, remove the **Set up Bun**, **Install frontend dependencies**, and **Build frontend** steps.
-
-* In the `.fastapicloudignore` file, remove the `!backend/app/frontend/` entry.
-
-Done, you have a frontend-less (api-only) app. 🤓
 
 ## Generate Client
 

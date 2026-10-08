@@ -12,7 +12,7 @@ FRONTEND_DIR = Path(__file__).parent / "frontend"
 
 
 def custom_generate_unique_id(route: APIRoute) -> str:
-    return f"{route.tags[0]}-{route.name}"
+    return f"{route.tags[0]}-{route.name}" if route.tags else route.name
 
 
 if settings.SENTRY_DSN and settings.FASTAPI_ENV != "development":
@@ -26,11 +26,20 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[settings.FRONTEND_HOST],
+    allow_origins=[settings.FRONTEND_HOST, "*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
 app.include_router(api_router, prefix=settings.API_V1_STR)
+
+
+@app.get("/health", tags=["health"])
+async def health():
+    return {"status": "ok", "app": "Tathya", "version": "0.1.0"}
+
+
+
 app.frontend("/", directory=FRONTEND_DIR)
+

@@ -1,28 +1,27 @@
 {
   "expo": {
-    "name": "mobile",
+    "name": "Tathya",
     "slug": "mobile",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
+    "icon": "./assets/tathya-logo.png",
     "userInterfaceStyle": "light",
     "ios": {
       "supportsTablet": true
     },
     "android": {
       "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE",
-        "foregroundImage": "./assets/android-icon-foreground.png",
-        "backgroundImage": "./assets/android-icon-background.png",
-        "monochromeImage": "./assets/android-icon-monochrome.png"
+        "backgroundColor": "#F7F2E4",
+        "foregroundImage": "./assets/tathya-logo.png"
       }
     },
     "web": {
-      "favicon": "./assets/favicon.png"
+      "favicon": "./assets/tathya-logo.png"
     },
     "plugins": [
       "expo-router",
       "expo-secure-store"
-    ]
+    ],
+    "description": "Tathya (तथ्य) — every fact, checked."
   }
 }

@@ -3,6 +3,9 @@ import sys
 import json
 from pydantic import BaseModel
 
+from dotenv import load_dotenv
+load_dotenv()
+
 openai_key = os.getenv("OPENAI_API_KEY")
 gemini_key = os.getenv("GEMINI_API_KEY")
 
@@ -25,15 +28,32 @@ else:
         model_name = os.getenv("OPENAI_MODEL", "gpt-5-mini")
         
         # Test structured output
-        completion = client.beta.chat.completions.parse(
-            model=model_name,
-            messages=[
-                {"role": "system", "content": "Extract the specified business fact."},
-                {"role": "user", "content": 'Extract the following business fact: "Contract value is ₹41.6 lakh."'}
-            ],
-            response_format=ExtractedFact,
-            temperature=0
-        )
+        try:
+            completion = client.beta.chat.completions.parse(
+                model=model_name,
+                messages=[
+                    {"role": "system", "content": "Extract the specified business fact."},
+                    {"role": "user", "content": 'Extract the following business fact: "Contract value is ₹41.6 lakh."'}
+                ],
+                response_format=ExtractedFact,
+                temperature=0
+            )
+        except Exception as e:
+            if "model" in str(e).lower() or "not found" in str(e).lower():
+                print(f"Notice: '{model_name}' not available on account tier, falling back to 'gpt-4o-mini'...")
+                model_name = "gpt-4o-mini"
+                completion = client.beta.chat.completions.parse(
+                    model=model_name,
+                    messages=[
+                        {"role": "system", "content": "Extract the specified business fact."},
+                        {"role": "user", "content": 'Extract the following business fact: "Contract value is ₹41.6 lakh."'}
+                    ],
+                    response_format=ExtractedFact,
+                    temperature=0
+                )
+            else:
+                raise
+
         parsed = completion.choices[0].message.parsed
         print(f"OPENAI_API: PASS")
         print(f"STRUCTURED_OUTPUT: PASS (Parsed: {parsed})")
