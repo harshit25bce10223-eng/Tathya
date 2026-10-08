@@ -37,5 +37,6 @@ app.add_middleware(
 app.include_router(api_router, prefix=settings.API_V1_STR)
 app.include_router(health_router)  # root: /health, /demo/readiness
 
-if FRONTEND_DIR.exists():
-    app.mount("/", StaticFiles(directory=FRONTEND_DIR, html=True), name="frontend")
+# Static files mount disabled for API testing - frontend served separately in dev
+# if FRONTEND_DIR.exists():
+#     app.mount("/", StaticFiles(directory=FRONTEND_DIR, html=True), name="frontend")
