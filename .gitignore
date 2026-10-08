@@ -6,3 +6,19 @@ backend/app/frontend/
 /playwright-report/
 /blob-report/
 /playwright/.cache/
+
+# Tathya Sensitive & Runtime ignores
+.env
+.env.*
+!.env.example
+secrets/
+data/models/
+data/cache/
+storage/
+*.pem
+*.key
+backend/secrets/
+backend/data/models/
+backend/data/cache/
+backend/storage/
+
