@@ -25,7 +25,6 @@ import re
 from datetime import UTC, date, datetime
 from typing import Any
 
-import dateparser
 from dateparser.search import search_dates
 
 from app.core.extraction.base import CATEGORY_DATE, FactRecord, SpanClaims

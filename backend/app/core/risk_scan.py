@@ -18,8 +18,6 @@ import logging
 import re
 import uuid
 from dataclasses import dataclass
-from datetime import UTC, datetime
-from typing import Any
 
 from sqlmodel import Session, select
 
@@ -28,11 +26,9 @@ from app.core.canonical import (
     build_blocks,
     build_sentences,
     location_docx,
-    location_pdf,
     location_text,
     location_xlsx,
 )
-from app.core.llm import LLMError, LLMRequest, llm_adapter
 from app.models import Document, Flag
 
 logger = logging.getLogger("tathya.risk_scan")

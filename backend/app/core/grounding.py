@@ -25,7 +25,6 @@ Rules:
 
 from __future__ import annotations
 
-import hashlib
 import json
 import logging
 import uuid
@@ -36,7 +35,6 @@ from typing import Any
 
 from sqlmodel import Session, select
 
-from app.core.canonical import compute_sentence_id
 from app.core.llm import LLMError, LLMRequest, llm_adapter
 from app.models import Claim, Document, Evidence, Fact
 
@@ -251,7 +249,6 @@ def _verify_against_facts(
 
 def _check_numeric_conflict(claim_text: str, fact_text: str) -> bool | None:
     """Check for numeric conflicts between claim and fact."""
-    import re
 
     # Extract numbers with units from both texts
     claim_numbers = _extract_numbers_with_units(claim_text)
@@ -272,7 +269,6 @@ def _check_numeric_conflict(claim_text: str, fact_text: str) -> bool | None:
 def _check_date_conflict(claim_text: str, fact_text: str) -> bool | None:
     """Check for date conflicts between claim and fact."""
     import re
-    from datetime import datetime
 
     # Extract dates from both texts (simplified)
     date_pattern = r"\b(\d{1,2}[\s/-](?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*[\s/-]\d{2,4}|\d{4}[\s/-]\d{1,2}[\s/-]\d{1,2})\b"

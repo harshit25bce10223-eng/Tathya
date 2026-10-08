@@ -23,21 +23,13 @@ import json
 import logging
 import uuid
 from dataclasses import dataclass
-from datetime import UTC, datetime
 from typing import Any
 
 from sqlmodel import Session, select
 
 from app.core.canonical import (
-    Sentence,
     build_blocks,
     build_sentences,
-    denormalize_span,
-    location_docx,
-    location_pdf,
-    location_text,
-    location_xlsx,
-    text_hash,
 )
 from app.core.extraction.base import (
     CATEGORY_DATE,
@@ -47,13 +39,11 @@ from app.core.extraction.base import (
     LocationResolver,
     SentenceIndex,
     SpanClaims,
-    canonical_json,
     resolve_location,
 )
 from app.core.extraction.dates import extract as extract_dates
 from app.core.extraction.names import extract as extract_names
 from app.core.extraction.numeric import extract as extract_numeric
-from app.core.llm import LLMError, LLMRequest, llm_adapter
 from app.models import Document, Fact
 
 logger = logging.getLogger("tathya.facts")
