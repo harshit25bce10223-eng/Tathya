@@ -91,6 +91,8 @@ def compute_entry_hash(
     entry_canonical is built exactly per the locked contract with
     UTC ISO-8601 timestamps.
     """
+    if created_at.tzinfo is not None:
+        created_at = created_at.astimezone(UTC)
     created_iso = created_at.strftime("%Y-%m-%dT%H:%M:%S.%f") + "+00:00"
     entry = {
         "id": str(entry_id),
@@ -218,6 +220,27 @@ def r_s_to_der(r_hex: str, s_hex: str) -> str:
     """Convert fixed-width (r, s) hex pair back to DER hex."""
     der = encode_dss_signature(int(r_hex, 16), int(s_hex, 16))
     return der.hex()
+
+
+def ensure_keypair(private_path: str, public_path: str) -> tuple[bytes, bytes]:
+    """Load the passport ECDSA keypair from disk, generating it on first use."""
+    from pathlib import Path
+
+    priv = Path(private_path).expanduser()
+    pub = Path(public_path).expanduser()
+    if priv.is_file() and pub.is_file():
+        return priv.read_bytes(), pub.read_bytes()
+    private_pem, public_pem = generate_keypair()
+    priv.parent.mkdir(parents=True, exist_ok=True)
+    pub.parent.mkdir(parents=True, exist_ok=True)
+    priv.write_bytes(private_pem)
+    pub.write_bytes(public_pem)
+    try:
+        priv.chmod(0o600)
+        pub.chmod(0o644)
+    except OSError:
+        pass  # best-effort on Windows
+    return private_pem, public_pem
 
 
 # ---------------------------------------------------------------------------

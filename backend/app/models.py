@@ -67,7 +67,6 @@ class User(UserBase, table=True):
         default_factory=get_datetime_utc,
         sa_type=DateTime(timezone=True),  # type: ignore
     )
-    items: list[Item] = Relationship(back_populates="owner", cascade_delete=True)
 
 
 # Properties to return via API, id is always required
@@ -124,11 +123,6 @@ class Audit(AuditBase, table=True):
     owner_id: uuid.UUID = Field(
         foreign_key="users.id", nullable=False, ondelete="CASCADE"
     )
-
-    documents: list[Document] = Relationship(back_populates="audit", cascade_delete=True)
-    claims: list[Claim] = Relationship(back_populates="audit", cascade_delete=True)
-    flags: list[Flag] = Relationship(back_populates="audit", cascade_delete=True)
-    passport: Passport | None = Relationship(back_populates="audit", cascade_delete=True)
 
 
 class AuditPublic(AuditBase):
@@ -188,9 +182,7 @@ class Document(DocumentBase, table=True):
         sa_type=DateTime(timezone=True),
     )
 
-    audit: Audit = Relationship(back_populates="documents")
-    claims: list[Claim] = Relationship(back_populates="document")
-    flags: list[Flag] = Relationship(back_populates="document")
+    
 
 
 class DocumentPublic(SQLModel):
@@ -276,8 +268,7 @@ class Claim(ClaimBase, table=True):
         sa_type=DateTime(timezone=True),
     )
 
-    audit: Audit = Relationship(back_populates="claims")
-    document: Document = Relationship(back_populates="claims")
+    
 
 
 class ClaimPublic(ClaimBase):
@@ -367,8 +358,7 @@ class Flag(FlagBase, table=True):
         sa_type=DateTime(timezone=True),
     )
 
-    audit: Audit = Relationship(back_populates="flags")
-    document: Document = Relationship(back_populates="flags")
+    
 
 
 class FlagPublic(FlagBase):
@@ -521,7 +511,7 @@ class Passport(PassportBase, table=True):
         sa_type=DateTime(timezone=True),
     )
 
-    audit: Audit = Relationship(back_populates="passport")
+    
 
 
 class PassportPublic(PassportBase):
@@ -662,7 +652,6 @@ class Item(ItemBase, table=True):
     owner_id: uuid.UUID = Field(
         foreign_key="users.id", nullable=False, ondelete="CASCADE"
     )
-    owner: User | None = Relationship(back_populates="items")
 
 
 class ItemPublic(ItemBase):

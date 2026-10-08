@@ -160,7 +160,7 @@ export interface Passport {
   auditId: string
   documentName: string
   documentHash: string
-  merkleRoot: string
+  chainHead: string
   signature: string
   signedBy: string
   signedAt: string

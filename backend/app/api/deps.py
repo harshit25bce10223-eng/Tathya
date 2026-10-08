@@ -55,3 +55,39 @@ def get_current_active_superuser(current_user: CurrentUser) -> User:
             status_code=403, detail="The user doesn't have enough privileges"
         )
     return current_user
+
+
+# ---------------------------------------------------------------------------
+# RBAC roles: user | reviewer | admin  (base-template auth, no SSO)
+# ---------------------------------------------------------------------------
+
+ROLE_ORDER = ("user", "reviewer", "admin")
+
+
+def role_at_least(role: str, required: str) -> bool:
+    if role == "admin":
+        return True
+    return role == required
+
+
+def require_roles(*allowed: str):
+    """FastAPI dependency factory: user must hold one of the given roles.
+
+    admin implicitly satisfies every requirement; superuser bypasses checks.
+    """
+
+    def dependency(current_user: CurrentUser) -> User:
+        if current_user.is_superuser:
+            return current_user
+        if current_user.role == "admin" or current_user.role in allowed:
+            return current_user
+        raise HTTPException(
+            status_code=403,
+            detail=f"Requires one of roles: {', '.join(allowed)}",
+        )
+
+    return dependency
+
+
+ReviewerDep = Annotated[User, Depends(require_roles("reviewer", "admin"))]
+AdminDep = Annotated[User, Depends(require_roles("admin"))]

@@ -12,8 +12,32 @@ from tests.utils.user import authentication_token_from_email
 from tests.utils.utils import get_superuser_token_headers
 
 
+def database_available() -> bool:
+    import socket
+
+    from app.core.config import settings as _settings
+
+    # Fast TCP pre-check: psycopg can hang for minutes when nothing listens
+    # on localhost (IPv6 blackhole), so never reach for it blindly.
+    try:
+        host = _settings.DATABASE_URL.hosts()[0]
+        with socket.create_connection((host["host"], host["port"]), timeout=2):
+            return True
+    except (OSError, ValueError, IndexError):
+        return False
+
+
 @pytest.fixture(scope="session", autouse=True)
-def db() -> Generator[Session]:
+def db() -> Generator[Session | None]:
+    if not database_available():
+        # Deterministic (no-DB) tests still run; DB tests skip themselves.
+        yield None
+        return
+    try:
+        engine.connect().close()
+    except Exception:  # noqa: BLE001
+        yield None
+        return
     with Session(engine) as session:
         init_db(session)
         yield session

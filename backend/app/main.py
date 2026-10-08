@@ -6,6 +6,7 @@ from fastapi.routing import APIRoute
 from starlette.middleware.cors import CORSMiddleware
 
 from app.api.main import api_router
+from app.api.routes.health import router as health_router
 from app.core.config import settings
 
 FRONTEND_DIR = Path(__file__).parent / "frontend"
@@ -33,12 +34,7 @@ app.add_middleware(
 )
 
 app.include_router(api_router, prefix=settings.API_V1_STR)
-
-
-@app.get("/health", tags=["health"])
-async def health():
-    return {"status": "ok", "app": "Tathya", "version": "0.1.0"}
-
+app.include_router(health_router)  # root: /health, /demo/readiness
 
 
 app.frontend("/", directory=FRONTEND_DIR)

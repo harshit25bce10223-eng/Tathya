@@ -65,6 +65,34 @@ class Settings(BaseSettings):
     FIRST_SUPERUSER: EmailStr
     FIRST_SUPERUSER_PASSWORD: str
 
+    # ------------------------------------------------------------------
+    # Tathya Phase 1 settings
+    # ------------------------------------------------------------------
+    # Public base URL used for passport QR / verify links
+    PUBLIC_BASE_URL: str = "http://localhost:8000"
+
+    # LLM providers (provider-neutral adapter in app.core.llm)
+    OPENAI_API_KEY: str | None = None
+    OPENAI_MODEL: str = "gpt-5-mini"
+    GEMINI_API_KEY: str | None = None
+    GEMINI_MODEL: str = "gemini-2.5-flash"
+    LLM_TIMEOUT_SECONDS: float = 60.0
+    LLM_MAX_RETRIES: int = 1
+    LLM_CACHE_DIR: str = "./data/cache"
+
+    # Embedding / reranker runtime (Phase 0 cache)
+    EMBEDDING_MODEL: str = "BAAI/bge-m3"
+    RERANKER_MODEL: str = "BAAI/bge-reranker-v2-m3"
+    HHEM_MODEL: str = "vectara/hallucination_evaluation_model"
+    USE_HHEM: bool = False
+    TORCH_DEVICE: str = "auto"
+    MODEL_CACHE_DIR: str = "./data/models"
+
+    # Storage (uploaded documents, keys)
+    STORAGE_DIR: str = "./storage"
+    ECDSA_PRIVATE_KEY_PATH: str = "./secrets/passport_private.pem"
+    ECDSA_PUBLIC_KEY_PATH: str = "./secrets/passport_public.pem"
+
     def _check_default_secret(self, var_name: str, value: str | None) -> None:
         if value == "changethis":
             message = (
