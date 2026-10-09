@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react"
+import logoImage from "@/assets/brand/tathya-logo-v2.png"
 
 const parts = [
   { name: "Verified T mark", clip: "inset(0 72% 0 0)", delay: 0 },
@@ -39,7 +40,7 @@ export function BrandSplash({ preview = false }: { preview?: boolean }) {
           <img
             key={part.name}
             alt=""
-            src="/assets/images/tathya-logo-v2.png"
+            src={logoImage}
             className="splash-part"
             style={{
               clipPath: part.clip,
@@ -47,11 +48,7 @@ export function BrandSplash({ preview = false }: { preview?: boolean }) {
             }}
           />
         ))}
-        <img
-          className="splash-complete"
-          src="/assets/images/tathya-logo-v2.png"
-          alt=""
-        />
+        <img className="splash-complete" src={logoImage} alt="" />
       </div>
       <span className="splash-caption">सही जानकारी · भरोसे के साथ</span>
       <span className="splash-signature">

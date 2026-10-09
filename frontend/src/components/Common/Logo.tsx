@@ -1,4 +1,6 @@
 import { Link } from "@tanstack/react-router"
+import logoImage from "@/assets/brand/tathya-logo-v2.png"
+import markImage from "@/assets/brand/tathya-mark-v2.png"
 import { cn } from "@/lib/utils"
 
 interface LogoProps {
@@ -19,7 +21,7 @@ export function Logo({
       aria-label="Tathya"
     >
       <img
-        src="/assets/images/tathya-mark-v2.png"
+        src={markImage}
         alt=""
         width={40}
         height={40}
@@ -32,7 +34,7 @@ export function Logo({
       />
       {variant !== "icon" && (
         <img
-          src="/assets/images/tathya-logo-v2.png"
+          src={logoImage}
           alt="Tathya — Every fact, checked"
           width={216}
           height={72}
