@@ -41,6 +41,8 @@ from app.core.pipeline import (
     save_upload,
     verify_passport_token,
 )
+from app.api.schemas import ScoreBreakdown
+from app.core.trust_score import compute_score_breakdown, get_score_breakdown, persist_scores
 from app.models import (
     Audit,
     AuditLogEntry,
@@ -80,6 +82,13 @@ def _public(audit: Audit) -> AuditPublic:
         error_message=audit.error_message,
         failed_stage=audit.failed_stage,
         source_set_hash=audit.source_set_hash,
+        ai_score=audit.ai_score,
+        reviewed_score=audit.reviewed_score,
+        score_band=audit.score_band,
+        critical_risk=audit.critical_risk,
+        review_status=audit.review_status,
+        score_version=audit.score_version,
+        score_methodology=audit.score_methodology,
         created_at=audit.created_at,
         updated_at=audit.updated_at,
     )
@@ -439,6 +448,8 @@ def submit_decision(
         actor_id=reviewer.id,
         action=body.action,
         note=body.note,
+        reason=body.reason,
+        remediation=body.remediation,
     )
     session.add(decision)
 
@@ -461,6 +472,7 @@ def submit_decision(
                 "flag_id": str(flag_id),
                 "decision_id": str(decision.id),
                 "action": body.action,
+                "reason": body.reason,
             }
         ),
     )
@@ -473,15 +485,23 @@ def rescore_audit(
 ) -> RescoreResult:
     audit = _get_audit(session, audit_id, reviewer)
     flags = session.exec(select(Flag).where(Flag.audit_id == audit_id)).all()
-    open_flags = [f for f in flags if f.status in ("pending", "accepted")]
-    penalty = sum(max(0.0, f.impact_score) for f in open_flags)
-    trust_score = max(0.0, round(100.0 - penalty, 2))
+    breakdown = compute_score_breakdown(session, audit_id)
+    persist_scores(session, audit, breakdown)
+
+    ai_score = breakdown.ai_score
+    reviewed_score = breakdown.reviewed_score
+    ai_score_band = breakdown.ai_score_band
+    reviewed_score_band = breakdown.reviewed_score_band
+    critical_risk = breakdown.critical_risk
 
     passport = session.exec(
         select(Passport).where(Passport.audit_id == audit_id)
     ).first()
     if passport is not None:
-        passport.trust_score = trust_score
+        passport.ai_score = ai_score
+        passport.reviewed_score = reviewed_score
+        passport.score_band = reviewed_score_band
+        passport.critical_risk = critical_risk
         session.add(passport)
         session.commit()
         session.refresh(passport)
@@ -492,14 +512,27 @@ def rescore_audit(
         actor_id=reviewer.id,
         action="audit.rescored",
         payload_json=_canonical_json(
-            {"trust_score": trust_score, "open_flags": len(open_flags)}
+            {
+                "ai_score": ai_score,
+                "reviewed_score": reviewed_score,
+                "ai_score_band": ai_score_band,
+                "reviewed_score_band": reviewed_score_band,
+                "critical_risk": critical_risk,
+                "open_flag_count": len([f for f in flags if f.status in ("pending", "accepted")]),
+            }
         ),
     )
     return RescoreResult(
         audit=_public(audit),
-        trust_score=trust_score,
+        ai_score=ai_score,
+        reviewed_score=reviewed_score,
+        ai_score_band=ai_score_band,
+        reviewed_score_band=reviewed_score_band,
+        critical_risk=critical_risk,
+        trust_score=reviewed_score,
         flag_count=len(flags),
-        open_flag_count=len(open_flags),
+        open_flag_count=len([f for f in flags if f.status in ("pending", "accepted")]),
+        score_version=breakdown.scoring_version,
     )
 
 
@@ -508,17 +541,83 @@ def rescore_audit(
 # ---------------------------------------------------------------------------
 
 
+@router.get("/{audit_id}/score-breakdown", response_model=ScoreBreakdown)
+def audit_score_breakdown(
+    audit_id: uuid.UUID, session: SessionDep, current_user: CurrentUser
+) -> ScoreBreakdown:
+    _get_audit(session, audit_id, current_user)
+    breakdown = get_score_breakdown(session, audit_id)
+    if breakdown is None:
+        raise HTTPException(status_code=404, detail="Score breakdown not found")
+    return breakdown
+
+
+@router.post("/{audit_id}/passport", response_model=PassportPublic)
+def create_passport(
+    audit_id: uuid.UUID, session: SessionDep, reviewer: ReviewerDep
+) -> PassportPublic:
+    audit = _get_audit(session, audit_id, reviewer)
+    # Check if passport already exists
+    existing = session.exec(
+        select(Passport).where(Passport.audit_id == audit_id)
+    ).first()
+    if existing is not None:
+        return PassportPublic.model_validate(existing)
+    
+    # Compute scores
+    flags = session.exec(select(Flag).where(Flag.audit_id == audit_id)).all()
+    breakdown = compute_score_breakdown(session, audit_id)
+    persist_scores(session, audit, breakdown)
+    
+    # Generate verify token via security module
+    verify_token = security.generate_verify_token()
+    
+    # Compute document hash from audit ID and scores via security module
+    document_hash = security.sha256_text(
+        f"{audit_id}:{breakdown.ai_score}:{breakdown.reviewed_score}"
+    )
+    
+    # Sign the passport
+    private_pem, public_pem = security.ensure_keypair(
+        settings.ECDSA_PRIVATE_KEY_PATH, settings.ECDSA_PUBLIC_KEY_PATH
+    )
+    
+    message = f"{audit_id}:{breakdown.ai_score}:{breakdown.reviewed_score}".encode()
+    signature = security.sign_message(private_pem, message)
+    
+    # Create new passport with scores
+    passport = Passport(
+        audit_id=audit_id,
+        verify_token=verify_token,
+        document_hash=document_hash,
+        chain_head="0" * 64,  # genesis
+        signature=signature,
+        ai_score=breakdown.ai_score,
+        reviewed_score=breakdown.reviewed_score,
+        score_band=breakdown.ai_score_band,
+        critical_risk=breakdown.critical_risk,
+        finding_summary="Initial scores computed",
+        review_status="pending",
+        revision=1,
+    )
+    session.add(passport)
+    session.commit()
+    session.refresh(passport)
+    
+    return PassportPublic.model_validate(passport)
+
+
 @router.get("/{audit_id}/passport", response_model=PassportPublic)
 def get_passport(
     audit_id: uuid.UUID, session: SessionDep, current_user: CurrentUser
-) -> Passport:
-    _get_audit(session, audit_id, current_user)
+) -> PassportPublic:
+    audit = _get_audit(session, audit_id, current_user)
     passport = session.exec(
         select(Passport).where(Passport.audit_id == audit_id)
     ).first()
     if passport is None:
         raise HTTPException(status_code=404, detail="Passport not issued yet")
-    return passport
+    return PassportPublic.model_validate(passport)
 
 
 # ---------------------------------------------------------------------------
