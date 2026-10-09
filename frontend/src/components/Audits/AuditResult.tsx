@@ -1,4 +1,5 @@
 import { DocumentText } from "./DocumentText"
+import { PolicyAssessment } from "./PolicyAssessment"
 import { useQuery, useMutation } from "@tanstack/react-query"
 import { Link } from "@tanstack/react-router"
 import { ArrowLeft, ArrowRight, FileText, ShieldCheck } from "lucide-react"
@@ -122,6 +123,7 @@ export function AuditResult({ auditId }: { auditId: string }) {
         {retryAudit.error && <p role="alert">{retryAudit.error.message}</p>}
       </section>}
       <a className="back-link" href="#audit-findings">Jump to findings</a>
+      <PolicyAssessment auditId={auditId} completed={data.audit.status === "completed"} />
       <div className="result-grid">
         <section className="product-panel">
           <div className="panel-heading">

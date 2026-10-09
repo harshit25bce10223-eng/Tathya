@@ -169,6 +169,8 @@ class VerificationResult(BaseModel):
     status: str
     trust_score: float
     score_status: str = "insufficient_verification"
+    requires_reassessment: bool = False
+    reassessment_reason: str | None = None
     issued_at: datetime | None = None
     document_count: int = 0
     document_hash: str = ""

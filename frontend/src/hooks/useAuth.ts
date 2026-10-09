@@ -21,7 +21,7 @@ const useAuth = () => {
   const queryClient = useQueryClient()
   const { showErrorToast } = useCustomToast()
 
-  const { data: user, error: userError, refetch: retryUser } = useQuery<UserPublic | null, Error>({
+  const { data: user, error: userError, refetch: retryUser } = useQuery<(UserPublic & {role?: string}) | null, Error>({
     queryKey: ["currentUser"],
     queryFn: async () => (await UsersService.readUserMe()).data,
     enabled: isLoggedIn(),

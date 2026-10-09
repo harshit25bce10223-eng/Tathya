@@ -10,6 +10,8 @@ const schema = z.object({
   status: z.string(),
   trust_score: z.number().min(0).max(100),
   score_status: z.string().default("insufficient_verification"),
+  requires_reassessment: z.boolean().default(false),
+  reassessment_reason: z.string().nullable().optional(),
   document_count: z.number().int().nonnegative(),
   document_hash: z.string(),
   issued_at: z.string().nullable(),
@@ -90,9 +92,10 @@ function VerifyPage() {
                   <StatusPill status={data.status} />
                 </div>
                 <div className="verification-score">
-                  <strong>{data.score_status === "insufficient_verification" ? "Not assessed" : data.trust_score}</strong>
+                  <strong>{data.signature_valid === false || data.chain?.ok === false ? "Verification failed" : data.requires_reassessment ? "Reassessment required" : data.score_status === "insufficient_verification" ? "Not assessed" : data.trust_score}</strong>
                   <span>/ 100 · Published trust score</span>
                 </div>
+                {data.requires_reassessment && <p role="status" className="control-note">{data.reassessment_reason}</p>}
                 <div className="policy-grid">
                   <article>
                     <h3>Signature</h3>

@@ -300,6 +300,7 @@ export const isReviewer = (
 ) =>
   !!user &&
   (user.is_superuser || ["reviewer", "admin"].includes(user.role ?? ""))
+export const isAdmin = (user: {is_superuser?: boolean; role?: string} | null | undefined) => !!user && (user.is_superuser || user.role === "admin")
 export const formatDate = (date: string | null) =>
   date
     ? new Intl.DateTimeFormat("en-IN", {

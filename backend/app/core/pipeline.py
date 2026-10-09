@@ -265,6 +265,14 @@ def run_audit_pipeline(
     session.commit()
 
     # ---- hash chain -----------------------------------------------------
+    tracker.set("policy_check")
+    try:
+        from app.core.business_policies import evaluate_audit_policies
+        evaluate_audit_policies(session, audit_id)
+    except Exception as exc:
+        logger.exception("policy evaluation failed for audit %s", audit_id)
+        raise StageError("policy_check", f"policy evaluation failed: {exc}") from exc
+
     tracker.set("hash_chain")
     hashes = [d.text_hash for d in documents]
     audit.source_set_hash = source_set_hash(hashes)

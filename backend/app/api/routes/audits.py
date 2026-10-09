@@ -354,6 +354,13 @@ def source_fact_sheet(audit_id: uuid.UUID, session: SessionDep, current_user: Cu
     return build_source_fact_sheet(session, audit_id)
 
 
+@router.get("/{audit_id}/policy-results")
+def policy_results(audit_id: uuid.UUID, session: SessionDep, current_user: CurrentUser) -> dict[str, Any]:
+    _get_audit(session, audit_id, current_user)
+    from app.core.business_policies import recorded_policy_results
+    return recorded_policy_results(session, audit_id)
+
+
 @router.patch("/{audit_id}/documents/{document_id}/source-context")
 def update_source_context(audit_id: uuid.UUID, document_id: uuid.UUID, body: SourceContextUpdate, session: SessionDep, current_user: ReviewerDep) -> dict[str, Any]:
     from datetime import UTC, datetime
@@ -521,6 +528,12 @@ def submit_decision(
     if flag is None or flag.audit_id != audit_id or flag.audit_id != audit.id:
         raise HTTPException(status_code=404, detail="Flag not found")
 
+    document = session.get(Document, flag.document_id)
+    if flag.status == "superseded" or document is None or not document.is_current:
+        raise HTTPException(status_code=409, detail="This finding belongs to a superseded assessment. Review the current findings.")
+    if audit.status in ("queued", "processing"):
+        raise HTTPException(status_code=409, detail="Wait for the audit to finish before reviewing findings.")
+
     decision = Decision(
         audit_id=audit_id,
         flag_id=flag_id,
@@ -562,6 +575,8 @@ def rescore_audit(
     audit_id: uuid.UUID, session: SessionDep, reviewer: ReviewerDep
 ) -> RescoreResult:
     audit = _get_audit(session, audit_id, reviewer)
+    if audit.status in ("queued", "processing"):
+        raise HTTPException(status_code=409, detail="Wait for the audit to finish before recalculating its score.")
     flags = session.exec(select(Flag).join(Document, Flag.document_id == Document.id).where(Flag.audit_id == audit_id, Document.is_current.is_(True), Flag.status != "superseded")).all()
     breakdown = compute_score_breakdown(session, audit_id)
     persist_scores(session, audit, breakdown)
@@ -679,7 +694,7 @@ def verify_passport(verify_token: str, session: SessionDep) -> VerificationResul
         session.exec(
             select(func.count())
             .select_from(Document)
-            .where(Document.audit_id == audit.id)
+            .where(Document.audit_id == audit.id, Document.is_current.is_(True))
         ).one()
     )
     entry_count = int(
@@ -702,12 +717,20 @@ def verify_passport(verify_token: str, session: SessionDep) -> VerificationResul
         signature_valid = None
 
     base = str(settings.PUBLIC_BASE_URL).rstrip("/")
+    from app.core.business_policies import recorded_policy_results
+    from app.core.canonical import source_set_hash
+    policy_state = recorded_policy_results(session, audit.id)
+    current_hashes = session.exec(select(Document.text_hash).where(Document.audit_id == audit.id, Document.is_current.is_(True))).all()
+    latest_entry = session.exec(select(AuditLogEntry).where(AuditLogEntry.audit_id == audit.id).order_by(AuditLogEntry.created_at.desc())).first()
+    requires_reassessment = bool(policy_state["stale"] and (policy_state["active_policy_count"] or policy_state["evaluations"])) or passport.document_hash != source_set_hash(list(current_hashes)) or bool(latest_entry and passport.chain_head != latest_entry.hash)
     return VerificationResult(
         found=True,
         verify_token=passport.verify_token,
         status=passport.status,
         trust_score=passport.trust_score,
         score_status=compute_score_breakdown(session, str(passport.audit_id)).score_status,
+        requires_reassessment=requires_reassessment,
+        reassessment_reason="Documents, policy settings or reviewer records changed after this passport was issued. Re-audit or recalculate before treating the issued rating as current." if requires_reassessment else None,
         issued_at=passport.issued_at,
         document_count=document_count,
         document_hash=passport.document_hash,

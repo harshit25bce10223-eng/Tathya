@@ -4,6 +4,7 @@ import { useState } from "react"
 import { auditApi, formatDate } from "@/api/audits"
 import { QueryState, StatusPill } from "./shared"
 import { SourceFactSheet } from "./SourceFactSheet"
+import { PolicyStudio } from "./PolicyStudio"
 
 function Heading({
   title,
@@ -145,6 +146,7 @@ export function PoliciesPage() {
         title="Trust policies"
         description="Understand how findings and reviewer decisions affect a published score."
       />
+      <PolicyStudio />
       <section className="product-panel">
         <div className="panel-heading">
           <div>
@@ -203,8 +205,8 @@ export function PoliciesPage() {
       <aside className="control-note">
         <span className="eyebrow">POLICY CONFIGURATION</span>
         <p>
-          Custom policy editing is not connected in this service. This page
-          describes current scoring behaviour; it does not publish new rules.
+          Administrators create and version business requirements in Policy Studio.
+          Enabled rules apply on the next audit run; previews never change findings or scores.
         </p>
       </aside>
     </div>

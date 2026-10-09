@@ -20,6 +20,7 @@ from dataclasses import dataclass, asdict, fields, field
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
+from uuid import UUID
 
 from sqlmodel import Session, select
 
@@ -28,7 +29,7 @@ from app.models import Audit, Flag, Claim, Document, Evidence
 logger = logging.getLogger("tathya.trust_score")
 
 # Scoring version - increment when formula changes
-SCORING_VERSION = "6.0"
+SCORING_VERSION = "6.1"
 SCORING_METHODOLOGY = "evidence_coverage_gated_penalty_v2"
 
 # The local materiality engine is loaded lazily to avoid circular imports.
@@ -345,6 +346,16 @@ def compute_score_breakdown(session: Session, audit_id: str) -> ScoreBreakdown:
         "dates": support_score([c for c in current_claims if "date" in values(c.text)]),
         "evidence_coverage": coverage["evidence_percent"],
     }
+
+    from app.core.business_policies import recorded_policy_results
+    policy_results = recorded_policy_results(session, UUID(str(audit_uuid)))
+    policy_checks = policy_results["evaluations"]
+    sub_scores["policy_compliance"] = round(100 * sum(r["state"] == "satisfied" for r in policy_checks) / len(policy_checks), 2) if policy_checks and not policy_results["stale"] else None
+    policy_uncertain = any(f.type == "policy_uncertain" and f.status in ("pending", "accepted") for f in flags)
+    policy_stale = policy_results["stale"] and (policy_results["active_policy_count"] or policy_checks)
+    if score_status == "assessed" and (policy_uncertain or policy_stale):
+        score_status = "partial_verification"
+        limit_reason = "Business policy checks are uncertain or out of date. Re-audit or resolve the recorded policy findings before relying on the rating."
 
     # Calculate AI Score (all findings)
     ai_score_raw = calculate_ai_score(flags)

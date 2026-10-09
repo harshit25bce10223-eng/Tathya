@@ -8,7 +8,7 @@ The original 146 findings remain in system-error-audit-2026-10-09.md as a histor
 - Scoring methodology schema migration, safe failed-session recovery, deduplicated jobs and interrupted-job recovery.
 - Real source-to-claim checks for comparable monetary values, dates and durations; currency-aware normalization; separate source documents; literal source quotes; conflicting evidence remains uncertain.
 - Current document versions determine retrieval, findings and coverage. Source amendments supersede old grounding findings instead of leaving contradictions active forever.
-- Scoring 6.0 separates evidence coverage from verification attempts. Zero claims, missing sources or no conclusive source-backed checks produce Not assessed. Partial coverage caps the score at 79; an unresolved critical finding caps it at 49. These are deterministic decision-support rules, not calibrated probabilities of truth.
+- Scoring 6.1 separates evidence coverage from verification attempts. Zero claims, missing sources or no conclusive source-backed checks produce Not assessed. Partial coverage caps the score at 79; an unresolved critical finding caps it at 49. These are deterministic decision-support rules, not calibrated probabilities of truth.
 - Score breakdown exposes supported, contradicted, unsupported and uncertain claims, real deductions and measured coverage. Missing evidence cannot yield a clean 100/100.
 - Passport revision updates preserve verification links. Version 2 signatures cover the issued audit identity, source hash, chain head, score, band, findings summary and review state. Tampering invalidates verification.
 - Safe bounded proof expressions replace arbitrary evaluation and contradictory boolean assertions now fail correctly.
@@ -18,7 +18,7 @@ The original 146 findings remain in system-error-audit-2026-10-09.md as a histor
 
 ## Validation
 
-- Full backend suite: 165 passed, zero skipped, against a temporary isolated PostgreSQL database. The database is removed afterward; production data is not used by the test suite.
+- Full backend suite: 188 passed, zero skipped, against a temporary isolated PostgreSQL database. The database is removed afterward; production data is not used by the test suite.
 - TypeScript build check: passed.
 - Frontend production build: passed and bundled with the backend.
 - Live browser upload of a synthetic contract and source approval produced four extracted claims, four contradictions and four findings, including a critical mismatch. The UI showed the real score and evidence coverage.
@@ -28,7 +28,7 @@ The original 146 findings remain in system-error-audit-2026-10-09.md as a histor
 
 ## Work still outstanding
 
-The complete blueprint is substantially broader than this repair. Policy Studio editing and pipeline enforcement, source authority resolution rules, source watchers, the claim graph, production evaluation datasets and ablations, full adversarial execution orchestration, mobile release and production deployment are not certified complete here.
+The complete blueprint is substantially broader than this repair. Source authority resolution rules, source watchers, the claim graph, production evaluation datasets and ablations, full adversarial execution orchestration, mobile release and production deployment are not certified complete here.
 
 Full live keyboard, screen-reader, contrast and all viewport conformance checks are not certified. Historical UI observations and design recommendations in the original audit require current visual validation. Parser resource limits reduce risk but are not a full sandbox or an exhaustive malformed-document assessment. Response-body timeouts, concurrent model loading and numeric-only proof draft detection have now been hardened. Broad network failure and accessibility coverage still needs further validation.
 
@@ -43,4 +43,16 @@ Generated model weights, training corpora, databases, runtime credentials, local
 - Source previews clear search filters and move focus to the opened document. Source editor drafts trigger unsaved-change prompts. Score and source-fact queries invalidate after a completed re-audit.
 - Passport summaries now exclude obsolete and superseded findings. Added regression for a source amendment that clears all findings and publishes total=0/open=0.
 - Request timeouts remain active through response-body receipt. Pre-cancelled requests respect their signal. Concurrent verifier loading uses a shared lock and a regression confirms that eight requests construct one model. Numeric-only proof drafts now trigger unsaved-change protection.
-- Updated the scoring explanation page to describe evidence gates and actual coverage caps. Custom policy configuration and enforcement remain pending.
+- Updated the scoring explanation page to describe evidence gates and actual coverage caps. Typed business policy configuration and enforcement are implemented in the following continuation.
+
+
+## Continuation: Policy Studio and enforced business requirements
+
+- Administrators can create, enable, disable and revise typed policies, with required change notes, stored revision history and optimistic version checks. Reviewers can read policies and use the read-only preview endpoint. Unsupported legacy policies are explicitly labelled as not enforced.
+- Supported business fields are contract value, currency, delivery date, payment days and warranty months. Rules can apply globally or to one audit, and can inspect AI claims or current source facts. Conditions require literal, validated document evidence; absent or conflicting values remain uncertain and currencies are never silently converted.
+- Pipeline policy checks run before scoring and passport signing. Violations create severity-weighted findings; uncertain requirements and changed, unchecked policies prevent a complete rating. Evaluation snapshots record exact policy versions and current document hashes in the audit chain.
+- Repeated identical checks preserve review decisions. Revised or disabled rules supersede obsolete findings. Historical findings cannot be resurrected through review actions, and running audits cannot be reviewed or rescored.
+- Public verification preserves the issued signed record and marks changed policies, documents or review events as requiring reassessment. The public UI withholds a current numeric grade when reassessment is required or integrity checks fail.
+- Actual browser preview found 12 months of source warranty against a 24-month requirement without saving results. Saving an enabled rule scoped only to the synthetic golden audit and re-running it produced five findings (four source contradictions plus one policy violation), policy compliance 0%, and a real score of 0. The mobile policy editor had no horizontal overflow. This synthetic policy does not apply to other audits.
+- Final isolated backend suite: 188 passed, zero skipped. TypeScript and production frontend build passed. Additional regressions cover invalid rules, role restrictions, non-mutating preview, currency incompatibility, source conflicts, version races, stale public ratings, pipeline enforcement and superseded/running-audit review guards.
+- Policy coverage is limited to these five extracted business fields and supported comparisons. General natural-language policy interpretation, authority precedence, source watchers, claim graph, production evals, mobile release and deployment remain outstanding. Stored policy revision history is controlled through the API; it is not a separate signed configuration ledger.

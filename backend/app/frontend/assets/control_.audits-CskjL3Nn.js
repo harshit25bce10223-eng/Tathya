@@ -1,0 +1,1 @@
+import{t as e}from"./jsx-runtime-B-hcVAMW.js";import{t}from"./AuditList-CEERl-QS.js";var n=e(),r=()=>(0,n.jsx)(t,{archive:!0});export{r as component};
