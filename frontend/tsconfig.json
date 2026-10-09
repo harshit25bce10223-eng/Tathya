@@ -17,12 +17,12 @@
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true,
-    "types": ["node"],
+    "types": ["node", "@playwright/test"],
     "paths": {
       "@/*": ["./src/*"]
     }
   },
-  "include": ["src", "tests", "playwright.config.ts"],
+  "include": ["src", "playwright.config.ts"],
   "references": [
     {
       "path": "./tsconfig.node.json"

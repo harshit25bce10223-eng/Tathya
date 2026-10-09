@@ -51,6 +51,9 @@ def test_document_version_binding(db):
     assert doc_v1.is_current is False
     assert doc_v2.is_current is True
     assert doc_v1.id != doc_v2.id  # document_version_id == documents.id
+    assert path_v1 != path_v2
+    assert path_v1.read_bytes() == b"Version one text."
+    assert path_v2.read_bytes() == b"Version two text."
 
     # claims.document_id -> documents.id (mandatory, never audit_id alone)
     claim = Claim(

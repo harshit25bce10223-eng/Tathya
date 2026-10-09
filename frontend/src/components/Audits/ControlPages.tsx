@@ -1,3 +1,4 @@
+import { apiFetch } from "@/api/transport"
 import { useQuery } from "@tanstack/react-query"
 import { useState } from "react"
 import { auditApi, formatDate } from "@/api/audits"
@@ -24,6 +25,8 @@ export function SourcesPage() {
   const audits = useQuery({ queryKey: ["audits"], queryFn: auditApi.list })
   const [selected, setSelected] = useState("")
   const [search, setSearch] = useState("")
+  const [openDocument, setOpenDocument] = useState("")
+  const preview = useQuery({ queryKey: ["document-text", selected, openDocument], queryFn: () => auditApi.documentText(selected || audits.data?.data[0]?.id || "", openDocument), enabled: !!openDocument })
   const id = selected || audits.data?.data[0]?.id || ""
   const documents = useQuery({
     queryKey: ["audit-documents", id],
@@ -53,7 +56,7 @@ export function SourcesPage() {
             <select
               aria-label="Document set"
               value={id}
-              onChange={(e) => setSelected(e.target.value)}
+              onChange={(e) => { setSelected(e.target.value); setOpenDocument("") }}
             >
               <option disabled value="">
                 Select an audit
@@ -85,7 +88,7 @@ export function SourcesPage() {
           visible.map((d) => (
             <article className="source-record" key={d.id}>
               <div>
-                <h3>{d.filename}</h3>
+                <h3><button type="button" aria-expanded={openDocument === d.id} onClick={() => setOpenDocument(openDocument === d.id ? "" : d.id)}>{d.filename}</button></h3>
                 <p>
                   Version {d.version_no} · {d.kind}
                 </p>
@@ -99,6 +102,7 @@ export function SourcesPage() {
                 <dt>Canonical text hash</dt>
                 <dd>{d.text_hash || "Not available"}</dd>
               </dl>
+              {openDocument === d.id && <div><QueryState loading={preview.isPending} error={preview.error} retry={() => preview.refetch()} />{preview.data && <pre className="document-preview">{preview.data.raw_text}</pre>}</div>}
             </article>
           ))}
         {audits.data && !audits.data.data.length && (
@@ -117,9 +121,8 @@ export function SourcesPage() {
       <aside className="control-note">
         <span className="eyebrow">SOURCE CONTEXT</span>
         <p>
-          These are uploaded document records. Source authority and original
-          text previews are not supplied by the current service; consult the
-          original files when reviewing a claim.
+          Select a filename to read the extracted source text. Uploaded documents
+          do not automatically establish independent source authority.
         </p>
       </aside>
     </div>
@@ -196,7 +199,17 @@ export function PoliciesPage() {
 }
 export function MetricsPage() {
   const audits = useQuery({ queryKey: ["audits"], queryFn: auditApi.list })
+  const ropeMetrics = useQuery({
+    queryKey: ["ropeMetrics"],
+    queryFn: async () => {
+      const res = await apiFetch("/rope/metrics")
+      return res.json()
+    },
+  })
+
   const records = audits.data?.data ?? []
+  const gating = ropeMetrics.data?.gating_results
+
   const dayKey = (date: string | null) =>
     date
       ? new Intl.DateTimeFormat("en-CA", {
@@ -212,17 +225,82 @@ export function MetricsPage() {
     .sort()
     .reverse()
     .slice(0, 7)
+
   return (
     <div className="product-page">
+      <QueryState loading={ropeMetrics.isPending} error={ropeMetrics.error} retry={() => ropeMetrics.refetch()} />
       <Heading
-        title="Metrics & drift"
-        description="Operational context across the latest 100 accessible audits."
+        title="Metrics & RoPE Verification Engine"
+        description="Real-time neural verifier metrics, confusion matrix, and audit volumes."
       />
       <QueryState
         loading={audits.isPending}
         error={audits.error}
         retry={() => audits.refetch()}
       />
+
+      {/* 1. Live RoPE Neural Verifier Gating Dashboard */}
+      {gating && (
+        <section className="product-panel mb-6 border-emerald-500/30">
+          <div className="panel-heading">
+            <div>
+              <div className="flex items-center gap-3">
+                <h2>RoPE Cross-Encoder Fact Verifier</h2>
+                <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                  STATUS: {gating.gate_decision || "Not evaluated"}
+                </span>
+              </div>
+              <p>Calibrated temperature probability scaling & gating benchmark</p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 my-4">
+            <div className="p-3 bg-neutral-900/60 rounded border border-neutral-800">
+              <span className="text-xs text-neutral-400">Macro-F1 Score</span>
+              <div className="text-2xl font-bold text-emerald-400">{gating.model_summary_f1}%</div>
+              <small className="text-neutral-500">Baseline: {gating.baseline_summary_f1}%</small>
+            </div>
+            <div className="p-3 bg-neutral-900/60 rounded border border-neutral-800">
+              <span className="text-xs text-neutral-400">Contradiction Recall</span>
+              <div className="text-2xl font-bold text-sky-400">{gating.overall_test_metrics?.contradiction_recall ?? "—"}%</div>
+              <small className="text-neutral-500">Measured on the recorded test set</small>
+            </div>
+            <div className="p-3 bg-neutral-900/60 rounded border border-neutral-800">
+              <span className="text-xs text-neutral-400">False-Alarm Rate</span>
+              <div className="text-2xl font-bold text-amber-400">{gating.model_false_alarm_rate}%</div>
+              <small className="text-neutral-500">Baseline: {gating.baseline_false_alarm_rate}%</small>
+            </div>
+            <div className="p-3 bg-neutral-900/60 rounded border border-neutral-800">
+              <span className="text-xs text-neutral-400">CPU Latency</span>
+              <div className="text-2xl font-bold text-purple-400">{gating.latency_cpu_single_ms} ms</div>
+              <small className="text-neutral-500">Batch 20: {gating.latency_cpu_batch20_ms} ms</small>
+            </div>
+          </div>
+
+          {/* Confusion Matrix Breakdown */}
+          {gating.overall_test_metrics?.confusion_matrix && (
+            <div className="mt-4 pt-4 border-t border-neutral-800">
+              <h3 className="text-sm font-semibold text-neutral-300 mb-2">Test Confusion Matrix (Predicted vs Actual)</h3>
+              <div className="grid grid-cols-3 gap-2 text-center text-xs">
+                <div className="p-2 bg-neutral-800/40 rounded">
+                  <span className="text-neutral-400 block">Entailment</span>
+                  <strong className="text-emerald-400 font-mono text-sm">{gating.overall_test_metrics.confusion_matrix[0][0]} Correct</strong>
+                </div>
+                <div className="p-2 bg-neutral-800/40 rounded">
+                  <span className="text-neutral-400 block">Contradiction</span>
+                  <strong className="text-red-400 font-mono text-sm">{gating.overall_test_metrics.confusion_matrix[1][1]} Correct</strong>
+                </div>
+                <div className="p-2 bg-neutral-800/40 rounded">
+                  <span className="text-neutral-400 block">Neutral/Unsupported</span>
+                  <strong className="text-yellow-400 font-mono text-sm">{gating.overall_test_metrics.confusion_matrix[2][2]} Correct</strong>
+                </div>
+              </div>
+            </div>
+          )}
+        </section>
+      )}
+
+      {/* 2. Audit Volume & Standard Metrics */}
       {audits.data && (
         <>
           <section className="metric-strip">
@@ -267,14 +345,6 @@ export function MetricsPage() {
           </section>
         </>
       )}
-      <aside className="control-note">
-        <span className="eyebrow">DRIFT MONITORING</span>
-        <p>
-          Historical score snapshots and drift measurements are not available
-          from the current API. Audit volume is shown here; score trends need a
-          history source.
-        </p>
-      </aside>
     </div>
   )
 }

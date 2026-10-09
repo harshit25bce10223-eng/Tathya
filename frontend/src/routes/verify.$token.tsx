@@ -1,3 +1,4 @@
+import { apiFetch } from "@/api/transport"
 import { useQuery } from "@tanstack/react-query"
 import { createFileRoute, Link } from "@tanstack/react-router"
 import { z } from "zod"
@@ -8,6 +9,7 @@ const schema = z.object({
   found: z.boolean(),
   status: z.string(),
   trust_score: z.number().min(0).max(100),
+  score_status: z.string().default("insufficient_verification"),
   document_count: z.number().int().nonnegative(),
   document_hash: z.string(),
   issued_at: z.string().nullable(),
@@ -31,9 +33,7 @@ function VerifyPage() {
     queryKey: ["verify", token],
     retry: 1,
     queryFn: async () => {
-      const response = await fetch(
-        `${(import.meta.env.VITE_API_URL ?? import.meta.env.VITE_API_BASE_URL ?? "").replace(/\/$/, "")}/api/v1/verify/${encodeURIComponent(token)}`,
-      )
+      const response = await apiFetch(`/verify/${encodeURIComponent(token)}`, {}, false)
       if (!response.ok)
         throw new Error(
           response.status === 404
@@ -90,7 +90,7 @@ function VerifyPage() {
                   <StatusPill status={data.status} />
                 </div>
                 <div className="verification-score">
-                  <strong>{data.trust_score}</strong>
+                  <strong>{data.score_status === "insufficient_verification" ? "Not assessed" : data.trust_score}</strong>
                   <span>/ 100 · Published trust score</span>
                 </div>
                 <div className="policy-grid">

@@ -1,0 +1,1 @@
+import{t as e}from"./jsx-runtime-B-hcVAMW.js";import{f as t}from"./schemas-By-29fNM.js";var n=e();function r({className:e,...r}){return(0,n.jsx)(`div`,{"data-slot":`skeleton`,className:t(`bg-accent animate-pulse rounded-md`,e),...r})}export{r as t};

@@ -23,5 +23,38 @@ export default defineConfig({
     }),
     react(),
     tailwindcss(),
+    // Exclude test files from Vite's module graph
+    {
+      name: "exclude-tests",
+      enforce: "pre",
+      resolveId(source, importer) {
+        if (source.includes("/tests/") || source.includes("\\tests\\")) {
+          return { id: source, external: true }
+        }
+        if (importer && (importer.includes("/tests/") || importer.includes("\\tests\\"))) {
+          return { id: source, external: true }
+        }
+      },
+    },
   ],
+  server: {
+    host: "0.0.0.0",
+    proxy: {
+      "/api": {
+        target: "http://localhost:8001",
+        changeOrigin: true,
+      },
+      "/health": {
+        target: "http://localhost:8001",
+        changeOrigin: true,
+      },
+      "/demo": {
+        target: "http://localhost:8001",
+        changeOrigin: true,
+      },
+    },
+    fs: {
+      deny: ["tests/**"],
+    },
+  },
 })

@@ -95,6 +95,14 @@ class AuditBase(SQLModel):
     failed_stage: str | None = Field(default=None, max_length=128)
     # Deterministic hash over sorted source document text_hashes
     source_set_hash: str | None = Field(default=None, max_length=64)
+    # Phase 4: Trust scores
+    ai_score: float = Field(default=0.0)
+    reviewed_score: float = Field(default=0.0)
+    score_band: str = Field(default="insufficient_verification", max_length=32)
+    critical_risk: bool = Field(default=False)
+    review_status: str = Field(default="pending", max_length=32)  # pending | reviewed | final
+    score_version: str = Field(default="4.0", max_length=16)
+    score_methodology: str = Field(default="deterministic_penalty_v1", max_length=128)
 
 
 class AuditCreate(AuditBase):
@@ -107,6 +115,13 @@ class AuditUpdate(SQLModel):
     error_message: str | None = None
     failed_stage: str | None = Field(default=None, max_length=128)
     source_set_hash: str | None = Field(default=None, max_length=64)
+    ai_score: float | None = Field(default=None)
+    reviewed_score: float | None = Field(default=None)
+    score_band: str | None = Field(default=None, max_length=32)
+    critical_risk: bool | None = Field(default=None)
+    review_status: str | None = Field(default=None, max_length=32)
+    score_version: str | None = Field(default=None, max_length=16)
+    score_methodology: str | None = Field(default=None, max_length=128)
 
 
 class Audit(AuditBase, table=True):
@@ -131,6 +146,13 @@ class AuditPublic(AuditBase):
     owner_id: uuid.UUID
     created_at: datetime | None = None
     updated_at: datetime | None = None
+    ai_score: float
+    reviewed_score: float
+    score_band: str
+    critical_risk: bool
+    review_status: str
+    score_version: str
+    score_methodology: str
 
 
 class AuditsPublic(SQLModel):
@@ -386,6 +408,8 @@ class DecisionBase(SQLModel):
     actor_id: uuid.UUID = Field(foreign_key="users.id", nullable=False)
     action: str = Field(max_length=32)
     note: str | None = Field(default=None)
+    reason: str = Field(default="", sa_column=Column(Text()))  # why this decision
+    remediation: str = Field(default="", sa_column=Column(Text()))  # for FIX actions
 
 
 class DecisionCreate(DecisionBase):
@@ -405,6 +429,8 @@ class Decision(DecisionBase, table=True):
 class DecisionPublic(DecisionBase):
     id: uuid.UUID
     created_at: datetime | None = None
+    reason: str
+    remediation: str
 
 
 # ---------------------------------------------------------------------------
@@ -496,7 +522,14 @@ class PassportBase(SQLModel):
     chain_head: str = Field(default="", max_length=64)
     signature: str = Field(default="", sa_column=Column(Text()))
     trust_score: float = Field(default=0.0)
-    status: str = Field(default="VERIFIED", max_length=32)
+    status: str = Field(default="VERIFIED", max_length=32)  # VERIFIED | UNDER_REVIEW | FINAL
+    ai_score: float = Field(default=0.0)
+    reviewed_score: float = Field(default=0.0)
+    score_band: str = Field(default="insufficient_verification", max_length=32)
+    critical_risk: bool = Field(default=False)
+    finding_summary: str = Field(default="", max_length=500)
+    review_status: str = Field(default="pending", max_length=32)  # pending | reviewed | final
+    revision: int = Field(default=1)
     issued_at: datetime | None = Field(
         default_factory=get_datetime_utc,
         sa_column=Column(DateTime(timezone=True)),
@@ -520,6 +553,14 @@ class Passport(PassportBase, table=True):
 class PassportPublic(PassportBase):
     id: uuid.UUID
     created_at: datetime | None = None
+    ai_score: float
+    reviewed_score: float
+    score_band: str
+    status: str
+    critical_risk: bool
+    finding_summary: str
+    review_status: str
+    revision: int
 
 
 # ---------------------------------------------------------------------------

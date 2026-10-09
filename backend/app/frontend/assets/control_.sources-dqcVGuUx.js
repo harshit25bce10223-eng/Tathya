@@ -1,0 +1,1 @@
+import{r as e}from"./ControlPages-KoQ6PfHu.js";var t=e;export{t as component};

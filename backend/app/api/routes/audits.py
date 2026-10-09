@@ -8,9 +8,13 @@ from __future__ import annotations
 
 import json
 import uuid
+from pathlib import Path
 from typing import Annotated, Any
 
 from fastapi import APIRouter, File, Form, HTTPException, UploadFile, status
+from starlette.concurrency import run_in_threadpool
+from app.core.jobs import StageError
+from app.core.pipeline import issue_passport
 from sqlmodel import Session, func, select
 
 from app.api.deps import CurrentUser, ReviewerDep, SessionDep
@@ -98,7 +102,7 @@ def _recompute_source_set_hash(session: Session, audit_id: uuid.UUID) -> str | N
     from app.core.canonical import source_set_hash
 
     hashes = session.exec(
-        select(Document.text_hash).where(Document.audit_id == audit_id)
+        select(Document.text_hash).where(Document.audit_id == audit_id, Document.is_current.is_(True))
     ).all()
     if not hashes:
         return None
@@ -114,28 +118,44 @@ def _recompute_source_set_hash(session: Session, audit_id: uuid.UUID) -> str | N
 async def _ingest_uploads(
     session: Session, audit: Audit, files: list[UploadFile]
 ) -> list[Document]:
+    if not 1 <= len(files) <= 20:
+        raise HTTPException(400, "Choose between 1 and 20 documents.")
+    names = [Path(upload.filename or "upload.bin").name for upload in files]
+    if len(set(names)) != len(names):
+        session.rollback()
+        raise HTTPException(400, "Files in one upload must have different names so their document roles and versions stay distinct.")
     documents: list[Document] = []
-    for upload in files:
-        filename = upload.filename or "upload.bin"
-        data = await upload.read()
-        if len(data) > MAX_UPLOAD_BYTES:
-            raise HTTPException(
-                status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
-                detail=f"{filename} exceeds {MAX_UPLOAD_BYTES} bytes",
-            )
-        if not data:
-            raise HTTPException(status_code=400, detail=f"{filename} is empty")
-        path = save_upload(audit.id, filename, data)
-        documents.append(
-            ingest_document(
-                session,
-                audit,
-                filename=filename,
-                path=path,
-                mime_type=upload.content_type,
-            )
-        )
-    return documents
+    paths = []
+    total_bytes = 0
+    try:
+        for upload in files:
+            filename = upload.filename or "upload.bin"
+            data = bytearray()
+            while chunk := await upload.read(1024 * 1024):
+                data.extend(chunk)
+                total_bytes += len(chunk)
+                if len(data) > MAX_UPLOAD_BYTES or total_bytes > 100 * 1024 * 1024:
+                    raise HTTPException(413, "Each file must be at most 50 MB; the document set must be at most 100 MB.")
+            if not data:
+                raise HTTPException(400, f"{filename} is empty")
+            path = save_upload(audit.id, filename, bytes(data))
+            paths.append(path)
+            documents.append(await run_in_threadpool(
+                ingest_document, session, audit, filename=filename,
+                path=path, mime_type=upload.content_type, commit=False,
+            ))
+        session.flush()
+        return documents
+    except Exception as exc:
+        session.rollback()
+        for path in paths:
+            path.unlink(missing_ok=True)
+        if isinstance(exc, StageError):
+            raise HTTPException(422, "A document could not be read. Check that it is valid, unlocked and contains readable text.") from exc
+        raise
+    finally:
+        for upload in files:
+            await upload.close()
 
 
 def _job_status(audit: Audit) -> JobStatus:
@@ -163,11 +183,12 @@ async def create_audit(
     """Create an audit, ingest any uploaded documents, enqueue the job."""
     audit = Audit(title=title, owner_id=current_user.id, status="queued")
     session.add(audit)
-    session.commit()
-    session.refresh(audit)
+    session.flush()
 
-    if files:
-        await _ingest_uploads(session, audit, files)
+    if not files:
+        session.rollback()
+        raise HTTPException(400, "Add at least one document.")
+    await _ingest_uploads(session, audit, files)
     _recompute_source_set_hash(session, audit.id)
     submit_audit_job(audit.id)
     session.refresh(audit)
@@ -197,14 +218,14 @@ def get_audit(
         select(func.count()).select_from(Document).where(Document.audit_id == audit_id)
     ).one()
     flag_rows = session.exec(
-        select(Flag.status, func.count())
-        .where(Flag.audit_id == audit_id)
+        select(Flag.status, func.count()).join(Document, Flag.document_id == Document.id)
+        .where(Flag.audit_id == audit_id, Document.is_current.is_(True), Flag.status != "superseded")
         .group_by(Flag.status)
     ).all()
     flag_count = sum(c for _, c in flag_rows)
-    open_count = sum(c for s, c in flag_rows if s in ("pending", "open"))
+    open_count = sum(c for s, c in flag_rows if s in ("pending", "open", "accepted"))
     claim_count = session.exec(
-        select(func.count()).select_from(Claim).where(Claim.audit_id == audit_id)
+        select(func.count()).select_from(Claim).join(Document, Claim.document_id == Document.id).where(Claim.audit_id == audit_id, Document.is_current.is_(True))
     ).one()
     fact_count = session.exec(
         select(func.count())
@@ -255,6 +276,26 @@ def list_documents(
     return DocumentsPublic(data=documents, count=len(documents))
 
 
+@router.get("/{audit_id}/documents/{document_id}/text")
+def get_document_text(
+    audit_id: uuid.UUID,
+    document_id: uuid.UUID,
+    session: SessionDep,
+    current_user: CurrentUser,
+) -> dict[str, Any]:
+    _get_audit(session, audit_id, current_user)
+    doc = session.get(Document, document_id)
+    if doc is None or doc.audit_id != audit_id:
+        raise HTTPException(status_code=404, detail="Document not found")
+    return {
+        "id": str(doc.id),
+        "filename": doc.filename,
+        "raw_text": doc.raw_text or "",
+        "normalized_text": doc.normalized_text or "",
+        "text_hash": doc.text_hash or "",
+    }
+
+
 @router.post("/{audit_id}/documents", response_model=DocumentsPublic)
 async def upload_documents(
     audit_id: uuid.UUID,
@@ -263,6 +304,11 @@ async def upload_documents(
     files: Annotated[list[UploadFile], File()],
 ) -> DocumentsPublic:
     audit = _get_audit(session, audit_id, current_user)
+    if audit.status in ("queued", "processing"):
+        raise HTTPException(409, "Wait for this audit to finish before adding documents.")
+    audit.status = "queued"
+    audit.error_message = None
+    audit.failed_stage = None
     await _ingest_uploads(session, audit, files)
     _recompute_source_set_hash(session, audit_id)
     submit_audit_job(audit.id)
@@ -275,7 +321,7 @@ def run_audit(
     audit_id: uuid.UUID, session: SessionDep, current_user: CurrentUser
 ) -> JobStatus:
     audit = _get_audit(session, audit_id, current_user)
-    if audit.status == "processing":
+    if audit.status in ("queued", "processing"):
         raise HTTPException(status_code=409, detail="Audit is already processing")
     audit.status = "queued"
     audit.error_message = None
@@ -311,7 +357,7 @@ def list_claims_with_grounding(
 ) -> ClaimsWithGroundingPublic:
     _get_audit(session, audit_id, current_user)
     claims = session.exec(
-        select(Claim).where(Claim.audit_id == audit_id).order_by(Claim.created_at)  # type: ignore[attr-defined]
+        select(Claim).join(Document, Claim.document_id == Document.id).where(Claim.audit_id == audit_id, Document.is_current.is_(True)).order_by(Claim.created_at)  # type: ignore[attr-defined]
     ).all()
 
     enriched_claims = []
@@ -385,7 +431,7 @@ def list_flags(
 ) -> FlagsWithEvidencePublic:
     _get_audit(session, audit_id, current_user)
     flags = session.exec(
-        select(Flag).where(Flag.audit_id == audit_id).order_by(Flag.created_at)  # type: ignore[attr-defined]
+        select(Flag).join(Document, Flag.document_id == Document.id).where(Flag.audit_id == audit_id, Document.is_current.is_(True), Flag.status != "superseded").order_by(Flag.created_at)  # type: ignore[attr-defined]
     ).all()
 
     enriched_flags = []
@@ -447,7 +493,7 @@ def submit_decision(
         flag_id=flag_id,
         actor_id=reviewer.id,
         action=body.action,
-        note=body.note,
+        note=body.note or body.reason,
         reason=body.reason,
         remediation=body.remediation,
     )
@@ -456,8 +502,7 @@ def submit_decision(
     flag.status = {"accept": "accepted", "dismiss": "dismissed", "fix": "fixed"}[
         body.action
     ]
-    if body.note:
-        flag.reviewer_note = body.note
+    flag.reviewer_note = body.note or body.reason
     session.add(flag)
     session.commit()
     session.refresh(decision)
@@ -484,7 +529,7 @@ def rescore_audit(
     audit_id: uuid.UUID, session: SessionDep, reviewer: ReviewerDep
 ) -> RescoreResult:
     audit = _get_audit(session, audit_id, reviewer)
-    flags = session.exec(select(Flag).where(Flag.audit_id == audit_id)).all()
+    flags = session.exec(select(Flag).join(Document, Flag.document_id == Document.id).where(Flag.audit_id == audit_id, Document.is_current.is_(True), Flag.status != "superseded")).all()
     breakdown = compute_score_breakdown(session, audit_id)
     persist_scores(session, audit, breakdown)
 
@@ -500,6 +545,7 @@ def rescore_audit(
     if passport is not None:
         passport.ai_score = ai_score
         passport.reviewed_score = reviewed_score
+        passport.trust_score = reviewed_score
         passport.score_band = reviewed_score_band
         passport.critical_risk = critical_risk
         session.add(passport)
@@ -522,6 +568,8 @@ def rescore_audit(
             }
         ),
     )
+    if passport is not None:
+        issue_passport(session, audit)
     return RescoreResult(
         audit=_public(audit),
         ai_score=ai_score,
@@ -557,54 +605,10 @@ def create_passport(
     audit_id: uuid.UUID, session: SessionDep, reviewer: ReviewerDep
 ) -> PassportPublic:
     audit = _get_audit(session, audit_id, reviewer)
-    # Check if passport already exists
-    existing = session.exec(
-        select(Passport).where(Passport.audit_id == audit_id)
-    ).first()
-    if existing is not None:
-        return PassportPublic.model_validate(existing)
-    
-    # Compute scores
-    flags = session.exec(select(Flag).where(Flag.audit_id == audit_id)).all()
-    breakdown = compute_score_breakdown(session, audit_id)
-    persist_scores(session, audit, breakdown)
-    
-    # Generate verify token via security module
-    verify_token = security.generate_verify_token()
-    
-    # Compute document hash from audit ID and scores via security module
-    document_hash = security.sha256_text(
-        f"{audit_id}:{breakdown.ai_score}:{breakdown.reviewed_score}"
-    )
-    
-    # Sign the passport
-    private_pem, public_pem = security.ensure_keypair(
-        settings.ECDSA_PRIVATE_KEY_PATH, settings.ECDSA_PUBLIC_KEY_PATH
-    )
-    
-    message = f"{audit_id}:{breakdown.ai_score}:{breakdown.reviewed_score}".encode()
-    signature = security.sign_message(private_pem, message)
-    
-    # Create new passport with scores
-    passport = Passport(
-        audit_id=audit_id,
-        verify_token=verify_token,
-        document_hash=document_hash,
-        chain_head="0" * 64,  # genesis
-        signature=signature,
-        ai_score=breakdown.ai_score,
-        reviewed_score=breakdown.reviewed_score,
-        score_band=breakdown.ai_score_band,
-        critical_risk=breakdown.critical_risk,
-        finding_summary="Initial scores computed",
-        review_status="pending",
-        revision=1,
-    )
-    session.add(passport)
-    session.commit()
-    session.refresh(passport)
-    
-    return PassportPublic.model_validate(passport)
+    if audit.status != "completed":
+        raise HTTPException(409, "A completed audit is required before issuing a passport.")
+    return PassportPublic.model_validate(issue_passport(session, audit))
+
 
 
 @router.get("/{audit_id}/passport", response_model=PassportPublic)
@@ -658,10 +662,9 @@ def verify_passport(verify_token: str, session: SessionDep) -> VerificationResul
         _, public_pem = security.ensure_keypair(
             settings.ECDSA_PRIVATE_KEY_PATH, settings.ECDSA_PUBLIC_KEY_PATH
         )
-        message = f"{passport.document_hash}:{passport.chain_head}".encode()
-        signature_valid = security.verify_signature(
-            public_pem, message, passport.signature
-        )
+        from app.core.passport_payload import signed_payload
+        message = signed_payload(passport) if passport.signature.startswith("v2:") else f"{passport.document_hash}:{passport.chain_head}".encode()
+        signature_valid = security.verify_signature(public_pem, message, passport.signature[3:] if passport.signature.startswith("v2:") else passport.signature)
     except Exception:  # noqa: BLE001
         signature_valid = None
 
@@ -671,6 +674,7 @@ def verify_passport(verify_token: str, session: SessionDep) -> VerificationResul
         verify_token=passport.verify_token,
         status=passport.status,
         trust_score=passport.trust_score,
+        score_status=compute_score_breakdown(session, str(passport.audit_id)).score_status,
         issued_at=passport.issued_at,
         document_count=document_count,
         document_hash=passport.document_hash,

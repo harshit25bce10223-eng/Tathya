@@ -1,0 +1,35 @@
+# Tathya repair status — 9 October 2026
+
+The original 146 findings remain in system-error-audit-2026-10-09.md as a historical snapshot. This delivery repairs the core audit flow and evidence scoring; it does not certify every recommendation or implement the complete master blueprint.
+
+## Implemented and verified
+
+- Atomic bounded uploads, rollback and cleanup on failure, distinct stored file versions, duplicate-batch protection, asynchronous parser work, readable API errors and upload cancellation.
+- Scoring methodology schema migration, safe failed-session recovery, deduplicated jobs and interrupted-job recovery.
+- Real source-to-claim checks for comparable monetary values, dates and durations; currency-aware normalization; separate source documents; literal source quotes; conflicting evidence remains uncertain.
+- Current document versions determine retrieval, findings and coverage. Source amendments supersede old grounding findings instead of leaving contradictions active forever.
+- Scoring 6.0 separates evidence coverage from verification attempts. Zero claims, missing sources or no conclusive source-backed checks produce Not assessed. Partial coverage caps the score at 79; an unresolved critical finding caps it at 49. These are deterministic decision-support rules, not calibrated probabilities of truth.
+- Score breakdown exposes supported, contradicted, unsupported and uncertain claims, real deductions and measured coverage. Missing evidence cannot yield a clean 100/100.
+- Passport revision updates preserve verification links. Version 2 signatures cover the issued audit identity, source hash, chain head, score, band, findings summary and review state. Tampering invalidates verification.
+- Safe bounded proof expressions replace arbitrary evaluation and contradictory boolean assertions now fail correctly.
+- Challenge results use actual recorded executions; unavailable models return explicit errors. Status endpoints no longer invent model uptime or latency.
+- Auth boundaries, invalid UUID responses, reviewer error recovery, health degradation and API-safe SPA navigation.
+- Evidence preview and text highlighting, source/primary upload roles, persistent workspace drafts, unsaved-change prompts, stale-result clearing, keyboard and focus improvements, reduced-motion splash and mobile proof layout.
+
+## Validation
+
+- Full backend suite: 155 passed, zero skipped, against a temporary isolated PostgreSQL database. The database is removed afterward; production data is not used by the test suite.
+- TypeScript build check: passed.
+- Frontend production build: passed and bundled with the backend.
+- Live browser upload of a synthetic contract and source approval produced four extracted claims, four contradictions and four findings, including a critical mismatch. The UI showed the real score and evidence coverage.
+- Regression verifies that replacing the source with a matching new version supersedes the old contradictions and produces fully supported claims.
+- Regression verifies passport score tampering, unsupported proof inputs, atomic upload rollback and missing model checkpoint behavior.
+- Existing default-superuser-password configuration still emits a development warning. Deployment configuration needs its own review.
+
+## Work still outstanding
+
+The complete blueprint is substantially broader than this repair. Policy Studio editing and pipeline enforcement, a complete source-fact authority editor, source watchers, the claim graph, production evaluation datasets and ablations, full adversarial execution orchestration, mobile release and production deployment are not certified complete here.
+
+Full live keyboard, screen-reader, contrast and all viewport conformance checks are not certified. Historical UI observations and design recommendations in the original audit require current visual validation. Parser resource limits reduce risk but are not a full sandbox or an exhaustive malformed-document assessment. Network response-body timeouts, concurrent model loading and numeric-only proof draft detection deserve further hardening.
+
+Generated model weights, training corpora, databases, runtime credentials, local test artifacts and unrelated mobile changes are excluded from this delivery. The master blueprint is retained separately as the desired product specification.

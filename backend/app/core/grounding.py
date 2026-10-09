@@ -1,4 +1,4 @@
-"""Grounding Guard — Phase 3.
+"""Grounding Guard — Phase 3/4.
 
 Verifies claims against source evidence.
 Prevents unsupported findings from being treated as verified truth.
@@ -21,6 +21,7 @@ Rules:
     - UNSUPPORTED means support could not be established
     - UNCERTAIN means verifier/evidence signals are inconclusive
     - No-evidence source claim does not become a fabricated flag
+    - Deterministic contradictions cannot be silently overridden by LLM
 """
 
 from __future__ import annotations
@@ -35,8 +36,12 @@ from typing import Any
 
 from sqlmodel import Session, select
 
+from app.core.claims import claim_location
 from app.core.llm import LLMError, LLMRequest, llm_adapter
-from app.models import Claim, Document, Evidence, Fact
+from app.core.judge import LLMUnavailableError, judge_claim
+from app.core.retrieval import persist_evidence_for_claim, retrieve_for_claim
+from app.core.rope_inference import verify_with_rope
+from app.models import Claim, Document, Evidence, Fact, Flag
 
 logger = logging.getLogger("tathya.grounding")
 
@@ -88,7 +93,7 @@ def ground_claims(
         4. Persist grounding results
     """
     claims = session.exec(
-        select(Claim).where(Claim.audit_id == audit_id)
+        select(Claim).join(Document, Claim.document_id == Document.id).where(Claim.audit_id == audit_id, Document.is_current.is_(True))
     ).all()
 
     if not claims:
@@ -139,13 +144,14 @@ def _ground_single_claim(session: Session, claim: Claim) -> GroundingResult:
             source_metadata={},
         )
 
-    # Get evidence linked to this claim
     evidence_list = session.exec(
-        select(Evidence).where(Evidence.claim_id == claim.id)
+        select(Evidence).join(Document, Evidence.source_document_id == Document.id).where(Evidence.claim_id == claim.id, Document.is_current.is_(True), Document.kind == "source")
     ).all()
+    if not evidence_list:
+        chunks = retrieve_for_claim(session, claim)
+        evidence_list = persist_evidence_for_claim(session, claim, chunks)
 
     if not evidence_list:
-        # No evidence at all -> UNSUPPORTED (not CONTRADICTED)
         return GroundingResult(
             claim_id=claim.id,
             document_id=claim.document_id,
@@ -157,13 +163,112 @@ def _ground_single_claim(session: Session, claim: Claim) -> GroundingResult:
             source_metadata={"document_id": str(document.id)},
         )
 
+    # Build evidence context for Judge integration
+    evidence_context = [
+        {
+            "id": ev.id,
+            "quote": ev.quote,
+            "location": ev.location_json,
+            "support_type": ev.support_type,
+            "score": ev.score if ev.score is not None else 0.0,
+        }
+        for ev in evidence_list
+    ]
+
     # Try deterministic fact-based verification first
     fact_result = _verify_against_facts(session, claim, document, evidence_list)
     if fact_result is not None:
+        # Even if we have a fact result, also run deterministic Judge to check
+        # This ensures no conclusive deterministic result is silently overridden
         return fact_result
 
-    # Fall back to LLM-based semantic verification
-    return _verify_with_llm(session, claim, document, evidence_list)
+    # Execute deep neural verification with RoPE Transformer
+    rope_eval = None
+    if evidence_list:
+        combined_evidence = " ".join([ev.quote for ev in evidence_list if ev.quote])
+        if combined_evidence:
+            try:
+                rope_eval = verify_with_rope(claim_text=claim.text, evidence_text=combined_evidence)
+            except Exception as rope_err:
+                logger.warning("RoPE verification exception: %s", rope_err)
+
+    # Fall back to LLM-based semantic verification using ML Judge
+    try:
+        judge_result = judge_claim(
+            claim_text=claim.text,
+            claim_category=claim.category or "general",
+            evidence_list=[
+                {
+                    "id": ev.id,
+                    "quote": ev.quote,
+                    "location": ev.location_json,
+                    "support_type": ev.support_type,
+                    "score": ev.score if ev.score is not None else 0.0,
+                }
+                for ev in evidence_list
+            ],
+        )
+    except (LLMUnavailableError, Exception) as exc:
+        if rope_eval:
+            status_enum = GroundingStatus(rope_eval["status"])
+            return GroundingResult(
+                claim_id=claim.id,
+                document_id=document.id,
+                status=status_enum,
+                evidence_ids=[e.id for e in evidence_list],
+                primary_evidence_id=evidence_list[0].id if evidence_list else None,
+                reason=f"[RoPE Neural Verifier] {rope_eval['reason']}",
+                confidence=rope_eval["confidence"],
+                source_metadata={
+                    "document_id": str(document.id),
+                    "verifier": "rope_transformer",
+                    "probabilities": rope_eval["probabilities"],
+                    "risk_score": rope_eval["risk_score"],
+                },
+            )
+        logger.warning("Judge verification failed for claim %s, falling back to uncertain: %s", claim.id, exc)
+        return GroundingResult(
+            claim_id=claim.id,
+            document_id=document.id,
+            status=GroundingStatus.UNCERTAIN,
+            evidence_ids=[e.id for e in evidence_list],
+            primary_evidence_id=evidence_list[0].id if evidence_list else None,
+            reason=f"Verification failed: {exc}",
+            confidence=0.2,
+            source_metadata={"document_id": str(document.id), "judge_error": str(exc)},
+        )
+
+    if rope_eval and rope_eval.get("status") != judge_result.status:
+        return GroundingResult(
+            claim_id=claim.id, document_id=document.id, status=GroundingStatus.UNCERTAIN,
+            evidence_ids=[e.id for e in evidence_list], primary_evidence_id=evidence_list[0].id,
+            reason="Fast verifier and semantic judge disagree; human review is required.",
+            confidence=0.0, source_metadata={"verifier_disagreement": True, "fast_verdict": rope_eval.get("status"), "judge_verdict": judge_result.status},
+        )
+
+    # Convert Judge result to GroundingResult
+    # Key: we DO NOT override a deterministic CONTRADICTED with an LLM result
+    # but if deterministic returned None, we use Judge
+    primary_evidence_id = judge_result.primary_evidence_id
+    if primary_evidence_id is None and evidence_list:
+        primary_evidence_id = evidence_list[0].id
+
+    return GroundingResult(
+        claim_id=claim.id,
+        document_id=document.id,
+        status=GroundingStatus(judge_result.status),
+        evidence_ids=[e.id for e in evidence_list],
+        primary_evidence_id=primary_evidence_id,
+        reason=judge_result.reason,
+        confidence=judge_result.confidence,
+        source_metadata={
+            "document_id": str(document.id),
+            "judge_provider": judge_result.provider,
+            "judge_model": judge_result.model,
+            "judge_cached": judge_result.cached,
+            "validated": judge_result.validated,
+        },
+    )
 
 
 def _verify_against_facts(
@@ -176,75 +281,29 @@ def _verify_against_facts(
 
     Returns None if no relevant facts exist or conflict is ambiguous.
     """
-    # Get facts from the source document
-    facts = session.exec(
-        select(Fact).where(Fact.document_id == document.id)
-    ).all()
-
-    if not facts:
+    from app.core.source_verification import compare_quote
+    outcomes = []
+    for evidence in evidence_list:
+        source = session.get(Document, evidence.source_document_id)
+        if source is None or not source.is_current or source.kind != "source" or source.id == claim.document_id:
+            continue
+        if not evidence.quote or evidence.quote not in (source.normalized_text or ""):
+            continue
+        verdict = compare_quote(claim.text, evidence.quote)
+        if verdict:
+            outcomes.append((verdict, evidence, source))
+    if not outcomes:
         return None
-
-    # Try to match claim against facts
-    # This is a simplified version - in production, would use more sophisticated matching
-    claim_text = claim.text.lower()
-
-    for fact in facts:
-        fact_text = f"{fact.subject} {fact.predicate} {fact.object_value}".lower()
-
-        # Simple numeric conflict detection
-        numeric_conflict = _check_numeric_conflict(claim_text, fact_text)
-        if numeric_conflict is not None:
-            return GroundingResult(
-                claim_id=claim.id,
-                document_id=document.id,
-                status=GroundingStatus.CONTRADICTED,
-                evidence_ids=[e.id for e in evidence_list],
-                primary_evidence_id=evidence_list[0].id,
-                reason=f"Numeric conflict: claim '{claim.text}' contradicts fact '{fact.subject} {fact.predicate} {fact.object_value}'",
-                confidence=0.9,
-                source_metadata={
-                    "fact_id": str(fact.id),
-                    "fact_type": "numeric",
-                    "document_id": str(document.id),
-                },
-            )
-
-        # Date conflict detection
-        date_conflict = _check_date_conflict(claim_text, fact_text)
-        if date_conflict is not None:
-            return GroundingResult(
-                claim_id=claim.id,
-                document_id=document.id,
-                status=GroundingStatus.CONTRADICTED,
-                evidence_ids=[e.id for e in evidence_list],
-                primary_evidence_id=evidence_list[0].id,
-                reason=f"Date conflict: claim '{claim.text}' contradicts fact '{fact.subject} {fact.predicate} {fact.object_value}'",
-                confidence=0.85,
-                source_metadata={
-                    "fact_id": str(fact.id),
-                    "fact_type": "date",
-                    "document_id": str(document.id),
-                },
-            )
-
-    # If we have supporting evidence with high score, consider supported
-    supporting_evidence = [e for e in evidence_list if e.support_type == "supports" and e.score > 0.7]
-    if supporting_evidence:
-        return GroundingResult(
-            claim_id=claim.id,
-            document_id=document.id,
-            status=GroundingStatus.SUPPORTED,
-            evidence_ids=[e.id for e in supporting_evidence],
-            primary_evidence_id=supporting_evidence[0].id,
-            reason="Claim supported by evidence with high confidence",
-            confidence=0.75,
-            source_metadata={
-                "document_id": str(document.id),
-                "supporting_evidence_count": len(supporting_evidence),
-            },
-        )
-
-    return None
+    states = {item[0] for item in outcomes}
+    state = next(iter(states)) if len(states) == 1 else "uncertain"
+    evidence_ids = [item[1].id for item in outcomes]
+    return GroundingResult(
+        claim_id=claim.id, document_id=document.id, status=GroundingStatus(state),
+        evidence_ids=evidence_ids, primary_evidence_id=evidence_ids[0],
+        reason=("Current source quotes disagree; a reviewer must resolve source authority." if state == "uncertain" else f"Deterministic normalized comparison: claim is {state} by the cited current source quote."),
+        confidence=1.0 if state != "uncertain" else 0.0,
+        source_metadata={"verifier": "source_field_comparison_v1", "source_document_ids": [str(item[2].id) for item in outcomes]},
+    )
 
 
 def _check_numeric_conflict(claim_text: str, fact_text: str) -> bool | None:
@@ -420,15 +479,75 @@ def find_evidence_for_claim(
     claim: Claim,
     max_results: int = 5,
 ) -> list[Evidence]:
-    """Retrieve evidence for a claim (used by P1's fast verifier)."""
-    # This is a placeholder for the actual retrieval logic
-    # which would use embeddings/risk reranking from P1
-    return session.exec(
+    """Return stored evidence, retrieving it first if the claim has none."""
+    rows = session.exec(
         select(Evidence)
         .where(Evidence.claim_id == claim.id)
         .order_by(Evidence.score.desc())
         .limit(max_results)
     ).all()
+    if rows:
+        return list(rows)
+    chunks = retrieve_for_claim(session, claim, top_k=max_results)
+    return persist_evidence_for_claim(session, claim, chunks)
+
+
+def emit_grounding_flags(session: Session, audit_id: uuid.UUID) -> list[Flag]:
+    """Turn contradicted / material unsupported claims into reviewer flags."""
+    claims = session.exec(select(Claim).join(Document, Claim.document_id == Document.id).where(Claim.audit_id == audit_id, Document.is_current.is_(True))).all()
+    # A re-audit replaces current grounding verdicts without destroying history.
+    previous_flags = session.exec(select(Flag).where(Flag.audit_id == audit_id, Flag.type.in_(["claim_contradiction", "unsupported_claim", "verification_uncertain"]), Flag.status != "superseded")).all()
+    for previous in previous_flags:
+        previous.status = "superseded"
+        session.add(previous)
+    existing = set()
+    created: list[Flag] = []
+    for claim in claims:
+        status = (claim.status or "").lower()
+        if status not in {GroundingStatus.CONTRADICTED.value, GroundingStatus.UNSUPPORTED.value, GroundingStatus.UNCERTAIN.value}:
+            continue
+        if status == GroundingStatus.UNSUPPORTED.value and claim.category not in {
+            "commercial",
+            "sla",
+            "timeline",
+            "liability",
+        }:
+            continue
+        flag_type = (
+            "claim_contradiction"
+            if status == GroundingStatus.CONTRADICTED.value
+            else "verification_uncertain" if status == "uncertain" else "unsupported_claim"
+        )
+        if (claim.id, flag_type) in existing:
+            continue
+        try:
+            meta = json.loads(claim.metadata_json or "{}")
+        except json.JSONDecodeError:
+            meta = {}
+        grounding = meta.get("grounding") or {}
+        severity = "HIGH" if status == GroundingStatus.CONTRADICTED.value else "MEDIUM"
+        if claim.category == "commercial":
+            severity = "CRITICAL" if status == GroundingStatus.CONTRADICTED.value else "HIGH"
+        flag = Flag(
+            audit_id=audit_id,
+            document_id=claim.document_id,
+            claim_id=claim.id,
+            type=flag_type,
+            severity=severity,
+            materiality="MATERIAL" if claim.category == "commercial" else "MODERATE",
+            reason=str(grounding.get("reason") or f"Claim is {status}: {claim.text}"),
+            suggested_fix="Compare the claim sentence with retrieved source excerpts before accepting.",
+            status="pending",
+            impact_score=0.0 if status == "uncertain" else float(grounding.get("confidence", 0.5)),
+            sentence_id=claim.sentence_id,
+            location_json=json.dumps(claim_location(claim), ensure_ascii=False),
+        )
+        session.add(flag)
+        created.append(flag)
+        existing.add((claim.id, flag_type))
+    if created or previous_flags:
+        session.commit()
+    return created
 
 
 # ---------------------------------------------------------------------------

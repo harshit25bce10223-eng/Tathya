@@ -47,6 +47,7 @@ class QueueState:
 
 
 queue_state = QueueState()
+_inflight: dict[uuid.UUID, Future[None]] = {}
 _state_lock = threading.Lock()
 
 
@@ -78,8 +79,20 @@ def submit_audit_job(
 ) -> Future[None]:
     """Enqueue an audit job. Status transitions are persisted by the worker."""
     with _state_lock:
+        if audit_id in _inflight:
+            return _inflight[audit_id]
         queue_state.pending += 1
-    return executor.submit(_run_job, audit_id, pipeline)
+        try:
+            future = executor.submit(_run_job, audit_id, pipeline)
+        except Exception:
+            queue_state.pending -= 1
+            raise
+        _inflight[audit_id] = future
+    def finished(_future):
+        with _state_lock:
+            _inflight.pop(audit_id, None)
+    future.add_done_callback(finished)
+    return future
 
 
 def _run_job(audit_id: uuid.UUID, pipeline: PipelineFn | None) -> None:
@@ -91,25 +104,16 @@ def _run_job(audit_id: uuid.UUID, pipeline: PipelineFn | None) -> None:
 
     tracker = StageTracker()
     with Session(engine) as session:
-        audit = session.get(Audit, audit_id)
-        if audit is None:
-            with _state_lock:
-                queue_state.active_audit_id = None
-                queue_state.active_stage = None
-            return
-        if audit.status == "cancelled":
-            with _state_lock:
-                queue_state.active_audit_id = None
-                queue_state.active_stage = None
-            return
-
-        audit.status = "processing"
-        audit.error_message = None
-        audit.failed_stage = None
-        session.add(audit)
-        session.commit()
-
+        audit = None
         try:
+            audit = session.get(Audit, audit_id)
+            if audit is None or audit.status == "cancelled":
+                return
+            audit.status = "processing"
+            audit.error_message = None
+            audit.failed_stage = None
+            session.add(audit)
+            session.commit()
             tracker.set("ingest")
             (pipeline or run_audit_pipeline)(session, audit_id, tracker)
             tracker.set("completed")
@@ -130,7 +134,8 @@ def _run_job(audit_id: uuid.UUID, pipeline: PipelineFn | None) -> None:
         except Exception as exc:  # noqa: BLE001 - job boundary
             session.rollback()
             logger.exception("audit job %s crashed", audit_id)
-            _fail(session, audit, tracker.stage, str(exc))
+            if audit is not None:
+                _fail(session, audit, tracker.stage, str(exc))
             with _state_lock:
                 queue_state.failed += 1
                 queue_state.last_error = str(exc)
@@ -154,3 +159,27 @@ def _fail(session: Session, audit: Audit, stage: str, message: str) -> None:
 
 def shutdown(wait: bool = True) -> None:
     executor.shutdown(wait=wait)
+
+
+def recover_interrupted_jobs() -> None:
+    """Resume queued jobs and make interrupted processing explicitly retryable."""
+    from sqlmodel import select
+    with Session(engine) as session:
+        interrupted = session.exec(select(Audit).where(Audit.status == "processing")).all()
+        for audit in interrupted:
+            audit.status = "failed"
+            audit.failed_stage = "interrupted"
+            audit.error_message = "Processing was interrupted by a service restart. Retry verification."
+            session.add(audit)
+        session.commit()
+        queued = list(session.exec(select(Audit.id).where(Audit.status == "queued")).all())
+    for audit_id in queued:
+        submit_audit_job(audit_id)
+
+
+def drain_jobs() -> None:
+    """Wait for submitted jobs before test cleanup or controlled shutdown."""
+    with _state_lock:
+        jobs = list(_inflight.values())
+    for future in jobs:
+        future.result(timeout=120)

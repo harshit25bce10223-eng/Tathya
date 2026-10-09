@@ -1,4 +1,5 @@
-import { useQuery } from "@tanstack/react-query"
+import { DocumentText } from "./DocumentText"
+import { useQuery, useMutation } from "@tanstack/react-query"
 import { Link } from "@tanstack/react-router"
 import { ArrowLeft, ArrowRight, FileText, ShieldCheck } from "lucide-react"
 import { useState } from "react"
@@ -13,6 +14,8 @@ export function AuditResult({ auditId }: { auditId: string }) {
     queryFn: () => auditApi.documentText(auditId, selectedDoc!.id),
     enabled: !!selectedDoc?.id,
   })
+  const breakdown = useQuery({ queryKey: ["audit-score", auditId], queryFn: () => auditApi.scoreBreakdown(auditId), enabled: summary.data?.audit.status === "completed" })
+  const retryAudit = useMutation({ mutationFn: () => auditApi.run(auditId), onSuccess: () => summary.refetch() })
   const data = summary.data
   if (!data)
     return (
@@ -22,11 +25,7 @@ export function AuditResult({ auditId }: { auditId: string }) {
         retry={() => summary.refetch()}
       />
     )
-  const score = data.passport?.trust_score
-  const active =
-    flags.data?.data.filter((flag) =>
-      ["pending", "accepted", "open"].includes(flag.status),
-    ) ?? []
+  const score = breakdown.data && breakdown.data.score_status !== "insufficient_verification" ? breakdown.data.reviewed_score : undefined
   return (
     <div className="product-page">
       <Link to="/control" className="back-link">
@@ -58,8 +57,9 @@ export function AuditResult({ auditId }: { auditId: string }) {
       {data.audit.status === "failed" && (
         <div className="form-error" role="alert">
           Verification could not finish.{" "}
-          {data.audit.error_message ||
-            "Please try a new audit with readable documents."}
+          {data.audit.failed_stage ? `The ${data.audit.failed_stage.replace(/_/g, " ")} step failed. ` : ""}Check that your documents are readable, then try again.
+          <button className="primary-link" disabled={retryAudit.isPending} onClick={() => retryAudit.mutate()}>Retry verification</button>
+          {retryAudit.error && <p role="alert">{retryAudit.error.message}</p>}
         </div>
       )}
       <section className="result-summary product-panel">
@@ -73,11 +73,11 @@ export function AuditResult({ auditId }: { auditId: string }) {
               : new Intl.NumberFormat("en-IN", {
                   maximumFractionDigits: 1,
                 }).format(score)}
-            <span>/ 100</span>
+            {score !== undefined && <span>/ 100</span>}
           </div>
           <p>
             {score === undefined
-              ? "Score available when a passport is issued."
+              ? breakdown.data?.score_limit_reason ?? "Verification coverage is being checked; no rating is available yet."
               : data.open_flag_count
                 ? "Review the flagged findings before relying on this document."
                 : "Read the evidence and findings alongside this score."}
@@ -101,6 +101,27 @@ export function AuditResult({ auditId }: { auditId: string }) {
           </div>
         </div>
       </section>
+      {breakdown.data && <section className="product-panel" aria-label="Verification coverage">
+        <h2>{breakdown.data.score_status === "assessed" ? "Evidence assessment" : "Verification incomplete"}</h2>
+        {breakdown.data.score_limit_reason && <p role="status">{breakdown.data.score_limit_reason}</p>}
+        <div className="score-context">
+          <div><span>Verification attempts</span><strong>{breakdown.data.coverage.checked_claims} / {breakdown.data.coverage.total_claims}</strong></div>
+          <div><span>Conclusive source checks</span><strong>{breakdown.data.coverage.grounded_claims} / {breakdown.data.coverage.total_claims}</strong></div>
+          <div><span>Supported</span><strong>{breakdown.data.coverage.supported}</strong></div>
+          <div><span>Contradicted</span><strong>{breakdown.data.coverage.contradicted}</strong></div>
+          <div><span>Unsupported</span><strong>{breakdown.data.coverage.unsupported}</strong></div>
+          <div><span>Uncertain / unchecked</span><strong>{breakdown.data.coverage.uncertain + breakdown.data.coverage.extracted}</strong></div>
+          <div><span>Separate source documents</span><strong>{breakdown.data.coverage.source_count}</strong></div>
+        </div>
+        <div className="score-context">
+          {Object.entries(breakdown.data.sub_scores).map(([key, value]) => <div key={key}><span>{key.replace(/_/g, " ")}</span><strong>{value === null ? "Not assessed" : `${value}%`}</strong></div>)}
+        </div>
+        <p>Support rates describe extracted claims checked against supplied sources; they are not a probability that the entire document is true.</p>
+        {score !== undefined && <p>AI score: {breakdown.data.ai_score} / 100 · Reviewed score: {breakdown.data.reviewed_score} / 100</p>}
+        <button type="button" className="primary-link" disabled={retryAudit.isPending} onClick={() => retryAudit.mutate()}>Re-audit current documents</button>
+        {retryAudit.error && <p role="alert">{retryAudit.error.message}</p>}
+      </section>}
+      <a className="back-link" href="#audit-findings">Jump to findings</a>
       <div className="result-grid">
         <section className="product-panel">
           <div className="panel-heading">
@@ -116,12 +137,13 @@ export function AuditResult({ auditId }: { auditId: string }) {
           />
           {flags.data && (
             <>
-              {["CRITICAL", "HIGH", "MEDIUM", "LOW"].map((severity) => {
-                const matches = active.filter(
-                  (flag) => flag.severity.toUpperCase() === severity,
+              <QueryState loading={summary.data?.audit.status === "completed" && breakdown.isPending} error={breakdown.error} retry={() => breakdown.refetch()} />
+              {["CRITICAL", "HIGH", "MEDIUM", "LOW", "NEGLIGIBLE"].map((severity) => {
+                const matches = (breakdown.data?.finding_contributions ?? []).filter(
+                  (flag) => flag.included_in_reviewed && flag.severity.toUpperCase() === severity,
                 )
                 const penalty = matches.reduce(
-                  (sum, flag) => sum + Math.max(0, flag.impact_score),
+                  (sum, flag) => sum + Math.max(0, flag.penalty),
                   0,
                 )
                 return (
@@ -148,13 +170,13 @@ export function AuditResult({ auditId }: { auditId: string }) {
               <div className="mt-4 pt-3 border-t border-border flex items-center justify-between text-xs text-muted-foreground">
                 <span className="flex items-center gap-1.5">
                   <span className="size-2 rounded-full bg-emerald-500" />
-                  Verified via <strong>Gemini 3.5 Flash</strong> & <strong>BGE-M3</strong>
+                  Score derived from recorded findings
                 </span>
-                <span className="font-mono text-[11px] bg-muted px-2 py-0.5 rounded">v4.0 Deterministic</span>
+                <span className="font-mono text-[11px] bg-muted px-2 py-0.5 rounded">Scoring {breakdown.data?.scoring_version ?? "—"}</span>
               </div>
               <p className="panel-footnote">
-                Deductions provide context for the overall score. Independent
-                accuracy and coverage sub-scores are not yet available.
+                Penalty = severity weight × materiality × confidence. Coverage limits
+                apply before a trust rating is issued; unresolved critical risk caps the score at 49.
               </p>
             </>
           )}
@@ -175,13 +197,12 @@ export function AuditResult({ auditId }: { auditId: string }) {
             <div
               className="document-row cursor-pointer hover:bg-accent/40 rounded-md p-2 transition-colors"
               key={doc.id}
-              onClick={() => setSelectedDoc(selectedDoc?.id === doc.id ? null : doc)}
               title="Click to view full document text"
             >
               <FileText size={17} className="text-primary mt-1 shrink-0" />
               <div className="flex-1 min-w-0">
                 <div className="flex items-center justify-between gap-2">
-                  <strong className="text-sm font-medium hover:underline truncate">{doc.filename}</strong>
+                  <button type="button" className="text-sm font-medium hover:underline truncate" aria-expanded={selectedDoc?.id === doc.id} onClick={() => setSelectedDoc(selectedDoc?.id === doc.id ? null : doc)}>{doc.filename}</button>
                   <span className="text-[11px] font-mono px-2 py-0.5 rounded bg-muted text-muted-foreground shrink-0">
                     {selectedDoc?.id === doc.id ? "Close file" : "Open file"}
                   </span>
@@ -193,9 +214,10 @@ export function AuditResult({ auditId }: { auditId: string }) {
                   <div className="mt-3 p-3 bg-muted/60 border border-border rounded text-xs font-mono whitespace-pre-wrap max-h-72 overflow-y-auto select-text">
                     <div className="text-[10px] text-muted-foreground pb-2 mb-2 border-b border-border/50 uppercase tracking-wider flex justify-between">
                       <span>Full Document Source Text</span>
-                      <span>Hash: {doc.text_hash}</span>
+                      <span className="break-all">Hash: {doc.text_hash}</span>
                     </div>
-                    {docViewer.data?.raw_text || (docViewer.isPending ? "Loading file content…" : "Unable to load document content.")}
+                    <QueryState loading={docViewer.isPending} error={docViewer.error} retry={() => docViewer.refetch()} />
+                    {docViewer.data && <DocumentText text={docViewer.data.normalized_text ?? docViewer.data.raw_text} flags={(flags.data?.data ?? []).filter(flag => flag.document_id === doc.id)} />}
                   </div>
                 )}
               </div>
@@ -211,7 +233,7 @@ export function AuditResult({ auditId }: { auditId: string }) {
       <section className="product-panel">
         <div className="panel-heading">
           <div>
-            <h2>What needs attention</h2>
+            <h2 id="audit-findings" tabIndex={-1}>What needs attention</h2>
             <p>Clear findings, with a practical next step.</p>
           </div>
           <span className="quiet-label">{data.flag_count} findings</span>
@@ -222,7 +244,7 @@ export function AuditResult({ auditId }: { auditId: string }) {
             <h3>
               {isRunning(data.audit.status)
                 ? "Findings will appear as the audit runs."
-                : "No findings returned"}
+                : data.audit.status === "failed" ? "Verification did not finish" : "No findings returned"}
             </h3>
             <p>
               {isRunning(data.audit.status)
@@ -236,7 +258,9 @@ export function AuditResult({ auditId }: { auditId: string }) {
             <StatusPill status={flag.severity} />
             <div>
               <h3>{flag.type.replace(/_/g, " ") || "Finding"}</h3>
+              {flag.claim_text && <blockquote>{flag.claim_text}</blockquote>}
               <p>{flag.reason}</p>
+              {flag.evidence?.map(ev => <details key={ev.id}><summary>View source evidence</summary><blockquote>{ev.quote}</blockquote></details>)}
               {flag.suggested_fix && (
                 <div className="suggested-action">
                   <strong>Next step</strong> {flag.suggested_fix}

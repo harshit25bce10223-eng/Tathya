@@ -1,3 +1,4 @@
+import { clearWorkspaceDrafts } from "@/api/workspaceDrafts"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { useNavigate } from "@tanstack/react-router"
 
@@ -20,7 +21,7 @@ const useAuth = () => {
   const queryClient = useQueryClient()
   const { showErrorToast } = useCustomToast()
 
-  const { data: user } = useQuery<UserPublic | null, Error>({
+  const { data: user, error: userError, refetch: retryUser } = useQuery<UserPublic | null, Error>({
     queryKey: ["currentUser"],
     queryFn: async () => (await UsersService.readUserMe()).data,
     enabled: isLoggedIn(),
@@ -55,6 +56,8 @@ const useAuth = () => {
 
   const logout = () => {
     localStorage.removeItem("access_token")
+    queryClient.clear()
+    clearWorkspaceDrafts()
     navigate({ to: "/login" })
   }
 
@@ -63,6 +66,8 @@ const useAuth = () => {
     loginMutation,
     logout,
     user,
+    userError,
+    retryUser,
   }
 }
 

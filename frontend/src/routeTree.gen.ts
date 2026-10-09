@@ -24,11 +24,16 @@ import { Route as LayoutSubmitRouteImport } from './routes/_layout/submit'
 import { Route as VerifyTokenRouteImport } from './routes/verify.$token'
 import { Route as LayoutControlAdminRouteImport } from './routes/_layout/control_.admin'
 import { Route as LayoutControlAuditsRouteImport } from './routes/_layout/control_.audits'
+import { Route as LayoutControlChallengesRouteImport } from './routes/_layout/control_.challenges'
 import { Route as LayoutControlMetricsRouteImport } from './routes/_layout/control_.metrics'
 import { Route as LayoutControlPoliciesRouteImport } from './routes/_layout/control_.policies'
 import { Route as LayoutControlQueueRouteImport } from './routes/_layout/control_.queue'
 import { Route as LayoutControlSourcesRouteImport } from './routes/_layout/control_.sources'
 import { Route as LayoutSubmitAuditIdRouteImport } from './routes/_layout/submit_.$auditId'
+import { Route as LayoutControlInjectorAuditIdRouteImport } from './routes/_layout/control_.injector.$auditId'
+import { Route as LayoutControlJudgeAuditIdRouteImport } from './routes/_layout/control_.judge.$auditId'
+import { Route as LayoutControlProofAuditIdRouteImport } from './routes/_layout/control_.proof.$auditId'
+import { Route as LayoutControlResultsAuditIdRouteImport } from './routes/_layout/control_.results.$auditId'
 import { Route as LayoutControlWorkspaceAuditIdRouteImport } from './routes/_layout/control_.workspace.$auditId'
 
 const LayoutRoute = LayoutRouteImport.update({
@@ -105,6 +110,11 @@ const LayoutControlAuditsRoute = LayoutControlAuditsRouteImport.update({
   path: '/control/audits',
   getParentRoute: () => LayoutRoute,
 } as any)
+const LayoutControlChallengesRoute = LayoutControlChallengesRouteImport.update({
+  id: '/control_/challenges',
+  path: '/control/challenges',
+  getParentRoute: () => LayoutRoute,
+} as any)
 const LayoutControlMetricsRoute = LayoutControlMetricsRouteImport.update({
   id: '/control_/metrics',
   path: '/control/metrics',
@@ -130,6 +140,30 @@ const LayoutSubmitAuditIdRoute = LayoutSubmitAuditIdRouteImport.update({
   path: '/submit/$auditId',
   getParentRoute: () => LayoutRoute,
 } as any)
+const LayoutControlInjectorAuditIdRoute =
+  LayoutControlInjectorAuditIdRouteImport.update({
+    id: '/control_/injector/$auditId',
+    path: '/control/injector/$auditId',
+    getParentRoute: () => LayoutRoute,
+  } as any)
+const LayoutControlJudgeAuditIdRoute =
+  LayoutControlJudgeAuditIdRouteImport.update({
+    id: '/control_/judge/$auditId',
+    path: '/control/judge/$auditId',
+    getParentRoute: () => LayoutRoute,
+  } as any)
+const LayoutControlProofAuditIdRoute =
+  LayoutControlProofAuditIdRouteImport.update({
+    id: '/control_/proof/$auditId',
+    path: '/control/proof/$auditId',
+    getParentRoute: () => LayoutRoute,
+  } as any)
+const LayoutControlResultsAuditIdRoute =
+  LayoutControlResultsAuditIdRouteImport.update({
+    id: '/control_/results/$auditId',
+    path: '/control/results/$auditId',
+    getParentRoute: () => LayoutRoute,
+  } as any)
 const LayoutControlWorkspaceAuditIdRoute =
   LayoutControlWorkspaceAuditIdRouteImport.update({
     id: '/control_/workspace/$auditId',
@@ -152,11 +186,16 @@ export interface FileRoutesByFullPath {
   '/verify/$token': typeof VerifyTokenRoute
   '/control/admin': typeof LayoutControlAdminRoute
   '/control/audits': typeof LayoutControlAuditsRoute
+  '/control/challenges': typeof LayoutControlChallengesRoute
   '/control/metrics': typeof LayoutControlMetricsRoute
   '/control/policies': typeof LayoutControlPoliciesRoute
   '/control/queue': typeof LayoutControlQueueRoute
   '/control/sources': typeof LayoutControlSourcesRoute
   '/submit/$auditId': typeof LayoutSubmitAuditIdRoute
+  '/control/injector/$auditId': typeof LayoutControlInjectorAuditIdRoute
+  '/control/judge/$auditId': typeof LayoutControlJudgeAuditIdRoute
+  '/control/proof/$auditId': typeof LayoutControlProofAuditIdRoute
+  '/control/results/$auditId': typeof LayoutControlResultsAuditIdRoute
   '/control/workspace/$auditId': typeof LayoutControlWorkspaceAuditIdRoute
 }
 export interface FileRoutesByTo {
@@ -174,11 +213,16 @@ export interface FileRoutesByTo {
   '/': typeof LayoutIndexRoute
   '/control/admin': typeof LayoutControlAdminRoute
   '/control/audits': typeof LayoutControlAuditsRoute
+  '/control/challenges': typeof LayoutControlChallengesRoute
   '/control/metrics': typeof LayoutControlMetricsRoute
   '/control/policies': typeof LayoutControlPoliciesRoute
   '/control/queue': typeof LayoutControlQueueRoute
   '/control/sources': typeof LayoutControlSourcesRoute
   '/submit/$auditId': typeof LayoutSubmitAuditIdRoute
+  '/control/injector/$auditId': typeof LayoutControlInjectorAuditIdRoute
+  '/control/judge/$auditId': typeof LayoutControlJudgeAuditIdRoute
+  '/control/proof/$auditId': typeof LayoutControlProofAuditIdRoute
+  '/control/results/$auditId': typeof LayoutControlResultsAuditIdRoute
   '/control/workspace/$auditId': typeof LayoutControlWorkspaceAuditIdRoute
 }
 export interface FileRoutesById {
@@ -198,11 +242,16 @@ export interface FileRoutesById {
   '/_layout/': typeof LayoutIndexRoute
   '/_layout/control_/admin': typeof LayoutControlAdminRoute
   '/_layout/control_/audits': typeof LayoutControlAuditsRoute
+  '/_layout/control_/challenges': typeof LayoutControlChallengesRoute
   '/_layout/control_/metrics': typeof LayoutControlMetricsRoute
   '/_layout/control_/policies': typeof LayoutControlPoliciesRoute
   '/_layout/control_/queue': typeof LayoutControlQueueRoute
   '/_layout/control_/sources': typeof LayoutControlSourcesRoute
   '/_layout/submit_/$auditId': typeof LayoutSubmitAuditIdRoute
+  '/_layout/control_/injector/$auditId': typeof LayoutControlInjectorAuditIdRoute
+  '/_layout/control_/judge/$auditId': typeof LayoutControlJudgeAuditIdRoute
+  '/_layout/control_/proof/$auditId': typeof LayoutControlProofAuditIdRoute
+  '/_layout/control_/results/$auditId': typeof LayoutControlResultsAuditIdRoute
   '/_layout/control_/workspace/$auditId': typeof LayoutControlWorkspaceAuditIdRoute
 }
 export interface FileRouteTypes {
@@ -222,11 +271,16 @@ export interface FileRouteTypes {
     | '/verify/$token'
     | '/control/admin'
     | '/control/audits'
+    | '/control/challenges'
     | '/control/metrics'
     | '/control/policies'
     | '/control/queue'
     | '/control/sources'
     | '/submit/$auditId'
+    | '/control/injector/$auditId'
+    | '/control/judge/$auditId'
+    | '/control/proof/$auditId'
+    | '/control/results/$auditId'
     | '/control/workspace/$auditId'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -244,11 +298,16 @@ export interface FileRouteTypes {
     | '/'
     | '/control/admin'
     | '/control/audits'
+    | '/control/challenges'
     | '/control/metrics'
     | '/control/policies'
     | '/control/queue'
     | '/control/sources'
     | '/submit/$auditId'
+    | '/control/injector/$auditId'
+    | '/control/judge/$auditId'
+    | '/control/proof/$auditId'
+    | '/control/results/$auditId'
     | '/control/workspace/$auditId'
   id:
     | '__root__'
@@ -267,11 +326,16 @@ export interface FileRouteTypes {
     | '/_layout/'
     | '/_layout/control_/admin'
     | '/_layout/control_/audits'
+    | '/_layout/control_/challenges'
     | '/_layout/control_/metrics'
     | '/_layout/control_/policies'
     | '/_layout/control_/queue'
     | '/_layout/control_/sources'
     | '/_layout/submit_/$auditId'
+    | '/_layout/control_/injector/$auditId'
+    | '/_layout/control_/judge/$auditId'
+    | '/_layout/control_/proof/$auditId'
+    | '/_layout/control_/results/$auditId'
     | '/_layout/control_/workspace/$auditId'
   fileRoutesById: FileRoutesById
 }
@@ -392,6 +456,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LayoutControlAuditsRouteImport
       parentRoute: typeof LayoutRoute
     }
+    '/_layout/control_/challenges': {
+      id: '/_layout/control_/challenges'
+      path: '/control/challenges'
+      fullPath: '/control/challenges'
+      preLoaderRoute: typeof LayoutControlChallengesRouteImport
+      parentRoute: typeof LayoutRoute
+    }
     '/_layout/control_/metrics': {
       id: '/_layout/control_/metrics'
       path: '/control/metrics'
@@ -427,6 +498,34 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LayoutSubmitAuditIdRouteImport
       parentRoute: typeof LayoutRoute
     }
+    '/_layout/control_/injector/$auditId': {
+      id: '/_layout/control_/injector/$auditId'
+      path: '/control/injector/$auditId'
+      fullPath: '/control/injector/$auditId'
+      preLoaderRoute: typeof LayoutControlInjectorAuditIdRouteImport
+      parentRoute: typeof LayoutRoute
+    }
+    '/_layout/control_/judge/$auditId': {
+      id: '/_layout/control_/judge/$auditId'
+      path: '/control/judge/$auditId'
+      fullPath: '/control/judge/$auditId'
+      preLoaderRoute: typeof LayoutControlJudgeAuditIdRouteImport
+      parentRoute: typeof LayoutRoute
+    }
+    '/_layout/control_/proof/$auditId': {
+      id: '/_layout/control_/proof/$auditId'
+      path: '/control/proof/$auditId'
+      fullPath: '/control/proof/$auditId'
+      preLoaderRoute: typeof LayoutControlProofAuditIdRouteImport
+      parentRoute: typeof LayoutRoute
+    }
+    '/_layout/control_/results/$auditId': {
+      id: '/_layout/control_/results/$auditId'
+      path: '/control/results/$auditId'
+      fullPath: '/control/results/$auditId'
+      preLoaderRoute: typeof LayoutControlResultsAuditIdRouteImport
+      parentRoute: typeof LayoutRoute
+    }
     '/_layout/control_/workspace/$auditId': {
       id: '/_layout/control_/workspace/$auditId'
       path: '/control/workspace/$auditId'
@@ -446,11 +545,16 @@ interface LayoutRouteChildren {
   LayoutIndexRoute: typeof LayoutIndexRoute
   LayoutControlAdminRoute: typeof LayoutControlAdminRoute
   LayoutControlAuditsRoute: typeof LayoutControlAuditsRoute
+  LayoutControlChallengesRoute: typeof LayoutControlChallengesRoute
   LayoutControlMetricsRoute: typeof LayoutControlMetricsRoute
   LayoutControlPoliciesRoute: typeof LayoutControlPoliciesRoute
   LayoutControlQueueRoute: typeof LayoutControlQueueRoute
   LayoutControlSourcesRoute: typeof LayoutControlSourcesRoute
   LayoutSubmitAuditIdRoute: typeof LayoutSubmitAuditIdRoute
+  LayoutControlInjectorAuditIdRoute: typeof LayoutControlInjectorAuditIdRoute
+  LayoutControlJudgeAuditIdRoute: typeof LayoutControlJudgeAuditIdRoute
+  LayoutControlProofAuditIdRoute: typeof LayoutControlProofAuditIdRoute
+  LayoutControlResultsAuditIdRoute: typeof LayoutControlResultsAuditIdRoute
   LayoutControlWorkspaceAuditIdRoute: typeof LayoutControlWorkspaceAuditIdRoute
 }
 
@@ -463,11 +567,16 @@ const LayoutRouteChildren: LayoutRouteChildren = {
   LayoutIndexRoute: LayoutIndexRoute,
   LayoutControlAdminRoute: LayoutControlAdminRoute,
   LayoutControlAuditsRoute: LayoutControlAuditsRoute,
+  LayoutControlChallengesRoute: LayoutControlChallengesRoute,
   LayoutControlMetricsRoute: LayoutControlMetricsRoute,
   LayoutControlPoliciesRoute: LayoutControlPoliciesRoute,
   LayoutControlQueueRoute: LayoutControlQueueRoute,
   LayoutControlSourcesRoute: LayoutControlSourcesRoute,
   LayoutSubmitAuditIdRoute: LayoutSubmitAuditIdRoute,
+  LayoutControlInjectorAuditIdRoute: LayoutControlInjectorAuditIdRoute,
+  LayoutControlJudgeAuditIdRoute: LayoutControlJudgeAuditIdRoute,
+  LayoutControlProofAuditIdRoute: LayoutControlProofAuditIdRoute,
+  LayoutControlResultsAuditIdRoute: LayoutControlResultsAuditIdRoute,
   LayoutControlWorkspaceAuditIdRoute: LayoutControlWorkspaceAuditIdRoute,
 }
 

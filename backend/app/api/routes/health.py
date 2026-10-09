@@ -6,7 +6,7 @@ import time
 from pathlib import Path
 from typing import Any
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Response
 from sqlalchemy import text
 from sqlalchemy.exc import SQLAlchemyError
 
@@ -41,7 +41,7 @@ def _llm_status() -> str:
 
 
 @router.get("/health")
-def health() -> dict[str, Any]:
+def health(response: Response) -> dict[str, Any]:
     """Component health. Values are status strings only — no config, no secrets."""
     runtime = models_runtime.runtime_status()
     components = {
@@ -54,6 +54,7 @@ def health() -> dict[str, Any]:
         "queue": queue_state.to_dict(),
     }
     critical_ok = components["api"] == "up" and components["db"] == "up"
+    response.status_code = 200 if critical_ok else 503
     return {
         "status": "ok" if critical_ok else "degraded",
         "app": "Tathya",

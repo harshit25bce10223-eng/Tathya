@@ -51,6 +51,39 @@ class EvidencePublic(BaseModel):
     count: int
 
 
+class ScoreContribution(BaseModel):
+    """Per-finding contribution to trust score."""
+    flag_id: str
+    severity: str
+    materiality: str
+    confidence: float
+    penalty: float
+    status: str
+    included_in_reviewed: bool
+    reason: str = ""
+
+
+class ScoreBreakdown(BaseModel):
+    """Complete score breakdown for an audit."""
+    ai_score: float
+    reviewed_score: float
+    ai_score_band: str
+    reviewed_score_band: str
+    critical_risk: bool
+    total_findings: int
+    unresolved_findings: int
+    severity_counts: dict[str, int]
+    review_status_counts: dict[str, int]
+    finding_contributions: list[ScoreContribution]
+    scoring_version: str
+    scoring_methodology: str
+    calculated_at: str
+    score_status: str
+    coverage: dict[str, Any]
+    sub_scores: dict[str, float | None]
+    score_limit_reason: str | None = None
+
+
 class DecisionsPublic(BaseModel):
     data: list[DecisionPublic]
     count: int
@@ -101,7 +134,9 @@ class FlagsWithEvidencePublic(BaseModel):
 
 class DecisionRequest(BaseModel):
     action: str = Field(pattern="^(accept|dismiss|fix)$")
-    note: str | None = None
+    note: str | None = Field(default=None, max_length=4000)
+    reason: str = Field(min_length=1, max_length=4000)
+    remediation: str = Field(default="", max_length=4000)
 
 
 class RescoreResult(BaseModel):
@@ -127,6 +162,7 @@ class VerificationResult(BaseModel):
     verify_token: str
     status: str
     trust_score: float
+    score_status: str = "insufficient_verification"
     issued_at: datetime | None = None
     document_count: int = 0
     document_hash: str = ""

@@ -93,6 +93,7 @@ class Settings(BaseSettings):
     MODEL_CACHE_DIR: str = "./data/models"
     MODEL_ARTIFACT_DIR: str = "./model_artifacts"
     TRAINING_DATA_DIR: str = "./training_data"
+    CHALLENGE_TRIALS_PATH: str = "./data/challenge_trials.json"
 
     # Storage (uploaded documents, keys)
     STORAGE_DIR: str = "./storage"

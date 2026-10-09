@@ -1,3 +1,5 @@
+import { clearWorkspaceDrafts } from "./api/workspaceDrafts"
+import { apiOrigin, ServiceError } from "./api/transport"
 import {
   MutationCache,
   QueryCache,
@@ -15,15 +17,18 @@ import "./index.css"
 import { routeTree } from "./routeTree.gen"
 
 client.setConfig({
-  baseURL: import.meta.env.VITE_API_URL ?? "",
+  baseURL: apiOrigin,
+  throwOnError: true,
   auth: () => localStorage.getItem("access_token") || "",
 })
 
 const handleApiError = (error: Error) => {
   if (
-    error instanceof AxiosError &&
-    [401, 403].includes(error.response?.status ?? 0)
+    (error instanceof AxiosError && error.response?.status === 401) ||
+    (error instanceof ServiceError && error.status === 401)
   ) {
+    queryClient.clear()
+    clearWorkspaceDrafts()
     localStorage.removeItem("access_token")
     window.location.href = "/login"
   }

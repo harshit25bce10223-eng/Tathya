@@ -40,6 +40,7 @@ PDF_SUFFIXES = {".pdf"}
 DOCX_SUFFIXES = {".docx"}
 XLSX_SUFFIXES = {".xlsx", ".xlsm"}
 TEXT_SUFFIXES = {".txt", ".md", ".markdown", ".csv"}
+IMAGE_SUFFIXES = {".png", ".jpg", ".jpeg", ".tiff", ".bmp", ".webp"}
 
 # Safety cap: refuse absurdly large extractions instead of exhausting memory.
 MAX_DOCUMENT_CHARS = 5_000_000
@@ -49,6 +50,7 @@ PARSER_PYTHON_DOCX = "python-docx"
 PARSER_OPENPYXL = "openpyxl"
 PARSER_DIRECT = "direct-utf8"
 PARSER_MARKITDOWN = "markitdown"
+PARSER_OCR = "ocr-engine"
 
 
 @dataclass
@@ -236,46 +238,52 @@ def _parse_docx(path: Path) -> ParsedDocument:
         parts.append("\n\n")
         cursor += 2
 
-    for para in document.paragraphs:
-        text = para.text
-        style_name = (para.style.name if para.style is not None else "") or ""
-        if _HEADING_PREFIX.match(style_name):
-            level = re.search(r"\d+", style_name)
-            marks = "#" * (int(level.group()) if level else 1)
-            text = f"{marks} {text}"
-            headings.append(text)
-        _emit_line(
-            text,
-            location_docx(para_index, 0, len(text)),
-        )
-        para_index += 1
-
-    for table in document.tables:
-        table_count += 1
-        for row in table.rows:
-            pieces: list[str] = []
-            cell_spans: list[tuple[int, int, dict[str, Any]]] = []
-            pos = 0
-            for cell_index, cell in enumerate(row.cells):
-                if cell_index:
-                    pieces.append(" | ")
-                    pos += 3
-                cell_text = " ".join(
-                    p.text.strip() for p in cell.paragraphs if p.text.strip()
-                )
-                span_start = pos
-                pieces.append(cell_text)
-                pos += len(cell_text)
-                if cell_text:
-                    cell_spans.append(
-                        (
-                            span_start,
-                            pos,
-                            location_docx(para_index, span_start, pos),
-                        )
-                    )
-            _emit_line("".join(pieces), None, cell_spans)
+    from docx.text.paragraph import Paragraph
+    from docx.table import Table
+    for child in document.element.body.iterchildren():
+        if child.tag.endswith("}p"):
+            para = Paragraph(child, document)
+            text = para.text
+            style_name = (para.style.name if para.style is not None else "") or ""
+            if _HEADING_PREFIX.match(style_name):
+                level = re.search(r"\d+", style_name)
+                marks = "#" * (int(level.group()) if level else 1)
+                text = f"{marks} {text}"
+                headings.append(text)
+            _emit_line(
+                text,
+                location_docx(para_index, 0, len(text)),
+            )
             para_index += 1
+
+        elif child.tag.endswith("}tbl"):
+            table = Table(child, document)
+            table_count += 1
+            for row in table.rows:
+                pieces: list[str] = []
+                cell_spans: list[tuple[int, int, dict[str, Any]]] = []
+                pos = 0
+                for cell_index, cell in enumerate(row.cells):
+                    if cell_index:
+                        pieces.append(" | ")
+                        pos += 3
+                    cell_text = " ".join(
+                        p.text.strip() for p in cell.paragraphs if p.text.strip()
+                    )
+                    span_start = pos
+                    pieces.append(cell_text)
+                    pos += len(cell_text)
+                    if cell_text:
+                        cell_spans.append(
+                            (
+                                span_start,
+                                pos,
+                                location_docx(para_index, span_start, pos),
+                            )
+                        )
+                _emit_line("".join(pieces), None, cell_spans)
+                para_index += 1
+
 
     raw = "".join(parts).strip("\n")
     return ParsedDocument(
@@ -416,6 +424,49 @@ def _parse_fallback(path: Path) -> ParsedDocument:
     )
 
 
+def _parse_image_ocr(path: Path) -> ParsedDocument:
+    raw = ""
+    # 1. Try pytesseract if available
+    try:
+        import pytesseract
+        from PIL import Image
+        img = Image.open(str(path))
+        raw = pytesseract.image_to_string(img)
+    except Exception:
+        pass
+
+    # 2. Try easyocr if available
+    if not raw.strip():
+        try:
+            import easyocr
+            reader = easyocr.Reader(["en"], gpu=False)
+            results = reader.readtext(str(path), detail=0)
+            raw = "\n".join(results)
+        except Exception:
+            pass
+
+    # 3. Try MarkItDown fallback
+    if not raw.strip():
+        try:
+            return _parse_fallback(path)
+        except Exception:
+            pass
+
+    if not raw.strip():
+        raise ParserError(f"OCR could not extract legible text from image {path.name}")
+
+    return ParsedDocument(
+        raw_text=raw,
+        format="image",
+        mime_type=_guess_mime(path),
+        parser=PARSER_OCR,
+        metadata={"ocr_engine": "tesseract/easyocr"},
+        locations=[
+            CharLocation(start=0, end=len(raw), location=location_text(0, len(raw)))
+        ],
+    )
+
+
 def _trim(locations: list[CharLocation], length: int) -> list[CharLocation]:
     trimmed: list[CharLocation] = []
     for entry in locations:
@@ -441,15 +492,26 @@ def _file_mtime_utc(path: Path) -> datetime:
 def parse_file(path: str | Path, filename: str | None = None) -> ParsedDocument:
     """Parse any supported file into the common representation.
 
-    Failure strategy (locked): primary parser -> MarkItDown fallback ->
+    Failure strategy (locked): primary parser -> OCR -> MarkItDown fallback ->
     ParserError. Empty and oversized extractions are rejected with honest
     messages instead of producing a silently useless document.
     """
     file_path = Path(path)
     if not file_path.is_file():
         raise ParserError(f"file not found: {file_path}")
+    if file_path.stat().st_size > 50 * 1024 * 1024:
+        raise ParserError("File exceeds 50 MB.")
     name = filename or file_path.name
     suffix = Path(name).suffix.lower()
+
+    if suffix in DOCX_SUFFIXES | XLSX_SUFFIXES:
+        from zipfile import ZipFile, BadZipFile
+        try:
+            with ZipFile(file_path) as archive:
+                if sum(item.file_size for item in archive.infolist()) > 100 * 1024 * 1024:
+                    raise ParserError("Expanded document exceeds 100 MB.")
+        except BadZipFile as exc:
+            raise ParserError("The document archive is invalid.") from exc
 
     primary: tuple[str, Any] | None = None
     if suffix in PDF_SUFFIXES:
@@ -460,14 +522,14 @@ def parse_file(path: str | Path, filename: str | None = None) -> ParsedDocument:
         primary = ("xlsx", _parse_xlsx)
     elif suffix in TEXT_SUFFIXES:
         primary = ("text", _parse_text)
+    elif suffix in IMAGE_SUFFIXES:
+        primary = ("image-ocr", _parse_image_ocr)
 
     if primary is not None:
         label, parser_fn = primary
         try:
             parsed = parser_fn(file_path)
         except Exception as exc:  # noqa: BLE001 - fallback boundary
-            # primary parser failed (corrupt / unsupported variant):
-            # fall back to MarkItDown, declaring its offset limitations
             try:
                 parsed = _parse_fallback(file_path)
                 parsed.fallback_used = True
@@ -494,18 +556,13 @@ def parse_file(path: str | Path, filename: str | None = None) -> ParsedDocument:
             f"({len(parsed.raw_text)} chars > {MAX_DOCUMENT_CHARS})"
         )
     if not parsed.raw_text.strip():
-        if suffix in PDF_SUFFIXES:
-            raise ParserError(
-                f"{name}: no extractable text (the PDF may be scanned or "
-                "image-only; OCR is not part of the standard path)"
-            )
         raise ParserError(f"{name}: document contains no extractable text")
 
     return parsed
 
 
 def supported_suffixes() -> list[str]:
-    return sorted(PDF_SUFFIXES | DOCX_SUFFIXES | XLSX_SUFFIXES | TEXT_SUFFIXES)
+    return sorted(PDF_SUFFIXES | DOCX_SUFFIXES | XLSX_SUFFIXES | TEXT_SUFFIXES | IMAGE_SUFFIXES)
 
 
 def file_provenance(path: str | Path) -> dict[str, Any]:

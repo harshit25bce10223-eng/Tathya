@@ -5,7 +5,7 @@ import {
   LayoutDashboard,
   Library,
   ListChecks,
-  Package,
+  Swords,
   Upload,
   Users,
 } from "lucide-react"
@@ -33,7 +33,11 @@ const baseItems: Item[] = [
     title: "Metrics & drift",
     path: "/control/metrics",
   },
-  { icon: Package, title: "Items", path: "/items" },
+  {
+    icon: Swords,
+    title: "Jhooth Chhupao",
+    path: "/control/challenges",
+  },
 ]
 
 export function AppSidebar() {

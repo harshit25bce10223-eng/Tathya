@@ -125,7 +125,7 @@ def scan_audit_risks(
 ) -> list[Flag]:
     """Scan all documents in an audit for risks."""
     documents = session.exec(
-        select(Document).where(Document.audit_id == audit_id)
+        select(Document).where(Document.audit_id == audit_id, Document.is_current.is_(True))
     ).all()
 
     all_flags: list[Flag] = []
@@ -510,13 +510,10 @@ def _persist_findings_as_flags(
         ).first()
 
         if existing:
-            # Update if new confidence is higher
-            if finding.confidence > existing.confidence if hasattr(existing, 'confidence') else 0:
+            if finding.confidence > existing.impact_score:
                 existing.severity = finding.severity
                 existing.reason = finding.reason
-                existing.evidence_quote = finding.evidence
-                existing.location_json = finding.location_json
-                existing.metadata_json = finding.metadata_json
+                existing.impact_score = finding.confidence
                 session.add(existing)
                 persisted.append(existing)
             continue
@@ -529,6 +526,7 @@ def _persist_findings_as_flags(
             materiality="MODERATE",  # Will be refined later
             reason=finding.reason,
             suggested_fix=_suggest_fix(finding.risk_type),
+            impact_score=finding.confidence,
             status="pending",
             sentence_id=finding.sentence_id,
             location_json=finding.location_json,

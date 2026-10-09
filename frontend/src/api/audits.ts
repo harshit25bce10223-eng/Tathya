@@ -1,3 +1,4 @@
+import { apiFetch, ServiceError, uploadAudit } from "./transport"
 import { z } from "zod"
 
 export interface AuditRecord {
@@ -9,7 +10,18 @@ export interface AuditRecord {
   error_message?: string | null
   failed_stage?: string | null
 }
+export interface AuditEvidence { id: string; quote: string; location_json: string; support_type: string; score: number }
+export interface ScoreBreakdown {
+  scoring_version: string; ai_score: number; reviewed_score: number;
+  score_status: "assessed" | "partial_verification" | "insufficient_verification";
+  score_limit_reason: string | null;
+  coverage: {total_claims: number; checked_claims: number; grounded_claims: number; supported: number; contradicted: number; unsupported: number; uncertain: number; extracted: number; source_count: number; checked_percent: number | null; evidence_percent: number | null};
+  sub_scores: Record<string, number | null>;
+  finding_contributions: Array<{flag_id: string; severity: string; penalty: number; included_in_reviewed: boolean; reason: string}>;
+}
 export interface AuditFlag {
+  claim_text?: string | null
+  evidence?: AuditEvidence[]
   id: string
   audit_id: string
   document_id: string
@@ -84,6 +96,8 @@ const flagSchema = z.object({
   reviewer_note: z.string().nullable(),
   impact_score: z.number().finite(),
   location_json: z.string(),
+  claim_text: z.string().nullable().optional(),
+  evidence: z.array(z.object({ id: z.string(), quote: z.string(), location_json: z.string(), support_type: z.string(), score: z.number() })).default([]),
 })
 const documentSchema = z.object({
   id: z.string().min(1),
@@ -122,35 +136,13 @@ const summarySchema = z.object({
   passport: passportSchema.nullable(),
   verify_token: z.string().nullable(),
 })
-export class AuditApiError extends Error {
-  constructor(
-    public status: number,
-    message: string,
-  ) {
-    super(message)
-  }
-}
+export class AuditApiError extends ServiceError {}
 async function request<T>(
   path: string,
   init: RequestInit = {},
   schema?: z.ZodType<T>,
 ): Promise<T> {
-  const token = localStorage.getItem("access_token")
-  const headers = new Headers(init.headers)
-  if (token) headers.set("Authorization", `Bearer ${token}`)
-  const response = await fetch(
-    `${(import.meta.env.VITE_API_URL ?? import.meta.env.VITE_API_BASE_URL ?? "").replace(/\/$/, "")}/api/v1/audits${path}`,
-    { ...init, headers },
-  )
-  if (!response.ok) {
-    const body = await response.json().catch(() => null)
-    throw new AuditApiError(
-      response.status,
-      typeof body?.detail === "string"
-        ? body.detail
-        : `Request failed (${response.status}). Please try again.`,
-    )
-  }
+  const response = await apiFetch(`/audits${path}`, init)
   const body = await response.json()
   if (!schema) return body
   const result = schema.safeParse(body)
@@ -167,22 +159,7 @@ async function requestRoot<T>(
   init: RequestInit = {},
   schema?: z.ZodType<T>,
 ): Promise<T> {
-  const token = localStorage.getItem("access_token")
-  const headers = new Headers(init.headers)
-  if (token) headers.set("Authorization", `Bearer ${token}`)
-  const response = await fetch(
-    `${(import.meta.env.VITE_API_URL ?? import.meta.env.VITE_API_BASE_URL ?? "").replace(/\/$/, "")}/api/v1${path}`,
-    { ...init, headers },
-  )
-  if (!response.ok) {
-    const body = await response.json().catch(() => null)
-    throw new AuditApiError(
-      response.status,
-      typeof body?.detail === "string"
-        ? body.detail
-        : `Request failed (${response.status}). Please try again.`,
-    )
-  }
+  const response = await apiFetch(path, init)
   const body = await response.json()
   if (!schema) return body
   const result = schema.safeParse(body)
@@ -203,7 +180,7 @@ export interface ControlMetricsResponse {
   avg_ai_score: number
   critical_risk_count: number
   passports_issued: number
-  verify_token_views_last_7_days: number
+  verify_token_views_last_7_days: number | null
   challenge_count: number
   users_with_reviewer_role: number
   audits_by_score_band: Record<string, number>
@@ -220,7 +197,7 @@ const metricsSchema = z.object({
   avg_ai_score: z.number().min(0).max(100),
   critical_risk_count: z.number().int().nonnegative(),
   passports_issued: z.number().int().nonnegative(),
-  verify_token_views_last_7_days: z.number().int().nonnegative(),
+  verify_token_views_last_7_days: z.number().int().nonnegative().nullable(),
   challenge_count: z.number().int().nonnegative(),
   users_with_reviewer_role: z.number().int().nonnegative(),
   audits_by_score_band: z.record(z.string(), z.number().int().nonnegative()),
@@ -238,6 +215,14 @@ export interface InjectionPayload {
 }
 
 export const auditApi = {
+  run: (id: string) => request(`/${encodeURIComponent(id)}/run`, { method: "POST" }),
+  scoreBreakdown: (id: string) => request<ScoreBreakdown>(`/${encodeURIComponent(id)}/score-breakdown`, {}, z.object({
+    scoring_version: z.string(), ai_score: z.number(), reviewed_score: z.number(),
+    score_status: z.enum(["assessed", "partial_verification", "insufficient_verification"]), score_limit_reason: z.string().nullable(),
+    coverage: z.object({total_claims: z.number(), checked_claims: z.number(), grounded_claims: z.number(), supported: z.number(), contradicted: z.number(), unsupported: z.number(), uncertain: z.number(), extracted: z.number(), source_count: z.number(), checked_percent: z.number().nullable(), evidence_percent: z.number().nullable()}),
+    sub_scores: z.record(z.string(), z.number().nullable()),
+    finding_contributions: z.array(z.object({flag_id: z.string(), severity: z.string(), penalty: z.number(), included_in_reviewed: z.boolean(), reason: z.string()})),
+  })),
   list: () =>
     request<{ data: AuditRecord[]; count: number }>(
       "?limit=100",
@@ -268,21 +253,22 @@ export const auditApi = {
       }),
     ),
   documentText: (auditId: string, documentId: string) =>
-    request<{ id: string; filename: string; raw_text: string; text_hash: string }>(
+    request<{ id: string; filename: string; raw_text: string; normalized_text?: string; text_hash: string }>(
       `/${encodeURIComponent(auditId)}/documents/${encodeURIComponent(documentId)}/text`,
       {},
       z.object({
         id: z.string(),
         filename: z.string(),
         raw_text: z.string(),
+        normalized_text: z.string().optional(),
         text_hash: z.string(),
       }),
     ),
-  create: (title: string, files: File[]) => {
+  create: async (title: string, files: File[], signal?: AbortSignal, onProgress?: (percent: number) => void) => {
     const body = new FormData()
     body.append("title", title)
     for (const file of files) body.append("files", file)
-    return request<AuditRecord>("", { method: "POST", body }, auditSchema)
+    return auditSchema.parse(await uploadAudit(body, signal, onProgress))
   },
   decision: (id: string, flagId: string, action: string, reason: string, remediation = "") =>
     request(
@@ -290,40 +276,11 @@ export const auditApi = {
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action, reason, remediation }),
+        body: JSON.stringify({ action, note: reason, reason, remediation }),
       },
     ),
   rescore: (id: string) =>
     request(`/${encodeURIComponent(id)}/rescore`, { method: "POST" }),
-  challenge: (id: string, payload: { target: "audit" | "flag"; flag_id?: string; challenge_reason: string; requested_changes?: string }) =>
-    request(
-      `/${encodeURIComponent(id)}/challenge`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      },
-    ),
-  resolveChallenge: (id: string, challengeId: string, payload: { resolution: "upheld" | "rejected" | "escalated"; resolution_note: string; rescore_after?: boolean }) =>
-    request(
-      `/${encodeURIComponent(id)}/challenge/${encodeURIComponent(challengeId)}/resolve`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      },
-    ),
-  inject: (id: string, payload: InjectionPayload) =>
-    request(
-      `/${encodeURIComponent(id)}/inject`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      },
-    ),
-  backfillPassports: () =>
-    request("/_backfill_passports", { method: "POST" }),
   metrics: () =>
     requestRoot<ControlMetricsResponse>("/metrics", {}, metricsSchema),
   proofSolve: (payload: { goals: string[]; assumptions?: string[]; numeric_constraints?: Array<Record<string, unknown>>; max_timeout_seconds?: number }) =>

@@ -17,37 +17,36 @@ export const Route = createFileRoute("/_layout/submit")({
   component: Submit,
   head: () => ({ meta: [{ title: "New audit - Tathya" }] }),
 })
-const accepted = ["pdf", "docx", "xlsx", "csv", "txt", "xlsm", "md", "markdown"]
+const accepted = ["pdf", "docx", "xlsx", "csv", "txt", "xlsm", "md", "markdown", "png", "jpg", "jpeg", "tiff", "bmp", "webp"]
 function Submit() {
   const navigate = useNavigate()
   const input = useRef<HTMLInputElement>(null)
+  const uploadController = useRef<AbortController | null>(null)
+  const [progress, setProgress] = useState(0)
   const [files, setFiles] = useState<File[]>([])
   const [title, setTitle] = useState("")
   const [error, setError] = useState("")
   const [dragging, setDragging] = useState(false)
   const create = useMutation({
-    mutationFn: () =>
-      auditApi.create(
+    mutationFn: () => {
+      uploadController.current = new AbortController()
+      setProgress(0)
+      return auditApi.create(
         title.trim() || files[0]?.name || "Untitled audit",
         files,
-      ),
+        uploadController.current.signal,
+        setProgress,
+      )
+    },
     onSuccess: (audit) =>
       navigate({ to: "/submit/$auditId", params: { auditId: audit.id } }),
   })
   function addFiles(incoming: File[]) {
-    const invalid = incoming.find(
-      (file) =>
-        !accepted.includes(file.name.split(".").pop()?.toLowerCase() ?? "") ||
-        !file.size ||
-        file.size > 50 * 1024 * 1024,
-    )
-    if (invalid) {
-      setError(
-        `${invalid.name}: choose a supported, non-empty file under 50 MB.`,
-      )
-      return
-    }
-    setError("")
+    create.reset()
+    const valid = incoming.filter(file => accepted.includes(file.name.split(".").pop()?.toLowerCase() ?? "") && file.size > 0 && file.size <= 50 * 1024 * 1024)
+    const rejected = incoming.filter(file => !valid.includes(file))
+    setError(rejected.length ? `${rejected.map(f => f.name).join(", ")}: choose a supported, non-empty file at most 50 MB.` : "")
+    incoming = valid
     setFiles((previous) => {
       const next = [...previous]
       for (const file of incoming) {
@@ -60,6 +59,10 @@ function Submit() {
           )
         )
           next.push(file)
+      }
+      if (next.length > 20 || next.reduce((total, file) => total + file.size, 0) > 100 * 1024 * 1024) {
+        setError("Use at most 20 files and 100 MB per audit.")
+        return previous
       }
       return next
     })
@@ -157,16 +160,17 @@ function Submit() {
               <span className="upload-symbol">
                 <Upload size={21} />
               </span>
-              <strong>Drop files here, or browse</strong>
-              <span>PDF, Word, Excel, CSV or text · up to 50 MB each</span>
+              <strong>Add the AI document and its source files</strong>
+              <span>PDF, Word, Excel, CSV, text or images · up to 50 MB each</span>
             </button>
           </fieldset>
+          {files.length === 1 && <p role="status">Add separate source files to verify factual claims. With only the AI document, no trust rating can be established.</p>}
           {files.length > 0 && (
             <div className="file-blocks">
               {files.map((file, index) => (
                 <div
                   className="file-block"
-                  key={`${file.name}-${file.lastModified}`}
+                  key={`${file.name}-${file.size}-${file.lastModified}`}
                 >
                   <FileText size={18} />
                   <div>
@@ -177,9 +181,10 @@ function Submit() {
                         : new Intl.NumberFormat("en-IN", {
                             maximumFractionDigits: 1,
                           }).format(file.size / 1024)}{" "}
-                      KB · Ready to upload
+                      KB · {index === 0 ? "AI document to check" : "Source evidence"}
                     </span>
                   </div>
+                  {index > 0 && <button type="button" disabled={create.isPending} onClick={() => setFiles([file, ...files.filter((_, i) => i !== index)])}>Use as AI document</button>}
                   <button
                     type="button"
                     aria-label={`Remove ${file.name}`}
@@ -199,6 +204,7 @@ function Submit() {
               {error || create.error?.message}
             </p>
           )}
+          {create.isPending && <div role="status" aria-live="polite"><progress max={100} value={progress} aria-label="Upload progress" /><p>{progress < 100 ? `Uploading documents: ${progress}%` : "Upload received. Reading your documents…"}</p><button type="button" className="back-link" onClick={() => uploadController.current?.abort()}>Cancel upload</button></div>}
           <div className="submit-footer">
             <p>
               {files.length

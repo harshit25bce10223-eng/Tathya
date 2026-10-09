@@ -2,7 +2,7 @@ from collections.abc import Generator
 
 import pytest
 from fastapi.testclient import TestClient
-from sqlmodel import Session, delete
+from sqlmodel import Session, SQLModel
 
 from app.core.config import settings
 from app.core.db import engine, init_db
@@ -38,13 +38,16 @@ def db() -> Generator[Session | None]:
     except Exception:  # noqa: BLE001
         yield None
         return
+    if not (engine.url.database or "").startswith("tathya_audit_test_"):
+        pytest.fail("Database tests require an isolated database. Run scripts/run_isolated_backend_tests.py.")
     with Session(engine) as session:
         init_db(session)
         yield session
-        statement = delete(Item)
-        session.execute(statement)
-        statement = delete(User)
-        session.execute(statement)
+        from app.core.jobs import drain_jobs
+        drain_jobs()
+        session.rollback()
+        for table in reversed(SQLModel.metadata.sorted_tables):
+            session.execute(table.delete())
         session.commit()
 
 

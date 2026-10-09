@@ -1,0 +1,1 @@
+var e=`tathya-workspace:`;function t(t,n){sessionStorage.setItem(`${e}${t}`,JSON.stringify(n))}function n(t){try{return JSON.parse(sessionStorage.getItem(`${e}${t}`)??`null`)}catch{return null}}function r(){Object.keys(sessionStorage).filter(t=>t.startsWith(e)).forEach(e=>sessionStorage.removeItem(e))}export{n,t as r,r as t};

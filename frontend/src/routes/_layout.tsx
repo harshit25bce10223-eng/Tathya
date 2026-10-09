@@ -23,6 +23,7 @@ export const Route = createFileRoute("/_layout")({
 function Layout() {
   return (
     <SidebarProvider>
+      <a href="#main-content" className="skip-link">Skip to main content</a>
       <AppSidebar />
       <SidebarInset>
         <header className="sticky top-0 z-10 flex h-16 shrink-0 items-center gap-2 border-b bg-background/95 backdrop-blur px-6">
@@ -32,7 +33,7 @@ function Layout() {
             Every fact, checked.
           </span>
         </header>
-        <main className="flex-1 p-6 md:p-8">
+        <main id="main-content" tabIndex={-1} className="flex-1 p-6 md:p-8">
           <div className="mx-auto max-w-7xl">
             <Outlet />
           </div>

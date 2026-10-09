@@ -1,4 +1,5 @@
-import { useMutation, useQueryClient } from "@tanstack/react-query"
+import { useUnsavedChanges } from "@/hooks/useUnsavedChanges"
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { Link } from "@tanstack/react-router"
 import {
   ArrowLeft,
@@ -16,6 +17,7 @@ import { QueryState, StatusPill, useAudit } from "./shared"
 export function Investigation({ auditId }: { auditId: string }) {
   const { summary, flags, documents } = useAudit(auditId)
   const queryClient = useQueryClient()
+  const scoring = useQuery({ queryKey: ["audit-score", auditId], queryFn: () => auditApi.scoreBreakdown(auditId) })
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [note, setNote] = useState("")
   const [saved, setSaved] = useState("")
@@ -34,6 +36,9 @@ export function Investigation({ auditId }: { auditId: string }) {
       )
       queryClient.invalidateQueries({ queryKey: ["audit-flags", auditId] })
       queryClient.invalidateQueries({ queryKey: ["audit", auditId] })
+      queryClient.invalidateQueries({ queryKey: ["audit-score", auditId] })
+      queryClient.invalidateQueries({ queryKey: ["audits"] })
+      queryClient.invalidateQueries({ queryKey: ["metrics"] })
     },
   })
   const rescore = useMutation({
@@ -41,8 +46,12 @@ export function Investigation({ auditId }: { auditId: string }) {
     onSuccess: () => {
       setSaved("Score recalculated.")
       queryClient.invalidateQueries({ queryKey: ["audit", auditId] })
+      queryClient.invalidateQueries({ queryKey: ["audit-score", auditId] })
+      queryClient.invalidateQueries({ queryKey: ["audits"] })
+      queryClient.invalidateQueries({ queryKey: ["metrics"] })
     },
   })
+  useUnsavedChanges(!!note.trim() && !saved)
   if (!summary.data)
     return (
       <QueryState
@@ -85,7 +94,7 @@ export function Investigation({ auditId }: { auditId: string }) {
       <div className="workspace-topline">
         <span>
           <ShieldCheck size={15} /> Score{" "}
-          <strong>{data.passport?.trust_score ?? "—"}</strong>
+          <strong>{scoring.data?.score_status === "insufficient_verification" ? "Not assessed" : scoring.data?.reviewed_score ?? "—"}</strong>
           <span className="text-muted-foreground">/ 100</span>
         </span>
         <StatusPill status={data.audit.status} />
@@ -160,7 +169,7 @@ export function Investigation({ auditId }: { auditId: string }) {
               </div>
               <div>
                 <span>Score impact</span>
-                <strong>−{Math.max(0, selected.impact_score)} points</strong>
+                <strong>{scoring.data ? `−${scoring.data.finding_contributions.find(item => item.flag_id === selected.id)?.penalty ?? 0} points` : "Not available"}</strong>
               </div>
             </div>
             <h3 className="field-label mt-6">Explanation</h3>
@@ -217,11 +226,11 @@ export function Investigation({ auditId }: { auditId: string }) {
               <textarea
                 id="review-note"
                 value={note}
-                onChange={(event) => setNote(event.target.value)}
+                disabled={decision.isPending || rescore.isPending}
+                onChange={(event) => { setNote(event.target.value); setSaved("") }}
                 placeholder="What did you check, and why is this the right decision?"
                 rows={3}
                 maxLength={4000}
-                disabled={decision.isPending}
               />
               <div className="decision-actions">
                 <LoadingButton
@@ -301,10 +310,7 @@ export function Investigation({ auditId }: { auditId: string }) {
             )}
             <div className="evidence-unavailable">
               <span className="eyebrow">EVIDENCE QUOTE</span>
-              <p>
-                The audit service does not currently return source excerpts.
-                Check the original document before making a decision.
-              </p>
+              {selected.evidence?.length ? selected.evidence.map(ev => <blockquote key={ev.id}><p>{ev.quote}</p><small>{ev.location_json}</small></blockquote>) : <p>No source excerpt is available for this finding. Check the original document before making a decision.</p>}
             </div>
             {selected.reviewer_note && (
               <div className="existing-note">

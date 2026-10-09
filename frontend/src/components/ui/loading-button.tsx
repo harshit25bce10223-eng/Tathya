@@ -55,6 +55,7 @@ function LoadingButton({
   return (
     <Comp
       className={cn(buttonVariants({ variant, size, className }))}
+      aria-busy={loading}
       disabled={loading || disabled}
       {...props}
     >

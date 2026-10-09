@@ -75,8 +75,7 @@ def test_fact_extraction_duration(db):
     facts = extract_facts(db, document)
     # Duration facts are extracted with fact_type="duration" in metadata_json
     duration_facts = [f for f in facts if "duration" in f.subject.lower() or "duration" in f.predicate.lower()]
-    # May not find duration depending on patterns
-    assert len(facts) >= 0
+    assert duration_facts, "A 30-day delivery term must produce a duration fact"
 
 
 def test_fact_version_binding(db):
@@ -169,10 +168,18 @@ def test_grounding_supported(db):
     db.commit()
     db.refresh(claim)
 
-    # Create supporting evidence
+    source = Document(
+        audit_id=audit.id, kind="source", filename="approval.txt", storage_path="approval.txt",
+        normalized_text="The contract value is INR 41.6 lakh.", raw_text="The contract value is INR 41.6 lakh.",
+        text_hash="source-hash", version_no=2, is_current=True,
+    )
+    db.add(source)
+    db.commit()
+    db.refresh(source)
+    # Supporting evidence must come from a separate source document.
     evidence = Evidence(
         claim_id=claim.id,
-        source_document_id=document.id,
+        source_document_id=source.id,
         quote="The contract value is INR 41.6 lakh.",
         location_json="{}",
         support_type="supports",
@@ -187,7 +194,7 @@ def test_grounding_supported(db):
     assert len(results) == 1
     result = results[0]
     # With high-score supporting evidence, should be SUPPORTED
-    assert result.status in (GroundingStatus.SUPPORTED, GroundingStatus.UNCERTAIN)
+    assert result.status == GroundingStatus.SUPPORTED
     if result.status == GroundingStatus.SUPPORTED:
         assert result.confidence > 0.5
         assert len(result.evidence_ids) >= 1

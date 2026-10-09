@@ -300,6 +300,9 @@ def _persist_facts(
     """Persist extracted facts to database."""
     persisted: list[Fact] = []
     for extracted in facts:
+        metadata = json.loads(extracted.metadata_json or "{}")
+        metadata.update(quote=extracted.raw_text, normalized_payload=extracted.normalized_payload, confidence=extracted.confidence)
+        grounded_metadata = json.dumps(metadata, ensure_ascii=False)
         # Check if identical fact already exists for this document version
         existing = session.exec(
             select(Fact).where(
@@ -314,7 +317,7 @@ def _persist_facts(
             # Update if new confidence is higher
             if extracted.confidence > 0:
                 existing.location_json = extracted.location_json
-                existing.metadata_json = extracted.metadata_json
+                existing.metadata_json = grounded_metadata
                 existing.status = "active"
                 session.add(existing)
                 persisted.append(existing)
@@ -325,6 +328,7 @@ def _persist_facts(
             subject=extracted.subject,
             predicate=extracted.predicate,
             object_value=extracted.object_value,
+            metadata_json=grounded_metadata,
             location_json=extracted.location_json,
             status="active",
         )
@@ -355,7 +359,7 @@ def get_facts_for_audit(session: Session, audit_id: uuid.UUID) -> list[Fact]:
     """Get all facts for an audit (across all document versions)."""
     # Join through documents
     document_ids = session.exec(
-        select(Document.id).where(Document.audit_id == audit_id)
+        select(Document.id).where(Document.audit_id == audit_id, Document.is_current.is_(True))
     ).all()
 
     if not document_ids:

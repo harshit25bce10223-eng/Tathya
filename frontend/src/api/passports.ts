@@ -1,15 +1,14 @@
+import { apiFetch } from "./transport"
 /**
  * Passport verification API client.
  * Public endpoints that don't require authentication.
  */
 
-import { config } from "@/config"
 import type { Passport, VerificationResult } from "./types"
 
-const BASE = `${config.api.baseUrl}`
 
 export async function getPassport(auditId: string): Promise<Passport> {
-  const res = await fetch(`${BASE}/audits/${auditId}/passport`, {
+  const res = await apiFetch(`/audits/${encodeURIComponent(auditId)}/passport`, {
     headers: { Accept: "application/json" },
   })
   if (!res.ok) {
@@ -21,7 +20,7 @@ export async function getPassport(auditId: string): Promise<Passport> {
 export async function verifyPassport(
   token: string,
 ): Promise<VerificationResult> {
-  const res = await fetch(`${BASE}/verify/${token}`, {
+  const res = await apiFetch(`/verify/${encodeURIComponent(token)}`, {
     headers: { Accept: "application/json" },
   })
   if (!res.ok) {

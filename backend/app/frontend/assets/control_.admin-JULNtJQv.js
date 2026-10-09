@@ -1,0 +1,1 @@
+import{t as e}from"./AdminPage-DRjAracd.js";var t=e;export{t as component};

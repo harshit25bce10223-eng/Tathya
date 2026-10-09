@@ -40,6 +40,7 @@ export function Main({ items }: MainProps) {
               currentPath === item.path ||
               (item.path === "/control/queue" &&
                 currentPath.startsWith("/control/workspace/")) ||
+              (item.path === "/control/challenges" && /^\/control\/(injector|judge|proof|results)\//.test(currentPath)) ||
               (item.path === "/control" && currentPath.startsWith("/submit/"))
 
             return (

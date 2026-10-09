@@ -7,7 +7,7 @@ export const Route = createRootRoute({
   component: () => (
     <>
       <HeadContent />
-      <Outlet />
+      <div id="application-surface"><Outlet /></div>
       <BrandSplash />
     </>
   ),

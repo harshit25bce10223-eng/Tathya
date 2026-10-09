@@ -1,0 +1,1 @@
+import{t as e}from"./jsx-runtime-B-hcVAMW.js";import{t}from"./AuditList-DiDMsXGR.js";import{t as n}from"./ReviewerGate-BbfuIYBp.js";var r=e(),i=()=>(0,r.jsx)(n,{children:(0,r.jsx)(t,{queue:!0})});export{i as component};

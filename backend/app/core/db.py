@@ -4,7 +4,7 @@ from app import crud
 from app.core.config import settings
 from app.models import User, UserCreate
 
-engine = create_engine(str(settings.DATABASE_URL))
+engine = create_engine(str(settings.DATABASE_URL), connect_args={"connect_timeout": 5} if settings.DATABASE_URL.scheme.startswith("postgresql") else {})
 
 
 # make sure all SQLModel models are imported (app.models) before initializing DB
