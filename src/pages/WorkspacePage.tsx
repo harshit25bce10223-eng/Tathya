@@ -25,7 +25,8 @@ import {
   Eye,
   CheckCircle2,
   FileCheck2,
-  Filter
+  Filter,
+  FileQuestion
 } from 'lucide-react';
 
 export const WorkspacePage: React.FC = () => {
@@ -440,14 +441,24 @@ export const WorkspacePage: React.FC = () => {
               </div>
             )}
 
-            {activeRightTab === 'POLICY' && selectedFlag && (
-              <div className="space-y-2.5 h-full">
-                <MaterialityPanel 
-                  materialityDetail={selectedFlag.materialityDetail}
-                  policyFindings={selectedFlag.policyFindings}
-                  omissionFindings={selectedFlag.omissionFindings}
-                />
-              </div>
+            {activeRightTab === 'POLICY' && (
+              selectedFlag ? (
+                <div className="space-y-2.5 h-full">
+                  <MaterialityPanel
+                    materialityDetail={selectedFlag.materialityDetail}
+                    policyFindings={selectedFlag.policyFindings}
+                    omissionFindings={selectedFlag.omissionFindings}
+                  />
+                </div>
+              ) : (
+                <div className="h-full flex flex-col items-center justify-center p-8 text-center text-tathya-text-muted">
+                  <FileQuestion className="w-10 h-10 mb-2 opacity-40 text-slate-500" />
+                  <h4 className="text-xs font-semibold text-white mb-1">No Finding Selected</h4>
+                  <p className="text-xs text-tathya-text-muted max-w-xs">
+                    Select a finding to inspect its business materiality classification, policy evaluation rules, and potential omissions.
+                  </p>
+                </div>
+              )
             )}
           </div>
 
@@ -460,6 +471,8 @@ export const WorkspacePage: React.FC = () => {
                 materialityDetail={selectedFlag.materialityDetail}
                 policyFindings={selectedFlag.policyFindings}
                 decisionHistory={selectedFlag.decisionHistory}
+                claimText={selectedFlag.claim}
+                suggestedFix={selectedFlag.suggestedFix}
               />
             )}
           </div>

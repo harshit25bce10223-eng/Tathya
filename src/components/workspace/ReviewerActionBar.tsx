@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Button } from '../ui/Button';
 import { Modal } from '../ui/Modal';
-import { Check, X, Wrench, AlertCircle, CheckCircle2, ChevronDown, ChevronUp } from 'lucide-react';
+import { Check, X, Wrench, AlertCircle, CheckCircle2, ChevronDown, ChevronUp, Edit3 } from 'lucide-react';
 import { MaterialityDetail, PolicyFinding, DecisionHistoryEntry } from '../../api/types';
 
 interface ReviewerActionBarProps {
@@ -11,6 +11,8 @@ interface ReviewerActionBarProps {
   materialityDetail?: MaterialityDetail;
   policyFindings?: PolicyFinding[];
   decisionHistory?: DecisionHistoryEntry[];
+  claimText?: string;
+  suggestedFix?: string;
 }
 
 export const ReviewerActionBar: React.FC<ReviewerActionBarProps> = ({
@@ -19,10 +21,14 @@ export const ReviewerActionBar: React.FC<ReviewerActionBarProps> = ({
   disabled = false,
   materialityDetail,
   policyFindings,
-  decisionHistory
+  decisionHistory,
+  claimText,
+  suggestedFix
 }) => {
   const [loadingAction, setLoadingAction] = useState<'ACCEPT' | 'DISMISS' | 'FIX' | null>(null);
   const [modalMode, setModalMode] = useState<'DISMISS' | 'FIX' | null>(null);
+  const [editModalOpen, setEditModalOpen] = useState(false);
+  const [candidateEdit, setCandidateEdit] = useState('');
   const [reviewerNote, setReviewerNote] = useState('');
   const [successFeedback, setSuccessFeedback] = useState<string | null>(null);
   const [errorFeedback, setErrorFeedback] = useState<string | null>(null);
@@ -183,13 +189,27 @@ export const ReviewerActionBar: React.FC<ReviewerActionBarProps> = ({
             </Button>
 
             <Button
+              variant="secondary"
+              size="sm"
+              disabled={disabled || loadingAction !== null}
+              leftIcon={<Edit3 className="w-3.5 h-3.5 text-tathya-accent" />}
+              onClick={() => {
+                setCandidateEdit(suggestedFix || claimText || '');
+                setEditModalOpen(true);
+              }}
+            >
+              Edit & Rescore...
+            </Button>
+
+            <Button
               variant="primary"
               size="sm"
               disabled={disabled || loadingAction !== null}
+              isLoading={loadingAction === 'FIX'}
               leftIcon={<Wrench className="w-3.5 h-3.5" />}
-              onClick={handleFixInitiate}
+              onClick={() => handleExecute('FIX', 'Applied suggested fix')}
             >
-              Mark as Fixed
+              Apply Fix
             </Button>
           </div>
         </div>
@@ -208,6 +228,7 @@ export const ReviewerActionBar: React.FC<ReviewerActionBarProps> = ({
           </div>
         )}
 
+        {/* 1. Dismissal / Note Modal */}
         <Modal
           isOpen={modalMode !== null}
           onClose={() => setModalMode(null)}
@@ -244,6 +265,64 @@ export const ReviewerActionBar: React.FC<ReviewerActionBarProps> = ({
                 onClick={submitWithNote}
               >
                 Confirm {modalMode === 'DISMISS' ? 'Dismissal' : 'Fix'}
+              </Button>
+            </div>
+          </div>
+        </Modal>
+
+        {/* 2. Judge Edit Mode Modal (Workflow C: Candidate Edit to Rescore) */}
+        <Modal
+          isOpen={editModalOpen}
+          onClose={() => setEditModalOpen(false)}
+          title="Judge Edit Mode · Propose Claim Remediation"
+          subtitle="Propose candidate claim text to test how Tathya rescores the finding. Original baseline document remains immutable."
+        >
+          <div className="space-y-4">
+            {claimText && (
+              <div className="p-3 rounded-lg bg-black/40 border border-tathya-surface-border text-xs">
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-[10px] uppercase font-bold text-tathya-text-muted">Original Baseline Claim</span>
+                  <span className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-slate-800 text-slate-400 border border-slate-700">Immutable</span>
+                </div>
+                <div className="text-slate-300 leading-relaxed font-mono">{claimText}</div>
+              </div>
+            )}
+
+            <div>
+              <label className="block text-xs font-semibold text-white mb-1.5">
+                Candidate Remediation Text <span className="text-red-400">*</span>
+              </label>
+              <textarea
+                rows={3}
+                value={candidateEdit}
+                onChange={(e) => setCandidateEdit(e.target.value)}
+                placeholder="Enter candidate corrected claim text..."
+                className="w-full bg-tathya-surface text-white text-xs p-3 rounded-lg border border-tathya-surface-border focus:ring-1 focus:ring-tathya-accent focus:outline-none font-mono"
+              />
+              <span className="text-[10px] text-tathya-text-muted mt-1 block">
+                Local Candidate Edit (Unsaved). Submitting evaluates the candidate against ground truth and recalibrates the Reviewed Score.
+              </span>
+            </div>
+
+            <div className="flex items-center justify-end gap-2 pt-2 border-t border-tathya-surface-border">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setEditModalOpen(false)}
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="primary"
+                size="sm"
+                disabled={!candidateEdit.trim() || loadingAction !== null}
+                isLoading={loadingAction === 'FIX'}
+                onClick={async () => {
+                  setEditModalOpen(false);
+                  await handleExecute('FIX', candidateEdit);
+                }}
+              >
+                Submit Candidate & Rescore
               </Button>
             </div>
           </div>

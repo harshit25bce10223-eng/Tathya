@@ -79,17 +79,24 @@ export const QueueTable: React.FC<QueueTableProps> = ({ audits }) => {
                   {audit.status === 'PROCESSING' ? (
                     <span className="text-slate-500">—</span>
                   ) : (
-                    <span
-                      className={`text-sm ${
-                        audit.trustScore >= 80
-                          ? 'text-emerald-400'
-                          : audit.trustScore >= 50
-                          ? 'text-amber-400'
-                          : 'text-red-400'
-                      }`}
-                    >
-                      {audit.trustScore}/100
-                    </span>
+                    <div>
+                      <span
+                        className={`text-sm ${
+                          (audit.reviewedScore ?? audit.trustScore) >= 80
+                            ? 'text-emerald-400'
+                            : (audit.reviewedScore ?? audit.trustScore) >= 50
+                            ? 'text-amber-400'
+                            : 'text-red-400'
+                        }`}
+                      >
+                        {audit.reviewedScore ?? audit.trustScore}/100
+                      </span>
+                      {audit.reviewedScore !== null && audit.reviewedScore !== undefined && (
+                        <span className="block text-[9px] font-mono text-emerald-400 uppercase tracking-wider">
+                          Reviewed
+                        </span>
+                      )}
+                    </div>
                   )}
                 </td>
 
