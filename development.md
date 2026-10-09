@@ -1,4 +1,4 @@
-# FastAPI Project - Development
+# Tathya — Development
 
 ## Local Development
 

@@ -4,4 +4,4 @@ Tathya is derived in part from the Full Stack FastAPI Template by Sebastián Ram
 
 The Expo mobile source retains its existing notice in mobile/LICENSE. JavaScript and Python dependencies retain their own licenses in their distributions. Framework names in technical documentation describe the actual infrastructure and must not be removed as branding cleanup.
 
-Manifest and lockfile dependency inventories are recorded in docs/template-residue-inventory.md. This attribution record does not certify every dependency or downloaded model license; distribution review remains required.
+Dependency inventories are recorded in the checked-in manifests and lockfiles. This attribution record does not certify every dependency or downloaded model license; distribution review remains required.

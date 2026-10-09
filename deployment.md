@@ -1,6 +1,8 @@
-# FastAPI Project - Deployment
+# Tathya — Deployment
 
-Deploy the project to [FastAPI Cloud](https://fastapicloud.com) with the included GitHub Actions workflow.
+For a server deployment, follow the [Docker Compose guide](deployment-docker-compose.md).
+
+The instructions below describe the optional [FastAPI Cloud](https://fastapicloud.com) deployment supported by the included GitHub Actions workflow. Configure this provider only if you use it; these instructions do not indicate that a Tathya deployment is already active.
 
 ## Create the FastAPI Cloud Application
 
