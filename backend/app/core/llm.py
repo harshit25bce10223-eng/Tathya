@@ -158,20 +158,26 @@ class Provider:
 
 
 def providers() -> list[Provider]:
-    return [
-        Provider(
-            name="openai",
-            model=settings.OPENAI_MODEL,
-            configured=bool(settings.OPENAI_API_KEY),
-            call=_call_openai,
-        ),
-        Provider(
-            name="gemini",
-            model=settings.GEMINI_MODEL,
-            configured=bool(settings.GEMINI_API_KEY),
-            call=_call_gemini,
-        ),
-    ]
+    pro_list: list[Provider] = []
+    if settings.GEMINI_API_KEY:
+        pro_list.append(
+            Provider(
+                name="gemini",
+                model=settings.GEMINI_MODEL,
+                configured=True,
+                call=_call_gemini,
+            )
+        )
+    if settings.OPENAI_API_KEY:
+        pro_list.append(
+            Provider(
+                name="openai",
+                model=settings.OPENAI_MODEL,
+                configured=True,
+                call=_call_openai,
+            )
+        )
+    return pro_list
 
 
 class LLMAdapter:

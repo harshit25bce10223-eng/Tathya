@@ -77,9 +77,9 @@ class Settings(BaseSettings):
 
     # LLM providers (provider-neutral adapter in app.core.llm)
     OPENAI_API_KEY: str | None = None
-    OPENAI_MODEL: str = "gpt-5-mini"
+    OPENAI_MODEL: str = "gpt-4o-mini"
     GEMINI_API_KEY: str | None = None
-    GEMINI_MODEL: str = "gemini-2.5-flash"
+    GEMINI_MODEL: str = "gemini-3.5-flash-lite"
     LLM_TIMEOUT_SECONDS: float = 60.0
     LLM_MAX_RETRIES: int = 1
     LLM_CACHE_DIR: str = "./data/cache"
@@ -91,6 +91,8 @@ class Settings(BaseSettings):
     USE_HHEM: bool = False
     TORCH_DEVICE: str = "auto"
     MODEL_CACHE_DIR: str = "./data/models"
+    MODEL_ARTIFACT_DIR: str = "./model_artifacts"
+    TRAINING_DATA_DIR: str = "./training_data"
 
     # Storage (uploaded documents, keys)
     STORAGE_DIR: str = "./storage"

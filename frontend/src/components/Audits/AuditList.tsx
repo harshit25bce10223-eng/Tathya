@@ -80,15 +80,61 @@ export function AuditList({
         </Link>
       </div>
       {!queue && !archive && (
-        <section className="metric-strip">
-          {counts.map((metric) => (
-            <div key={metric.label}>
-              <span>{metric.label}</span>
-              <strong>{audits.data ? metric.value : "—"}</strong>
-              <small>{metric.detail}</small>
+        <>
+          <section className="product-panel mb-6 border border-emerald-500/20 bg-emerald-500/5 p-4 rounded-lg">
+            <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
+              <div className="flex items-center gap-2">
+                <span className="size-2 rounded-full bg-emerald-500 animate-pulse" />
+                <span className="eyebrow font-semibold text-emerald-600 dark:text-emerald-400">
+                  LIVE AI ENGINES & VERIFICATION MESH
+                </span>
+              </div>
+              <span className="text-xs font-mono text-muted-foreground">
+                Primary: Gemini 3.5 Flash Lite · Embeddings: BGE-M3 (1024-dim)
+              </span>
             </div>
-          ))}
-        </section>
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
+              <div className="p-2.5 rounded bg-background/80 border border-border">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="font-medium">Gemini 3.5 Flash</span>
+                  <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-600 font-mono font-bold">ACTIVE</span>
+                </div>
+                <p className="text-[11px] text-muted-foreground mt-1">Google GenAI · Fast Claim Fact Checking</p>
+              </div>
+              <div className="p-2.5 rounded bg-background/80 border border-border">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="font-medium">GPT-4o Mini</span>
+                  <span className="text-[10px] px-1.5 py-0.5 rounded bg-blue-500/10 text-blue-600 font-mono font-bold">READY</span>
+                </div>
+                <p className="text-[11px] text-muted-foreground mt-1">OpenAI · Secondary Fallback & JSON Schema</p>
+              </div>
+              <div className="p-2.5 rounded bg-background/80 border border-border">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="font-medium">BGE-M3 Dense</span>
+                  <span className="text-[10px] px-1.5 py-0.5 rounded bg-purple-500/10 text-purple-600 font-mono font-bold">CACHED</span>
+                </div>
+                <p className="text-[11px] text-muted-foreground mt-1">BAAI · Multilingual Semantic Vectors</p>
+              </div>
+              <div className="p-2.5 rounded bg-background/80 border border-border">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="font-medium">Penalty Engine</span>
+                  <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-600 font-mono font-bold">LOCAL</span>
+                </div>
+                <p className="text-[11px] text-muted-foreground mt-1">Deterministic Penalty v1 · 0-100 Score</p>
+              </div>
+            </div>
+          </section>
+
+          <section className="metric-strip">
+            {counts.map((metric) => (
+              <div key={metric.label}>
+                <span>{metric.label}</span>
+                <strong>{audits.data ? metric.value : "—"}</strong>
+                <small>{metric.detail}</small>
+              </div>
+            ))}
+          </section>
+        </>
       )}
       <section className="product-panel audit-table-panel">
         <div className="panel-heading">

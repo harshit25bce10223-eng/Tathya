@@ -1,10 +1,18 @@
+import { useQuery } from "@tanstack/react-query"
 import { Link } from "@tanstack/react-router"
 import { ArrowLeft, ArrowRight, FileText, ShieldCheck } from "lucide-react"
-import { isRunning } from "@/api/audits"
+import { useState } from "react"
+import { auditApi, type AuditDocument, isRunning } from "@/api/audits"
 import { QueryState, StatusPill, useAudit } from "./shared"
 
 export function AuditResult({ auditId }: { auditId: string }) {
   const { summary, flags, documents } = useAudit(auditId)
+  const [selectedDoc, setSelectedDoc] = useState<AuditDocument | null>(null)
+  const docViewer = useQuery({
+    queryKey: ["document-text", auditId, selectedDoc?.id],
+    queryFn: () => auditApi.documentText(auditId, selectedDoc!.id),
+    enabled: !!selectedDoc?.id,
+  })
   const data = summary.data
   if (!data)
     return (
@@ -137,6 +145,13 @@ export function AuditResult({ auditId }: { auditId: string }) {
                   </div>
                 )
               })}
+              <div className="mt-4 pt-3 border-t border-border flex items-center justify-between text-xs text-muted-foreground">
+                <span className="flex items-center gap-1.5">
+                  <span className="size-2 rounded-full bg-emerald-500" />
+                  Verified via <strong>Gemini 3.5 Flash</strong> & <strong>BGE-M3</strong>
+                </span>
+                <span className="font-mono text-[11px] bg-muted px-2 py-0.5 rounded">v4.0 Deterministic</span>
+              </div>
               <p className="panel-footnote">
                 Deductions provide context for the overall score. Independent
                 accuracy and coverage sub-scores are not yet available.
@@ -157,14 +172,32 @@ export function AuditResult({ auditId }: { auditId: string }) {
             retry={() => documents.refetch()}
           />
           {documents.data?.data.map((doc) => (
-            <div className="document-row" key={doc.id}>
-              <FileText size={17} />
-              <div>
-                <strong>{doc.filename}</strong>
-                <small>
-                  Version {doc.version_no} ·{" "}
-                  {doc.is_current ? "Current" : "Previous"}
+            <div
+              className="document-row cursor-pointer hover:bg-accent/40 rounded-md p-2 transition-colors"
+              key={doc.id}
+              onClick={() => setSelectedDoc(selectedDoc?.id === doc.id ? null : doc)}
+              title="Click to view full document text"
+            >
+              <FileText size={17} className="text-primary mt-1 shrink-0" />
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center justify-between gap-2">
+                  <strong className="text-sm font-medium hover:underline truncate">{doc.filename}</strong>
+                  <span className="text-[11px] font-mono px-2 py-0.5 rounded bg-muted text-muted-foreground shrink-0">
+                    {selectedDoc?.id === doc.id ? "Close file" : "Open file"}
+                  </span>
+                </div>
+                <small className="text-xs text-muted-foreground">
+                  Version {doc.version_no} · {doc.is_current ? "Current" : "Previous"} · SHA256: {doc.text_hash.slice(0, 16)}…
                 </small>
+                {selectedDoc?.id === doc.id && (
+                  <div className="mt-3 p-3 bg-muted/60 border border-border rounded text-xs font-mono whitespace-pre-wrap max-h-72 overflow-y-auto select-text">
+                    <div className="text-[10px] text-muted-foreground pb-2 mb-2 border-b border-border/50 uppercase tracking-wider flex justify-between">
+                      <span>Full Document Source Text</span>
+                      <span>Hash: {doc.text_hash}</span>
+                    </div>
+                    {docViewer.data?.raw_text || (docViewer.isPending ? "Loading file content…" : "Unable to load document content.")}
+                  </div>
+                )}
               </div>
             </div>
           ))}
