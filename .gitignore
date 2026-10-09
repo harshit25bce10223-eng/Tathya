@@ -43,3 +43,16 @@ backend/storage/
 /playwright-report/
 /blob-report/
 /playwright/.cache/
+
+# Generated frontend bundle (recreated by Vite and Docker)
+/backend/app/frontend/
+
+# Local review artifacts, managed worktrees and packaged releases
+/artifacts/
+/release-artifacts/
+
+# Test reports at any workspace depth
+**/test-results/
+**/playwright-report/
+**/blob-report/
+**/playwright/.cache/

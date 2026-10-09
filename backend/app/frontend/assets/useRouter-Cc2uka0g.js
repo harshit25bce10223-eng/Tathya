@@ -1,1 +1,0 @@
-import{J as e,h as t}from"./useCustomToast-BcHfjxNI.js";var n=e(t(),1),r=n.createContext(null);function i(e){return n.useContext(r)}export{r as n,i as t};
