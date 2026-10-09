@@ -44,4 +44,4 @@ node frontend/tests/design-review/splash.cjs
 
 [Linear dashboard context](https://linear.app/now/dashboards-best-practices), [Notion upload blocks](https://www.notion.com/help/images-files-and-media), [Vercel analytics](https://vercel.com/docs/analytics), [Attio structured output](https://attio.com/engineering/blog/ask-attio-a-technical-look-at-our-new-agent), [community Linear spacing reference](https://github.com/Khalidabdi1/design-ai/blob/main/design-md/linear/DESIGN.md). Patterns were adapted to existing components and real data contracts.
 
-[Open the screenshot gallery](GALLERY.md).
+[Open the archived screenshot gallery](GALLERY.md). Review screenshots and the animation video are preserved in Git history at revision `854b26e`; gallery media links point to that immutable revision. Generated captures are kept locally rather than tracked in the current source tree.

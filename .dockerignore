@@ -8,3 +8,7 @@ frontend/node_modules
 frontend/playwright-report
 frontend/test-results
 node_modules
+artifacts
+release-artifacts
+docs/ui-design-review/screenshots
+docs/ui-design-review/splash-animation.webm
