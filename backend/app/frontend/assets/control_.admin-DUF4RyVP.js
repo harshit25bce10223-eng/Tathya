@@ -1,0 +1,1 @@
+import{t as e}from"./AdminPage-3cPaRhtF.js";var t=e;export{t as component};

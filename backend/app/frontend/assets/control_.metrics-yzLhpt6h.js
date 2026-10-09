@@ -1,0 +1,1 @@
+import{t as e}from"./ControlPages-b-4tARD6.js";var t=e;export{t as component};

@@ -1999,3 +1999,5 @@ body {
 .graph-claim-button[aria-pressed="true"] {background:var(--secondary); outline:2px solid var(--ring)}
 .graph-claim-button:focus-visible {outline:3px solid var(--ring);outline-offset:3px}
 @media(max-width:700px){.claim-graph-grid{grid-template-columns:1fr}.claim-graph .policy-actions{flex-wrap:wrap}}
+
+.source-inbox-path { white-space: pre-wrap; overflow-wrap: anywhere; max-width: 100%; }

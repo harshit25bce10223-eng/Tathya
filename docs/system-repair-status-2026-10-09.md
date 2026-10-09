@@ -84,3 +84,5 @@ Generated model weights, training corpora, databases, runtime credentials, local
 - Source selection is an explicit reviewer decision, not a certification of source authenticity. No production calibration, mobile release or deployment certification is implied.
 
 - Follow-up live QA: enabled the watcher only for the synthetic golden audit, observed an actual imported source version and unchanged-byte state, then disabled the watcher. Existing source documents and the original inbox file were retained. The sources UI now explicitly withholds combined canonical values when a current source has no recorded facts, while keeping existing quote-level facts available. A fresh audit is required to extract the new source and evaluate the resulting conflict.
+
+- Live reviewer QA saved the exact imported warranty source with a required synthetic-test reason and displayed the reviewer-selected canonical value. Narrow-screen inspection identified overflow from the inbox folder path; the dedicated path block now wraps within the panel.
