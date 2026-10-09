@@ -23,7 +23,7 @@ from app.models import Claim, Document, Evidence
 
 logger = logging.getLogger("tathya.retrieval")
 
-_TOKEN = re.compile(r"[A-Za-z0-9₹%./-]+")
+_TOKEN = re.compile(r"[\w₹%./\-\u0900-\u097f]+")
 _FALLBACK_EMBEDDING = "BAAI/bge-small-en-v1.5"
 
 

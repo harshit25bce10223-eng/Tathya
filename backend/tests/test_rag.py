@@ -211,3 +211,63 @@ def test_api_owner_access_and_cross_audit_denial(pack, monkeypatch):
         )
         del app.dependency_overrides[get_current_user]
         assert client.post(url, json={"question": "Warranty?"}).status_code == 401
+
+
+@pytest.mark.parametrize("vectors", [[], [[float("nan")]], [[0.0]], [[1.0]]])
+def test_invalid_embeddings_preserve_lexical_retrieval(pack, monkeypatch, vectors):
+    session, _, _, audit, _, source = pack
+    document = source("The warranty period is twelve months.")
+    monkeypatch.setattr(retrieval, "_encode", lambda _: vectors)
+    citations, mode = rag.retrieve_sources(session, audit.id, "Warranty period?", 5)
+    assert mode == "lexical"
+    assert citations[0].document_id == document.id
+
+
+def test_hindi_retrieval_uses_complete_words(pack):
+    session, _, _, audit, _, source = pack
+    relevant = source("वारंटी अवधि बारह महीने है।")
+    source("कार्यालय दिल्ली में है।", version=2)
+    assert "वारंटी" in retrieval._tokenize("वारंटी अवधि?")
+    citations, mode = rag.retrieve_sources(session, audit.id, "वारंटी अवधि?", 5)
+    assert mode == "lexical"
+    assert [c.document_id for c in citations] == [relevant.id]
+
+
+def test_invalid_location_is_not_returned(pack, monkeypatch):
+    session, _, _, audit, _, source = pack
+    document = source("Warranty period is twelve months.")
+    chunk = retrieval.RetrievedChunk(
+        document_id=document.id,
+        sentence_id="invalid",
+        text=document.normalized_text,
+        start_offset=-1,
+        end_offset=1000,
+        score=1.0,
+        support_type="unknown",
+    )
+    monkeypatch.setattr(retrieval, "_chunks_for_audit", lambda *_: [chunk])
+    citations, _ = rag.retrieve_sources(session, audit.id, "Warranty?", 5)
+    assert citations == []
+
+
+@pytest.mark.parametrize("change", ["kind", "version_no", "audit_id"])
+def test_source_identity_change_invalidates_answer(pack, monkeypatch, change):
+    session, _, _, audit, other, source = pack
+    document = source("Warranty period is twelve months.")
+
+    def complete(_):
+        value = {"kind": "primary", "version_no": 2, "audit_id": other.id}[change]
+        setattr(document, change, value)
+        session.add(document)
+        session.commit()
+        return {
+            "insufficient_evidence": False,
+            "statements": [{"text": "Twelve months.", "citation_ids": ["S1"]}],
+        }
+
+    monkeypatch.setattr(rag.llm_adapter, "complete_json", complete)
+    result = rag.answer_question(
+        session, audit.id, rag.RagQuestion(question="Warranty period?")
+    )
+    assert result.status == "generation_unavailable"
+    assert result.citations == []

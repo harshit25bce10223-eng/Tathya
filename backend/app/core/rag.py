@@ -89,7 +89,7 @@ _SCHEMA = {
 
 
 def _terms(text: str) -> set[str]:
-    return {t for t in re.findall(r"[^\W_]+", text.casefold()) if t not in _STOP}
+    return {t for t in retrieval._tokenize(text) if t not in _STOP}
 
 
 def retrieve_sources(
@@ -107,6 +107,15 @@ def retrieve_sources(
     try:
         vectors = retrieval._encode(corpus + [question])
         if vectors is not None:
+            vectors = np.asarray(vectors, dtype=float)
+            if (
+                vectors.ndim != 2
+                or vectors.shape[0] != len(chunks) + 1
+                or vectors.shape[1] == 0
+                or not np.isfinite(vectors).all()
+                or np.any(np.linalg.norm(vectors, axis=1) == 0)
+            ):
+                raise ValueError("Invalid embedding response")
             matrix, query = vectors[:-1], vectors[-1]
             semantic_scores = (
                 matrix / (np.linalg.norm(matrix, axis=1, keepdims=True) + 1e-9)
@@ -153,6 +162,13 @@ def retrieve_sources(
             or document.audit_id != audit_id
             or not document.is_current
             or document.kind != "source"
+        ):
+            continue
+        if (
+            not 0
+            <= chunk.start_offset
+            < chunk.end_offset
+            <= len(document.normalized_text)
         ):
             continue
         # Citations must be exact slices of this version, not model-produced quotes.
@@ -241,7 +257,10 @@ def answer_question(
             session.refresh(source)
         if (
             source is None
+            or source.audit_id != audit_id
+            or source.kind != "source"
             or not source.is_current
+            or source.version_no != citation.version_no
             or source.text_hash != citation.text_hash
             or source.normalized_text[citation.start_offset : citation.end_offset]
             != citation.quote

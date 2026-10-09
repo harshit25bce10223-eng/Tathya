@@ -15,3 +15,7 @@ Uploaded excerpts are delimited as untrusted data in the prompt. The generator r
 ## Validation
 
 Run `.venv/Scripts/python.exe -m pytest --noconftest backend/tests/test_rag.py -q` from the repository root. These tests create isolated in-memory SQLite tables and stub models/providers. They do not query production databases or require provider credentials. Regression coverage includes audit isolation, stale/primary exclusion, exact quote offsets, citations, abstention, unavailable generation, source updates, authorization and input limits.
+
+## Retrieval hardening
+
+Lexical retrieval supports Unicode words, including complete Hindi words with Devanagari vowel marks, alongside Indian currency and identifiers. Invalid, non-finite or zero-length embedding responses fall back to lexical retrieval. Citations with invalid character ranges are excluded. Before an answer is accepted, source audit membership, source kind and immutable version are rechecked alongside text hashes and exact quotes. These checks do not calculate truth or change trust scores.
