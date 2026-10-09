@@ -1,0 +1,1 @@
+import{r as e}from"./ControlPages-BO5PljVI.js";var t=e;export{t as component};

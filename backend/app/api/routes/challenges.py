@@ -35,12 +35,28 @@ from app.core.judge_wow import (
 )
 from app.core.z3_engine import solve_constraints
 from app.models import Audit, Flag, Passport, User
+from app.core.challenge_runner import TrialRequest, start_trial, trial_results
 
 challenges_router = APIRouter(prefix="/challenges", tags=["challenges"])
 inject_router = APIRouter(prefix="/inject", tags=["injection"])
 judge_router = APIRouter(prefix="/judge", tags=["judge"])
 proof_router = APIRouter(prefix="/proof", tags=["proof"])
 metrics_router = APIRouter(prefix="/metrics", tags=["metrics"])
+
+@challenges_router.post("/{audit_id}/trials", status_code=201)
+def run_document_trial(audit_id: uuid.UUID, payload: TrialRequest, session: SessionDep, reviewer: ReviewerDep) -> dict:
+    from app.api.routes.audits import _get_audit
+    base = _get_audit(session, audit_id, reviewer)
+    try:
+        return start_trial(session, base, reviewer.id, payload)
+    except ValueError as exc:
+        raise HTTPException(422, str(exc)) from exc
+
+@challenges_router.get("/{audit_id}/trials")
+def read_document_trials(audit_id: uuid.UUID, session: SessionDep, reviewer: ReviewerDep) -> dict:
+    from app.api.routes.audits import _get_audit
+    _get_audit(session, audit_id, reviewer)
+    return trial_results(session, audit_id)
 
 
 # ---------------------------------------------------------------------------

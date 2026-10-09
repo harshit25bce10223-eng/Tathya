@@ -113,6 +113,12 @@ class Settings(BaseSettings):
 
     @model_validator(mode="after")
     def _enforce_non_default_secrets(self) -> Self:
+        if len(self.SECRET_KEY) < 32 or self.SECRET_KEY.startswith("changethis"):
+            message = "SECRET_KEY must contain at least 32 characters and must not use the template default."
+            if self.FASTAPI_ENV == "development":
+                warnings.warn(message, stacklevel=1)
+            else:
+                raise ValueError(message)
         self._check_default_secret("SECRET_KEY", self.SECRET_KEY)
         for host in self.DATABASE_URL.hosts():
             self._check_default_secret("DATABASE_URL password", host["password"])

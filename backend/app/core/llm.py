@@ -131,7 +131,7 @@ def _call_gemini(request: LLMRequest) -> dict[str, Any]:
     from google import genai
     from google.genai import types
 
-    client = genai.Client(api_key=settings.GEMINI_API_KEY)
+    client = genai.Client(api_key=settings.GEMINI_API_KEY, http_options=types.HttpOptions(timeout=max(1, int(settings.LLM_TIMEOUT_SECONDS * 1000))))
     response = client.models.generate_content(
         model=settings.GEMINI_MODEL,
         contents=request.prompt,
@@ -139,7 +139,7 @@ def _call_gemini(request: LLMRequest) -> dict[str, Any]:
             temperature=request.temperature,
             max_output_tokens=request.max_output_tokens,
             response_mime_type="application/json",
-            response_schema=request.schema,
+            response_json_schema=request.schema,
             system_instruction=_schema_instruction(request.schema),
         ),
     )

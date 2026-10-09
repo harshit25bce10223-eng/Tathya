@@ -1,4 +1,5 @@
 import { useUnsavedChanges } from "@/hooks/useUnsavedChanges"
+import { TrialRunner } from "./TrialRunner"
 import { saveCandidate } from "@/api/workspaceDrafts"
 import { QueryState } from "@/components/Audits/shared"
 import { useState, useEffect } from "react"
@@ -376,6 +377,7 @@ export function InjectorWorkspace({ auditId }: { auditId: string }) {
           </div>
         </section>
       )}
+      <TrialRunner key={`trial-${activeAuditId}`} auditId={activeAuditId} candidateText={injectedText} />
     </fieldset>
   )
 }

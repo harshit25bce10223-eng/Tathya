@@ -54,6 +54,10 @@ def values(text: str) -> dict[str, tuple]:
 
 def compare_quote(claim: str, quote: str) -> str | None:
     """Compare like business fields; never compare unrelated numbers or dates."""
+    # Equality of a number cannot prove negation, conditional or bounded terms.
+    qualifiers = r"\b(?:not|never|unless|except|without|may|might|up\s+to|at\s+least|at\s+most|more\s+than|less\s+than|minimum|maximum)\b|n't\b"
+    if re.search(qualifiers, claim + " " + quote, re.I):
+        return None
     claim_field, source_field = field_hint(claim), field_hint(quote)
     if not claim_field or claim_field != source_field:
         return None

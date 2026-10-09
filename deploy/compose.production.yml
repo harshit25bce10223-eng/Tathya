@@ -1,0 +1,67 @@
+name: tathya
+services:
+  db:
+    image: postgres:18
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: tathya
+      POSTGRES_USER: tathya
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set a strong database password}
+    volumes:
+      - database:/var/lib/postgresql
+    healthcheck:
+      test: [CMD-SHELL, 'pg_isready -U tathya -d tathya']
+      interval: 10s
+      timeout: 5s
+      retries: 10
+  api:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql+psycopg://tathya:${POSTGRES_PASSWORD:?Required}@db:5432/tathya
+      SECRET_KEY: ${SECRET_KEY:?Required}
+      FIRST_SUPERUSER: ${FIRST_SUPERUSER:?Required}
+      FIRST_SUPERUSER_PASSWORD: ${FIRST_SUPERUSER_PASSWORD:?Required}
+      PUBLIC_BASE_URL: https://${DOMAIN:?Required}
+      FRONTEND_HOST: https://${DOMAIN:?Required}
+      STORAGE_DIR: /app/backend/storage
+      ECDSA_PRIVATE_KEY_PATH: /app/backend/secrets/passport_private.pem
+      ECDSA_PUBLIC_KEY_PATH: /app/backend/secrets/passport_public.pem
+      MODEL_CACHE_DIR: /app/backend/data/models
+      LLM_CACHE_DIR: /app/backend/data/cache
+    volumes:
+      - documents:/app/backend/storage
+      - signing:/app/backend/secrets
+      - runtime:/app/backend/data
+    healthcheck:
+      test: [CMD, python, -c, 'import urllib.request; urllib.request.urlopen("http://localhost:8000/health",timeout=5)']
+      interval: 30s
+      timeout: 10s
+      start_period: 120s
+      retries: 5
+  web:
+    image: caddy:2
+    restart: unless-stopped
+    environment:
+      DOMAIN: ${DOMAIN:?Required}
+      ACME_EMAIL: ${ACME_EMAIL:?Required}
+    ports: ['80:80', '443:443']
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - tls:/data
+      - caddy_config:/config
+    depends_on:
+      api:
+        condition: service_healthy
+volumes:
+  database:
+  documents:
+  signing:
+  runtime:
+  tls:
+  caddy_config:

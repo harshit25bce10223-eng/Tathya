@@ -1,0 +1,12 @@
+{"id":"price-match","family":"purchase-a","split":"tuning","category":"numbers","claim":"Contract value is INR 41.6 lakh.","sources":["Contract value is INR 4160000."],"expected":"supported"}
+{"id":"price-conflict","family":"purchase-a","split":"tuning","category":"numbers","claim":"Contract value is INR 50 lakh.","sources":["Contract value is INR 41.6 lakh."],"expected":"contradicted"}
+{"id":"warranty-match","family":"supply-b","split":"test","category":"commitments","claim":"Warranty is valid for 2 years.","sources":["Warranty is valid for 24 months."],"expected":"supported"}
+{"id":"warranty-conflict","family":"supply-b","split":"test","category":"commitments","claim":"Warranty is valid for 5 years.","sources":["Warranty is valid for 12 months."],"expected":"contradicted"}
+{"id":"payment-match","family":"payment-c","split":"test","category":"numbers","claim":"Payment is due within 14 days.","sources":["Payment is due within 2 weeks."],"expected":"supported"}
+{"id":"delivery-conflict","family":"delivery-d","split":"injector","category":"dates","claim":"Delivery is due on 15 December 2026.","sources":["Delivery is due on 22 December 2026."],"expected":"contradicted"}
+{"id":"entity-conflict","family":"entity-e","split":"injector","category":"names","claim":"Approved by Ministry Alpha.","sources":["Approved by Ministry Beta."],"expected":"contradicted"}
+{"id":"pii-unverified","family":"privacy-f","split":"test","category":"pii","claim":"The contact number is 9876543210.","sources":["The source omits personal contact details."],"expected":"unsupported"}
+{"id":"negation-trap","family":"negation-g","split":"injector","category":"commitments","claim":"Warranty is valid for 12 months.","sources":["Warranty is not valid for 12 months."],"expected":"contradicted"}
+{"id":"cross-field","family":"cross-h","split":"test","category":"numbers","claim":"Warranty is valid for 12 months.","sources":["Payment is due within 12 months."],"expected":"unsupported"}
+{"id":"two-sources","family":"authority-i","split":"test","category":"commitments","claim":"Warranty is valid for 12 months.","sources":["Warranty is valid for 12 months.","Warranty is valid for 6 months."],"expected":"uncertain"}
+{"id":"empty-evidence","family":"empty-j","split":"test","category":"other","claim":"The product is approved worldwide.","sources":[],"expected":"unsupported"}
