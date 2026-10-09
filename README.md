@@ -15,7 +15,7 @@ The intended product routes are `/login`, `/submit`, `/control`, `/control/queue
 
 ## Development
 
-Use [development.md](development.md), [backend instructions](backend/README.md), [frontend instructions](frontend/README.md) and [deployment instructions](deployment-docker-compose.md) for the existing service setup.
+Use the [development guide](development.md) for setup, backend/frontend commands, testing and contribution instructions. See the [deployment guide](deployment.md) for deployment options.
 
 The Vite build targets `backend/app/frontend/`. Keep generated deployment output separate from authored product source. Configure local environment values from `.env.example`; never commit passwords, credentials, private keys or runtime uploads.
 
