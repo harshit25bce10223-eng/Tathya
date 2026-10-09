@@ -29,7 +29,7 @@ from app.models import Audit, Flag, Claim, Document
 logger = logging.getLogger("tathya.trust_score")
 
 # Scoring version - increment when formula changes
-SCORING_VERSION = "6.2"
+SCORING_VERSION = "6.3"
 SCORING_METHODOLOGY = "evidence_coverage_gated_penalty_v2"
 
 # The local materiality engine is loaded lazily to avoid circular imports.
@@ -333,7 +333,7 @@ def compute_score_breakdown(session: Session, audit_id: str) -> ScoreBreakdown:
     from app.core.current_evidence import current_evidence
     cited_claims = {ev.claim_id for ev in current_evidence(session, audit_uuid)}
     grounded = sum(c.status in ("supported", "contradicted") and c.id in cited_claims for c in current_claims)
-    if policy_results["documents_changed"]:
+    if policy_results["documents_changed"] or policy_results["resolutions_changed"]:
         counts = {status: 0 for status in counts}
         counts["uncertain"] = total
         checked = grounded = 0
@@ -361,8 +361,8 @@ def compute_score_breakdown(session: Session, audit_id: str) -> ScoreBreakdown:
         score_status = "partial_verification"
         limit_reason = "Business policy checks are uncertain or out of date. Re-audit or resolve the recorded policy findings before relying on the rating."
 
-    if policy_results["documents_changed"]:
-        limit_reason = "The document set changed after the recorded assessment. Re-audit current documents before relying on a trust rating."
+    if policy_results["documents_changed"] or policy_results["resolutions_changed"]:
+        limit_reason = "The document set changed after the recorded assessment, or a reviewer changed its source selection. Re-audit current documents before relying on a trust rating."
         sub_scores = {key: None for key in sub_scores}
 
     # Calculate AI Score (all findings)

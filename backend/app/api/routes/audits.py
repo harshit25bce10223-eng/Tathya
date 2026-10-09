@@ -11,7 +11,7 @@ import uuid
 from pathlib import Path
 from typing import Annotated, Any
 
-from fastapi import APIRouter, File, Form, HTTPException, UploadFile, status
+from fastapi import APIRouter, File, Form, HTTPException, UploadFile, status, Query
 from starlette.concurrency import run_in_threadpool
 from app.core.jobs import StageError
 from app.core.pipeline import issue_passport
@@ -303,10 +303,17 @@ async def upload_documents(
     session: SessionDep,
     current_user: CurrentUser,
     files: Annotated[list[UploadFile], File()],
+    source_only: Annotated[bool, Form()] = False,
 ) -> DocumentsPublic:
     audit = _get_audit(session, audit_id, current_user)
+    audit = session.exec(select(Audit).where(Audit.id == audit_id).with_for_update().execution_options(populate_existing=True)).one()
     if audit.status in ("queued", "processing"):
         raise HTTPException(409, "Wait for this audit to finish before adding documents.")
+    if source_only:
+        current = session.exec(select(Document).where(Document.audit_id == audit_id, Document.is_current.is_(True))).all()
+        primary_names = {Path(d.filename).name.casefold() for d in current if d.kind == "primary"}
+        if not primary_names or any(Path(f.filename or "upload.bin").name.casefold() in primary_names for f in files):
+            raise HTTPException(409, "A source amendment cannot replace the AI document. Use a different source filename.")
     audit.status = "queued"
     audit.error_message = None
     audit.failed_stage = None
@@ -322,6 +329,7 @@ def run_audit(
     audit_id: uuid.UUID, session: SessionDep, current_user: CurrentUser
 ) -> JobStatus:
     audit = _get_audit(session, audit_id, current_user)
+    audit = session.exec(select(Audit).where(Audit.id == audit_id).with_for_update().execution_options(populate_existing=True)).one()
     if audit.status in ("queued", "processing"):
         raise HTTPException(status_code=409, detail="Audit is already processing")
     audit.status = "queued"
@@ -354,6 +362,13 @@ def source_fact_sheet(audit_id: uuid.UUID, session: SessionDep, current_user: Cu
     return build_source_fact_sheet(session, audit_id)
 
 
+@router.get("/{audit_id}/claim-graph")
+def claim_graph(audit_id: uuid.UUID, session: SessionDep, user: CurrentUser, offset: int = Query(default=0, ge=0), limit: int = Query(default=50, ge=1, le=100)) -> dict[str, Any]:
+    _get_audit(session, audit_id, user)
+    from app.core.claim_graph import build_claim_graph
+    return build_claim_graph(session, audit_id, offset, limit)
+
+
 @router.get("/{audit_id}/policy-results")
 def policy_results(audit_id: uuid.UUID, session: SessionDep, current_user: CurrentUser) -> dict[str, Any]:
     _get_audit(session, audit_id, current_user)
@@ -365,6 +380,9 @@ def policy_results(audit_id: uuid.UUID, session: SessionDep, current_user: Curre
 def update_source_context(audit_id: uuid.UUID, document_id: uuid.UUID, body: SourceContextUpdate, session: SessionDep, current_user: ReviewerDep) -> dict[str, Any]:
     from datetime import UTC, datetime
     audit = _get_audit(session, audit_id, current_user)
+    audit = session.exec(select(Audit).where(Audit.id == audit_id).with_for_update().execution_options(populate_existing=True)).one()
+    if audit.status in ("queued", "processing"):
+        raise HTTPException(409, "Wait for the audit to finish before changing source context.")
     document = session.get(Document, document_id)
     if document is None or document.audit_id != audit_id or document.kind != "source" or not document.is_current:
         raise HTTPException(status_code=404, detail="Current source document not found")
@@ -401,7 +419,8 @@ def list_claims_with_grounding(
     ).all()
 
     from app.core.business_policies import recorded_policy_results
-    documents_changed = recorded_policy_results(session, audit_id)["documents_changed"]
+    assessment_state = recorded_policy_results(session, audit_id)
+    documents_changed = assessment_state["documents_changed"] or assessment_state["resolutions_changed"]
     evidence_by_claim = {}
     for evidence in current_evidence(session, audit_id, [claim.id for claim in claims]):
         evidence_by_claim.setdefault(evidence.claim_id, []).append(evidence)
@@ -526,6 +545,7 @@ def submit_decision(
     reviewer: ReviewerDep,
 ) -> Decision:
     audit = _get_audit(session, audit_id, reviewer)
+    audit = session.exec(select(Audit).where(Audit.id == audit_id).with_for_update().execution_options(populate_existing=True)).one()
     flag = session.get(Flag, flag_id)
     if flag is None or flag.audit_id != audit_id or flag.audit_id != audit.id:
         raise HTTPException(status_code=404, detail="Flag not found")
@@ -577,6 +597,7 @@ def rescore_audit(
     audit_id: uuid.UUID, session: SessionDep, reviewer: ReviewerDep
 ) -> RescoreResult:
     audit = _get_audit(session, audit_id, reviewer)
+    audit = session.exec(select(Audit).where(Audit.id == audit_id).with_for_update().execution_options(populate_existing=True)).one()
     if audit.status in ("queued", "processing"):
         raise HTTPException(status_code=409, detail="Wait for the audit to finish before recalculating its score.")
     flags = session.exec(select(Flag).join(Document, Flag.document_id == Document.id).where(Flag.audit_id == audit_id, Document.is_current.is_(True), Flag.status != "superseded")).all()

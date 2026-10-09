@@ -1,0 +1,1 @@
+import{n as e}from"./ControlPages-4AIQDeCU.js";var t=e;export{t as component};

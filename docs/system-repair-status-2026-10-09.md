@@ -28,7 +28,7 @@ The original 146 findings remain in system-error-audit-2026-10-09.md as a histor
 
 ## Work still outstanding
 
-The complete blueprint is substantially broader than this repair. Source authority resolution rules, source watchers, the claim graph, production evaluation datasets and ablations, full adversarial execution orchestration, mobile release and production deployment are not certified complete here.
+The complete blueprint is substantially broader than this repair. Source selection, a bounded local source inbox watcher and the claim graph are implemented below. Production evaluation datasets and ablations, full adversarial execution orchestration, mobile release and production deployment remain outstanding.
 
 Full live keyboard, screen-reader, contrast and all viewport conformance checks are not certified. Historical UI observations and design recommendations in the original audit require current visual validation. Parser resource limits reduce risk but are not a full sandbox or an exhaustive malformed-document assessment. Response-body timeouts, concurrent model loading and numeric-only proof draft detection have now been hardened. Broad network failure and accessibility coverage still needs further validation.
 
@@ -69,3 +69,16 @@ Generated model weights, training corpora, databases, runtime credentials, local
 - Isolated backend suite: 193 passed, zero skipped. New regressions cover stale and cross-audit evidence, primary self-citations, forged quotes, exact duplicates, historical primary versions, fallback-model input boundaries, stale grounding projection and source changes without any business policy. TypeScript validation passed. No full accessibility or production-deployment certification is implied.
 
 - Live browser validation confirmed the numeric grade disappears during re-audit refresh and updated policy text arrives without reloading the page. The production frontend build passed and is bundled with this delivery.
+
+
+## Continuation: Living Trust, reviewer source selection and claim graph
+
+- Added a paginated graph linking current AI claims to literal, current source quotes. Support and contradiction edges use actual comparisons; unrelated retrieved quotes are labelled candidates. Claims absent from the current primary document cannot provide verified edges or score coverage.
+- Reviewers can select an exact current source version for a conflicting business field, with a required reason and optimistic revision checks. The choice is recorded in the audit chain, expires when that source version changes, and respects literal fact validation. Other fields retain their source conflicts. Authority labels alone do not resolve disagreement.
+- Scoring 6.3 withdraws assessment coverage after a source-selection revision until re-audit. Selected sources apply consistently to grounding and source-target policy checks. Historical findings and source choices remain available in the stored audit history.
+- Added source-only amendments with bounded uploads, cancellation and re-audit. This path protects the primary document from replacement.
+- Added an opt-in local source inbox watcher, approximately 30-second checks, and optional automatic re-audit. Imports create immutable source versions, deduplicate unchanged bytes, retain original inbox files and queue only after committed imports. Concurrent audit mutations and audit-chain appends use audit row locks.
+- Watcher bounds: 100 direct files, 50 MB per file, 100 MB read budget and five changed imports per check. Subfolders and symlinks are excluded. Failed unchanged files do not starve later valid imports; manual checks can retry them. This is local-folder monitoring, not cloud-source monitoring.
+- Fixed result-page text encoding and distinct sibling panel keys to prevent duplicated graphs during UI updates. Browser inspection confirmed current source contradictions and opening the exact source version from the graph. Broader accessibility conformance is still outstanding.
+- Validation: isolated backend suite 216 passed, zero skipped; TypeScript, undefined-name checks and production frontend build passed. Eight source-Q&A tests use stubbed provider/model responses and are not production model-accuracy measurements.
+- Source selection is an explicit reviewer decision, not a certification of source authenticity. No production calibration, mobile release or deployment certification is implied.

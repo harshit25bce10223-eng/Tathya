@@ -1993,3 +1993,9 @@ body {
 .policy-studio .secondary-button { border: 1px solid var(--border); border-radius: 8px; padding: .65rem 1rem; min-height: 44px; }
 .policy-studio button:focus-visible, .policy-studio input:focus-visible, .policy-studio select:focus-visible, .policy-studio textarea:focus-visible { outline: 2px solid var(--ring); outline-offset: 3px; }
 .policy-evaluation { display: grid; gap: .75rem; margin-top: .75rem; }
+
+.claim-graph-grid { display:grid; grid-template-columns:minmax(220px,1fr) minmax(0,2fr); gap:24px; margin-top:20px }
+.graph-claim-button {display:block; width:100%; text-align:left; border:1px solid var(--border); border-radius:10px; padding:14px; margin:8px 0; background:transparent; overflow-wrap:anywhere; min-height:44px}
+.graph-claim-button[aria-pressed="true"] {background:var(--secondary); outline:2px solid var(--ring)}
+.graph-claim-button:focus-visible {outline:3px solid var(--ring);outline-offset:3px}
+@media(max-width:700px){.claim-graph-grid{grid-template-columns:1fr}.claim-graph .policy-actions{flex-wrap:wrap}}

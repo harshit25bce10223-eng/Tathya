@@ -105,8 +105,13 @@ def applicable_policies(session: Session, audit_id: UUID) -> list[tuple[Policy, 
 
 
 def _fingerprint(session: Session, audit_id: UUID) -> dict[str, Any]:
-    return {"documents": {str(d.id): d.text_hash for d in session.exec(select(Document).where(Document.audit_id == audit_id, Document.is_current.is_(True))).all()},
-            "policies": {str(p.id): _json(p.rules_json).get("version", 1) for p, _ in applicable_policies(session, audit_id)}}
+    output = {"documents": {str(d.id): d.text_hash for d in session.exec(select(Document).where(Document.audit_id == audit_id, Document.is_current.is_(True))).all()},
+              "policies": {str(p.id): _json(p.rules_json).get("version", 1) for p, _ in applicable_policies(session, audit_id)}}
+    from app.core.source_resolution import resolution_fingerprint
+    resolutions = resolution_fingerprint(session, audit_id)
+    if resolutions:
+        output["resolutions"] = resolutions
+    return output
 
 
 def _claim_values(session: Session, audit_id: UUID) -> dict[str, list[dict[str, Any]]]:
@@ -136,7 +141,10 @@ def _claim_values(session: Session, audit_id: UUID) -> dict[str, list[dict[str, 
 
 def _source_values(sheet: dict[str, Any]) -> dict[str, list[dict[str, Any]]]:
     candidates: dict[str, list[dict[str, Any]]] = {}
+    selections = {r["field"]: r for r in sheet.get("resolutions", []) if r["active"]}
     for fact in sheet["facts"]:
+        if fact["field"] in selections and fact["document_id"] != selections[fact["field"]]["document_id"]:
+            continue
         if not fact["grounded"] or fact["field"] not in NUMERIC_FIELDS | {"delivery_date"}:
             continue
         item = {"value": fact["value"], "unit": fact["unit"], "quote": fact["context_quote"] or fact["quote"], "document_id": fact["document_id"], "claim_id": None, "location": fact["location"], "fact_id": fact["id"]}
@@ -224,6 +232,10 @@ def evaluate_audit_policies(session: Session, audit_id: UUID) -> dict[str, Any]:
             result["flag_id"] = str(flag.id)
         evaluations.append(result)
     snapshot = {"evaluations": evaluations, "fingerprint": {"documents": document_fingerprint, "policies": {r["policy_id"]: r["policy_version"] for r in evaluations}}}
+    from app.core.source_resolution import resolution_fingerprint
+    resolutions = resolution_fingerprint(session, audit_id)
+    if resolutions:
+        snapshot["fingerprint"]["resolutions"] = resolutions
     from app.core.pipeline import append_chain_entry
     append_chain_entry(session, audit_id=audit_id, actor_id=audit.owner_id, action="policies.evaluated", payload_json=json.dumps(snapshot, sort_keys=True))
     return snapshot
@@ -233,6 +245,6 @@ def recorded_policy_results(session: Session, audit_id: UUID) -> dict[str, Any]:
     entry = session.exec(select(AuditLogEntry).where(AuditLogEntry.audit_id == audit_id, AuditLogEntry.action == "policies.evaluated").order_by(AuditLogEntry.created_at.desc())).first()
     current = _fingerprint(session, audit_id)
     if not entry:
-        return {"evaluations": [], "stale": bool(current["policies"]), "evaluated_at": None, "documents_changed": False, "active_policy_count": len(current["policies"])}
+        return {"evaluations": [], "stale": bool(current["policies"] or current.get("resolutions")), "evaluated_at": None, "documents_changed": False, "resolutions_changed": bool(current.get("resolutions")), "active_policy_count": len(current["policies"])}
     payload = _json(entry.payload_json)
-    return {"evaluations": payload.get("evaluations", []), "stale": payload.get("fingerprint") != current, "evaluated_at": entry.created_at, "documents_changed": payload.get("fingerprint", {}).get("documents") != current["documents"], "active_policy_count": len(current["policies"])}
+    return {"evaluations": payload.get("evaluations", []), "stale": payload.get("fingerprint") != current, "evaluated_at": entry.created_at, "documents_changed": payload.get("fingerprint", {}).get("documents") != current["documents"], "resolutions_changed": payload.get("fingerprint", {}).get("resolutions", {}) != current.get("resolutions", {}), "active_policy_count": len(current["policies"])}

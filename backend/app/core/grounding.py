@@ -144,6 +144,10 @@ def _ground_single_claim(session: Session, claim: Claim) -> GroundingResult:
             source_metadata={},
         )
 
+    if document.audit_id != claim.audit_id or document.kind != "primary" or not document.is_current or not claim.text.strip() or claim.text not in (document.normalized_text or ""):
+        return GroundingResult(claim_id=claim.id, document_id=claim.document_id, status=GroundingStatus.UNSUPPORTED, evidence_ids=[], primary_evidence_id=None,
+                               reason="The claim is not anchored in the current AI document.", confidence=0.0, source_metadata={})
+
     from app.core.current_evidence import current_evidence
     evidence_list = current_evidence(session, claim.audit_id, [claim.id])
     if not evidence_list:
@@ -281,12 +285,18 @@ def _verify_against_facts(
     Returns None if no relevant facts exist or conflict is ambiguous.
     """
     from app.core.source_verification import compare_quote
+    from app.core.source_resolution import current_resolutions
+    from app.core.source_verification import field_hint
+    field = {"delivery": "delivery_date", "payment": "payment_terms_days", "warranty": "warranty_months", "contract_value": "contract_value"}.get(field_hint(claim.text))
+    selection = current_resolutions(session, claim.audit_id).get(field, {})
     outcomes = []
     for evidence in evidence_list:
         source = session.get(Document, evidence.source_document_id)
         if source is None or not source.is_current or source.kind != "source" or source.id == claim.document_id:
             continue
         if not evidence.quote or evidence.quote not in (source.normalized_text or ""):
+            continue
+        if selection and str(source.id) != selection["document_id"]:
             continue
         verdict = compare_quote(claim.text, evidence.quote)
         if verdict:
@@ -301,7 +311,7 @@ def _verify_against_facts(
         evidence_ids=evidence_ids, primary_evidence_id=evidence_ids[0],
         reason=("Current source quotes disagree; a reviewer must resolve source authority." if state == "uncertain" else f"Deterministic normalized comparison: claim is {state} by the cited current source quote."),
         confidence=1.0 if state != "uncertain" else 0.0,
-        source_metadata={"verifier": "source_field_comparison_v1", "source_document_ids": [str(item[2].id) for item in outcomes]},
+        source_metadata={"verifier": "source_field_comparison_v1", "source_document_ids": [str(item[2].id) for item in outcomes], "reviewer_source_selection": selection.get("revision")},
     )
 
 

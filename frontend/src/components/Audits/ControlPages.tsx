@@ -1,3 +1,4 @@
+import { SourceUpdates } from "./SourceUpdates"
 import { apiFetch } from "@/api/transport"
 import { useQuery } from "@tanstack/react-query"
 import { useState } from "react"
@@ -121,7 +122,8 @@ export function SourcesPage() {
           </div>
         )}
       </section>
-      <SourceFactSheet key={id} auditId={id} onPreview={documentId => {
+      {id && <SourceUpdates key={`updates-${id}`} auditId={id} />}
+      <SourceFactSheet key={`facts-${id}`} auditId={id} onPreview={documentId => {
         setSearch(""); setOpenDocument(documentId)
         window.requestAnimationFrame(() => {
           const target = document.getElementById(`source-document-${documentId}`)

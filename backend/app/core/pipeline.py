@@ -318,7 +318,9 @@ def append_chain_entry(
     actor_id: uuid.UUID | None,
     action: str,
     payload_json: str,
+    commit: bool = True,
 ) -> AuditLogEntry:
+    session.exec(select(Audit).where(Audit.id == audit_id).with_for_update()).one()
     previous_hash = _last_chain_hash(session, audit_id)
     entry_id = uuid.uuid4()
     created_at = datetime.now(UTC)
@@ -342,8 +344,11 @@ def append_chain_entry(
         created_at=created_at,
     )
     session.add(entry)
-    session.commit()
-    session.refresh(entry)
+    if commit:
+        session.commit()
+        session.refresh(entry)
+    else:
+        session.flush()
     return entry
 
 

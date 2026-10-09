@@ -34,7 +34,16 @@ async def lifespan(app):
             app.state.jobs_recovered = True
     except Exception:
         logging.getLogger("tathya.startup").exception("Job recovery unavailable")
-    yield
+    import threading
+    from app.core.source_watch import watch_loop
+    stop_watch = threading.Event()
+    watcher = threading.Thread(target=watch_loop, args=(stop_watch,), name="source-inbox-watch", daemon=True)
+    watcher.start()
+    try:
+        yield
+    finally:
+        stop_watch.set()
+        await run_in_threadpool(watcher.join, 1)
 
 
 app = FastAPI(

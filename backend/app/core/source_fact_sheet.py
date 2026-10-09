@@ -95,11 +95,16 @@ def build_source_fact_sheet(session: Session, audit_id: UUID) -> dict[str, Any]:
             items.append(item)
             if normalized:
                 candidates.setdefault(normalized[0], []).append(item)
+    from app.core.source_resolution import latest_resolutions
+    resolutions = latest_resolutions(session, audit_id)
     canonical, conflicts = {}, []
     for key, facts in candidates.items():
+        selection = resolutions.get(key, {})
+        if selection.get("active"):
+            facts = [f for f in facts if f["document_id"] == selection["document_id"]]
         distinct = {(str(f["value"]), f["unit"]) for f in facts}
         if len(distinct) == 1:
-            canonical[key] = {"value": facts[0]["value"], "unit": facts[0]["unit"], "fact_ids": [f["id"] for f in facts]}
+            canonical[key] = {"value": facts[0]["value"], "unit": facts[0]["unit"], "fact_ids": [f["id"] for f in facts], "reviewer_selected": bool(selection.get("active"))}
         else:
             conflicts.append({"field": key, "fact_ids": [f["id"] for f in facts], "reason": "Current sources contain different values or units. Reviewer resolution is required."})
-    return {"sources": sources, "facts": items, "canonical": canonical, "conflicts": conflicts, "source_count": len(sources), "fact_count": len(items), "grounded_count": sum(f["grounded"] for f in items), "authority_is_reviewer_declared": True}
+    return {"sources": sources, "facts": items, "canonical": canonical, "conflicts": conflicts, "source_count": len(sources), "fact_count": len(items), "grounded_count": sum(f["grounded"] for f in items), "authority_is_reviewer_declared": True, "resolutions": list(resolutions.values())}

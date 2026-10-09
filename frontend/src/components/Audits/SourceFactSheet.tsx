@@ -1,3 +1,4 @@
+import { SourceResolution } from "./SourceResolution"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { Link } from "@tanstack/react-router"
 import { useEffect, useState } from "react"
@@ -18,6 +19,7 @@ function displayValue(value: string | number | null, unit: string | null) {
 export function SourceFactSheet({auditId, onPreview, onDirtyChange}: {auditId: string; onPreview: (id: string) => void; onDirtyChange: (dirty: boolean) => void}) {
   const queryClient = useQueryClient()
   const {user} = useAuth()
+  const [resolutionDirty,setResolutionDirty]=useState(false)
   const [editing, setEditing] = useState("")
   const [authority, setAuthority] = useState("unspecified")
   const [note, setNote] = useState("")
@@ -25,7 +27,7 @@ export function SourceFactSheet({auditId, onPreview, onDirtyChange}: {auditId: s
   const source = facts.data?.sources.find(s => s.document_id === editing)
   const dirty = !!source && (authority !== source.authority || note !== source.note)
   useUnsavedChanges(dirty)
-  useEffect(() => {onDirtyChange(dirty); return () => onDirtyChange(false)}, [dirty, onDirtyChange])
+  useEffect(() => {onDirtyChange(dirty||resolutionDirty); return () => onDirtyChange(false)}, [dirty, resolutionDirty, onDirtyChange])
   const save = useMutation({mutationFn: () => sourceFactsApi.updateContext(auditId, editing, authority, note), onSuccess: async () => {
     setEditing("")
     await Promise.all([queryClient.invalidateQueries({queryKey: ["source-facts", auditId]}), queryClient.invalidateQueries({queryKey: ["audit", auditId]}), queryClient.invalidateQueries({queryKey: ["audit-score", auditId]})])
@@ -38,8 +40,9 @@ export function SourceFactSheet({auditId, onPreview, onDirtyChange}: {auditId: s
     {facts.data && <>
       {!facts.data.source_count && <div className="panel-state"><h3>No separate source evidence</h3><p>Add a source document to this audit. The AI document cannot serve as its own source.</p></div>}
       {facts.data.fact_count > 0 && facts.data.grounded_count === 0 && <div className="panel-state"><h3>Source quotes need refreshing</h3><p>Earlier extraction records may lack quote provenance. Re-run this audit to refresh the facts.</p><Link to="/submit/$auditId" params={{auditId}} className="primary-link">Open audit</Link></div>}
+      <SourceResolution auditId={auditId} data={facts.data} canReview={!!user&&!!isReviewer(user)} onDirtyChange={setResolutionDirty} />
       {facts.data.conflicts.map(conflict => <article className="source-fact-conflict" role="status" key={conflict.field}><h3>Conflicting {label(conflict.field)}</h3><p>{conflict.reason}</p></article>)}
-      {!!Object.keys(facts.data.canonical).length && <div className="policy-grid">{Object.entries(facts.data.canonical).map(([field, item]) => <article key={field}><h3>{label(field)}</h3><p>{displayValue(item.value, item.unit)}</p><small>{item.fact_ids.length} source fact{item.fact_ids.length === 1 ? " agrees" : "s agree"}</small></article>)}</div>}
+      {!!Object.keys(facts.data.canonical).length && <div className="policy-grid">{Object.entries(facts.data.canonical).map(([field, item]) => <article key={field}><h3>{label(field)}</h3><p>{displayValue(item.value, item.unit)}</p><small>{item.reviewer_selected?"Reviewer-selected value · ":""}{item.fact_ids.length} source fact{item.fact_ids.length === 1 ? " agrees" : "s agree"}</small></article>)}</div>}
       {facts.data.sources.map(s => <article className="source-record" key={s.document_id}><div><h3>{s.filename}</h3><p>Version {s.version_no} · Uploaded {formatDate(s.uploaded_at)}</p></div><StatusPill status={`Authority: ${s.authority}`} /><p>{s.note || "No source authority note has been recorded."}</p>
         {user && isReviewer(user) && <button type="button" className="secondary-button" disabled={save.isPending} onClick={() => {if (dirty && !window.confirm("Discard your unsaved source context?")) return; setEditing(s.document_id); setAuthority(s.authority); setNote(s.note); save.reset()}}>Edit source context</button>}
         {editing === s.document_id && <form className="source-context-form" onSubmit={event => {event.preventDefault(); save.mutate()}}><fieldset disabled={save.isPending}><legend>Source authority context</legend><label>Reviewer-declared authority<select value={authority} onChange={event => setAuthority(event.target.value)}><option value="unspecified">Unspecified</option><option value="reference">Reference material</option><option value="approved">Approved business record</option><option value="official">Official record</option></select></label><label>Why should this source be used?<textarea required minLength={3} maxLength={2000} value={note} onChange={event => setNote(event.target.value)} /></label><p>This records reviewer context. It does not automatically verify the source or resolve conflicting values.</p><button type="submit" className="primary-link" disabled={!dirty || note.trim().length < 3} aria-busy={save.isPending}>{save.isPending ? "Saving…" : "Save source context"}</button><button type="button" className="secondary-button" onClick={close}>Cancel</button></fieldset><QueryState loading={false} error={save.error} retry={() => save.mutate()} /></form>}

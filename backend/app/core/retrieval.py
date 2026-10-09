@@ -262,7 +262,7 @@ def persist_evidence_for_claim(
         return list(existing)
     rows: list[Evidence] = []
     primary = session.get(Document, claim.document_id)
-    if primary is None or not primary.is_current or primary.kind != "primary" or primary.audit_id != claim.audit_id:
+    if primary is None or not primary.is_current or primary.kind != "primary" or primary.audit_id != claim.audit_id or not claim.text.strip() or claim.text not in (primary.normalized_text or ""):
         return []
     seen = set()
     for chunk in chunks:

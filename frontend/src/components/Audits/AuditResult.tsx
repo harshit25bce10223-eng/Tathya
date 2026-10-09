@@ -1,3 +1,5 @@
+import { SourceQuestions } from "./SourceQuestions"
+import { ClaimGraph } from "./ClaimGraph"
 import { DocumentText } from "./DocumentText"
 import { PolicyAssessment } from "./PolicyAssessment"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
@@ -20,7 +22,7 @@ export function AuditResult({ auditId }: { auditId: string }) {
   const retryAudit = useMutation({ mutationFn: () => auditApi.run(auditId), onSuccess: async () => {
     await summary.refetch()
     // A fast job can finish between polls without an observed running state.
-    await Promise.all(["audit-score", "audit-flags", "audit-documents", "source-facts", "policy-results"].map(key => queryClient.invalidateQueries({queryKey: [key, auditId]})))
+    await Promise.all(["audit-score", "audit-flags", "audit-documents", "source-facts", "policy-results", "claim-graph"].map(key => queryClient.invalidateQueries({queryKey: [key, auditId]})))
   } })
   const data = summary.data
   if (!data)
@@ -129,6 +131,7 @@ export function AuditResult({ auditId }: { auditId: string }) {
       </section>}
       <a className="back-link" href="#audit-findings">Jump to findings</a>
       <PolicyAssessment auditId={auditId} completed={data.audit.status === "completed"} />
+      <ClaimGraph key={`graph-${auditId}`} auditId={auditId} completed={data.audit.status === "completed" && !retryAudit.isPending} onPreview={id => setSelectedDoc(documents.data?.data.find(d=>d.id===id)||null)} />
       <div className="result-grid">
         <section className="product-panel">
           <div className="panel-heading">
@@ -278,6 +281,7 @@ export function AuditResult({ auditId }: { auditId: string }) {
           </article>
         ))}
       </section>
+      <SourceQuestions key={`questions-${auditId}`} auditId={auditId} />
       <div className="result-bottom">
         <p>
           <ShieldCheck size={15} /> A trust score supports a decision; it
