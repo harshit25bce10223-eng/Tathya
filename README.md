@@ -23,4 +23,4 @@ The Vite build targets `backend/app/frontend/`. Keep generated deployment output
 
 Tathya reuses the [Full Stack FastAPI Template](https://github.com/fastapi/full-stack-fastapi-template), FastAPI, SQLModel, Alembic, React, Vite, Tailwind, shadcn/ui, TanStack and Expo. Tathya product work also uses Recharts and React Flow. Document/OCR/ML integrations include MarkItDown, pdfplumber, python-docx, openpyxl, Presidio, sentence-transformers, Transformers, PyTorch and Tesseract tooling. These libraries are useful infrastructure; their presence does not imply an inherited demo.
 
-Upstream copyright and license notices remain in [LICENSE](LICENSE), [mobile/LICENSE](mobile/LICENSE) and installed dependency distributions. This repository's MIT notice retains Sebastián Ramírez's upstream copyright. See [LICENSES.md](LICENSES.md) for the attribution record; it is not a substitute for reviewing dependency licenses when distributing the application or models.
+Dependencies retain their own licenses in their installed distributions.
