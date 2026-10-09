@@ -39,6 +39,7 @@ export async function apiFetch(path: string, init: RequestInit = {}, authenticat
   const timer = window.setTimeout(() => controller.abort(), 120000)
   const abort = () => controller.abort()
   init.signal?.addEventListener("abort", abort, { once: true })
+  if (init.signal?.aborted) controller.abort()
   try {
     const response = await fetch(`${apiOrigin}/api/v1${path}`, { ...init, headers, signal: controller.signal })
     if (response.status === 401 && authenticated) {
@@ -52,7 +53,9 @@ export async function apiFetch(path: string, init: RequestInit = {}, authenticat
         : `The service could not complete this request (${response.status}). Please try again.`
       throw new ServiceError(response.status, message)
     }
-    return response
+    // Keep the timeout active until the body has arrived, not only the headers.
+    const body = response.status === 204 || response.status === 205 ? null : await response.arrayBuffer()
+    return new Response(body, {status: response.status, statusText: response.statusText, headers: response.headers})
   } catch (error) {
     if (error instanceof ServiceError) throw error
     throw new ServiceError(0, controller.signal.aborted

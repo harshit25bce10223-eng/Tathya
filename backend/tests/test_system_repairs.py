@@ -153,3 +153,32 @@ def test_model_status_does_not_fabricate_health_or_latency(client, superuser_tok
     assert data["active_primary_llm"] is None
     assert all(model["latency"] == "Not measured" for model in data["models"])
     assert all("ONLINE" not in model["status"] for model in data["models"])
+
+
+def test_concurrent_verifier_requests_share_one_loaded_model(tmp_path, monkeypatch):
+    from concurrent.futures import ThreadPoolExecutor
+    import time
+    from types import SimpleNamespace
+    from app.core import rope_inference as inference
+    checkpoint = tmp_path / "model.pt"
+    checkpoint.write_bytes(b"fixture")
+    constructed = []
+    class Model:
+        def __init__(self, **kwargs):
+            constructed.append(self)
+            time.sleep(0.02)
+        def to(self, device): return self
+        def load_state_dict(self, state): pass
+        def eval(self): pass
+    monkeypatch.setattr(inference, "TathyaRoPEVerifier", Model)
+    monkeypatch.setattr(inference, "DocumentTokenizer", lambda **kwargs: SimpleNamespace(vocab_size=10))
+    monkeypatch.setattr(inference.torch, "load", lambda *args, **kwargs: {"model_state_dict": {}})
+    monkeypatch.setattr(inference.torch.cuda, "is_available", lambda: False)
+    inference.invalidate_rope_model()
+    try:
+        with ThreadPoolExecutor(max_workers=8) as pool:
+            results = list(pool.map(lambda _: inference.load_rope_model(str(checkpoint)), range(8)))
+        assert len(constructed) == 1
+        assert all(item[0] is constructed[0] and item[1] is results[0][1] for item in results)
+    finally:
+        inference.invalidate_rope_model()

@@ -18,7 +18,7 @@ The original 146 findings remain in system-error-audit-2026-10-09.md as a histor
 
 ## Validation
 
-- Full backend suite: 155 passed, zero skipped, against a temporary isolated PostgreSQL database. The database is removed afterward; production data is not used by the test suite.
+- Full backend suite: 165 passed, zero skipped, against a temporary isolated PostgreSQL database. The database is removed afterward; production data is not used by the test suite.
 - TypeScript build check: passed.
 - Frontend production build: passed and bundled with the backend.
 - Live browser upload of a synthetic contract and source approval produced four extracted claims, four contradictions and four findings, including a critical mismatch. The UI showed the real score and evidence coverage.
@@ -28,8 +28,19 @@ The original 146 findings remain in system-error-audit-2026-10-09.md as a histor
 
 ## Work still outstanding
 
-The complete blueprint is substantially broader than this repair. Policy Studio editing and pipeline enforcement, a complete source-fact authority editor, source watchers, the claim graph, production evaluation datasets and ablations, full adversarial execution orchestration, mobile release and production deployment are not certified complete here.
+The complete blueprint is substantially broader than this repair. Policy Studio editing and pipeline enforcement, source authority resolution rules, source watchers, the claim graph, production evaluation datasets and ablations, full adversarial execution orchestration, mobile release and production deployment are not certified complete here.
 
-Full live keyboard, screen-reader, contrast and all viewport conformance checks are not certified. Historical UI observations and design recommendations in the original audit require current visual validation. Parser resource limits reduce risk but are not a full sandbox or an exhaustive malformed-document assessment. Network response-body timeouts, concurrent model loading and numeric-only proof draft detection deserve further hardening.
+Full live keyboard, screen-reader, contrast and all viewport conformance checks are not certified. Historical UI observations and design recommendations in the original audit require current visual validation. Parser resource limits reduce risk but are not a full sandbox or an exhaustive malformed-document assessment. Response-body timeouts, concurrent model loading and numeric-only proof draft detection have now been hardened. Broad network failure and accessibility coverage still needs further validation.
 
 Generated model weights, training corpora, databases, runtime credentials, local test artifacts and unrelated mobile changes are excluded from this delivery. The master blueprint is retained separately as the desired product specification.
+
+## Continuation: Source Fact Sheet and follow-up fixes
+
+- Added a current-source-only fact sheet with canonical contract value, delivery date, payment days and warranty months, plus exact quotes, document versions, text hashes, upload timestamps and source locations. Canonical fields are withheld when sources disagree.
+- Re-extraction validates that each displayed grounded value actually occurs in its literal source quote. Forged payload values and source-location spans are rejected; sentence context must contain the fact span before a canonical business field is assigned. Earlier fact records without quote provenance are shown as needing refresh; re-running the audit populates provenance.
+- Reviewer-declared source authority and required notes persist through a permission-scoped endpoint and an audit-chain event. An existing passport refreshes its signature and revision while retaining the verification link. Authority labels do not automatically resolve conflicts or certify authenticity. Browser uploads do not supply original file modification timestamps; upload timestamps are labelled accordingly.
+- Live synthetic audit refresh produced four grounded source facts. The reviewer note and reference authority saved successfully in the actual browser. The 390-pixel viewport showed no horizontal overflow; keyboard Tab correctly focused the labelled note field. These checks are not full accessibility certification.
+- Source previews clear search filters and move focus to the opened document. Source editor drafts trigger unsaved-change prompts. Score and source-fact queries invalidate after a completed re-audit.
+- Passport summaries now exclude obsolete and superseded findings. Added regression for a source amendment that clears all findings and publishes total=0/open=0.
+- Request timeouts remain active through response-body receipt. Pre-cancelled requests respect their signal. Concurrent verifier loading uses a shared lock and a regression confirms that eight requests construct one model. Numeric-only proof drafts now trigger unsaved-change protection.
+- Updated the scoring explanation page to describe evidence gates and actual coverage caps. Custom policy configuration and enforcement remain pending.

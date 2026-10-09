@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query"
 import { useState } from "react"
 import { auditApi, formatDate } from "@/api/audits"
 import { QueryState, StatusPill } from "./shared"
+import { SourceFactSheet } from "./SourceFactSheet"
 
 function Heading({
   title,
@@ -26,6 +27,7 @@ export function SourcesPage() {
   const [selected, setSelected] = useState("")
   const [search, setSearch] = useState("")
   const [openDocument, setOpenDocument] = useState("")
+  const [contextDirty, setContextDirty] = useState(false)
   const preview = useQuery({ queryKey: ["document-text", selected, openDocument], queryFn: () => auditApi.documentText(selected || audits.data?.data[0]?.id || "", openDocument), enabled: !!openDocument })
   const id = selected || audits.data?.data[0]?.id || ""
   const documents = useQuery({
@@ -56,7 +58,7 @@ export function SourcesPage() {
             <select
               aria-label="Document set"
               value={id}
-              onChange={(e) => { setSelected(e.target.value); setOpenDocument("") }}
+              onChange={(e) => { if (contextDirty && !window.confirm("Discard your unsaved source context?")) return; setSelected(e.target.value); setOpenDocument("") }}
             >
               <option disabled value="">
                 Select an audit
@@ -86,7 +88,7 @@ export function SourcesPage() {
         />
         {documents.data &&
           visible.map((d) => (
-            <article className="source-record" key={d.id}>
+            <article className="source-record" key={d.id} id={`source-document-${d.id}`} tabIndex={-1}>
               <div>
                 <h3><button type="button" aria-expanded={openDocument === d.id} onClick={() => setOpenDocument(openDocument === d.id ? "" : d.id)}>{d.filename}</button></h3>
                 <p>
@@ -118,6 +120,14 @@ export function SourcesPage() {
           </div>
         )}
       </section>
+      <SourceFactSheet key={id} auditId={id} onPreview={documentId => {
+        setSearch(""); setOpenDocument(documentId)
+        window.requestAnimationFrame(() => {
+          const target = document.getElementById(`source-document-${documentId}`)
+          target?.focus({preventScroll: true})
+          target?.scrollIntoView({behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "start"})
+        })
+      }} onDirtyChange={setContextDirty} />
       <aside className="control-note">
         <span className="eyebrow">SOURCE CONTEXT</span>
         <p>
@@ -140,17 +150,20 @@ export function PoliciesPage() {
           <div>
             <h2>Score calculation</h2>
             <p>
-              The current service starts at 100 and deducts active finding
-              impacts.
+              A score requires conclusive checks against separate source evidence.
+              Finding deductions and coverage limits then determine the result.
             </p>
           </div>
           <StatusPill status="read only" />
         </div>
         <div className="policy-formula">
-          max(0, 100 − active finding impacts)
+          Evidence coverage → finding deductions → score limits
         </div>
         <div className="policy-grid">
           {[
+            ["Not assessed", "No extracted claims, no separate sources, or no conclusive source-backed checks means no published trust grade."],
+            ["Partial verification", "Incomplete conclusive coverage caps the score at 79."],
+            ["Critical risk", "An unresolved critical finding caps the score at 49."],
             ["Pending", "Impact counts until a reviewer resolves the finding."],
             ["Accepted", "Confirmed findings continue to reduce the score."],
             ["Dismissed", "Impact is excluded when the score is recalculated."],

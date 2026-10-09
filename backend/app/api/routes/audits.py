@@ -34,6 +34,7 @@ from app.api.schemas import (
     PassportPublic,
     RescoreResult,
     VerificationResult,
+    SourceContextUpdate,
 )
 from app.core import security
 from app.core.config import settings
@@ -344,6 +345,38 @@ def list_facts(
     _get_audit(session, audit_id, current_user)
     facts = get_facts_for_audit(session, audit_id)
     return FactsPublic(data=facts, count=len(facts))
+
+
+@router.get("/{audit_id}/source-facts")
+def source_fact_sheet(audit_id: uuid.UUID, session: SessionDep, current_user: CurrentUser) -> dict[str, Any]:
+    _get_audit(session, audit_id, current_user)
+    from app.core.source_fact_sheet import build_source_fact_sheet
+    return build_source_fact_sheet(session, audit_id)
+
+
+@router.patch("/{audit_id}/documents/{document_id}/source-context")
+def update_source_context(audit_id: uuid.UUID, document_id: uuid.UUID, body: SourceContextUpdate, session: SessionDep, current_user: ReviewerDep) -> dict[str, Any]:
+    from datetime import UTC, datetime
+    audit = _get_audit(session, audit_id, current_user)
+    document = session.get(Document, document_id)
+    if document is None or document.audit_id != audit_id or document.kind != "source" or not document.is_current:
+        raise HTTPException(status_code=404, detail="Current source document not found")
+    if audit.status in ("queued", "processing"):
+        raise HTTPException(status_code=409, detail="Wait for the audit to finish before changing source context")
+    note = body.note.strip()
+    if len(note) < 3:
+        raise HTTPException(status_code=422, detail="Explain the source authority in a reviewer note")
+    metadata = json.loads(document.metadata_json or "{}")
+    context = {"authority": body.authority, "note": note, "updated_at": datetime.now(UTC).isoformat(), "updated_by": str(current_user.id)}
+    metadata["source_context"] = context
+    document.metadata_json = json.dumps(metadata, ensure_ascii=False)
+    session.add(document)
+    session.flush()
+    append_chain_entry(session, audit_id=audit_id, actor_id=current_user.id, action="source.context.updated", payload_json=json.dumps({"document_id": str(document_id), "context": context}, sort_keys=True))
+    # Refresh an existing issued passport after the chain changes; do not issue one for an unprocessed audit.
+    if session.exec(select(Passport).where(Passport.audit_id == audit_id)).first():
+        issue_passport(session, audit)
+    return {"document_id": str(document_id), **context}
 
 
 # ---------------------------------------------------------------------------

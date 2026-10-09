@@ -10,6 +10,7 @@ from __future__ import annotations
 import uuid
 from datetime import datetime
 from typing import Any
+from typing import Literal
 
 from pydantic import BaseModel, Field
 
@@ -44,6 +45,11 @@ class ClaimsPublic(BaseModel):
 class FactsPublic(BaseModel):
     data: list[FactPublic]
     count: int
+
+
+class SourceContextUpdate(BaseModel):
+    authority: Literal["unspecified", "reference", "approved", "official"]
+    note: str = Field(min_length=3, max_length=2000)
 
 
 class EvidencePublic(BaseModel):

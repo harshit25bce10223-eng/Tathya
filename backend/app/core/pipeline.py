@@ -374,7 +374,7 @@ def issue_passport(session: Session, audit: Audit) -> Passport:
     signature = sign_message(private_pem, message)
 
     # Build finding summary (consistent with audits.py create_passport helper)
-    flags = session.exec(select(Flag).where(Flag.audit_id == audit.id)).all()
+    flags = session.exec(select(Flag).join(Document, Document.id == Flag.document_id).where(Flag.audit_id == audit.id, Document.is_current.is_(True), Flag.status != "superseded")).all()
     severity_counts: dict[str, int] = {}
     for f in flags:
         sev = (f.severity or "MEDIUM").upper()

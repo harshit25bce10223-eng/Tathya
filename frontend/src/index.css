@@ -1960,3 +1960,20 @@ body {
 }
 
 .workspace-fields { border: 0; padding: 0; margin: 0; min-width: 0; }
+.source-fact-sheet { margin-top: 1.5rem; }
+.source-record[id] { scroll-margin-top: 5rem; }
+.source-facts-list { display: grid; gap: 1rem; margin-top: 1rem; }
+.source-fact-record { padding: 1rem; border: 1px solid var(--border); border-radius: 12px; overflow-wrap: anywhere; }
+.source-fact-record > div { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .75rem; }
+.source-fact-record blockquote { margin: .75rem 0; padding: .5rem 1rem; border-left: 3px solid #bda36c; }
+.source-fact-record pre { white-space: pre-wrap; font-size: .875rem; }
+.source-fact-conflict { border: 1px solid #db9b47; border-radius: 12px; padding: 1rem; margin-bottom: 1rem; }
+.source-context-form { width: 100%; margin-top: 1rem; }
+.source-context-form fieldset { display: flex; flex-wrap: wrap; gap: .75rem; min-width: 0; }
+.source-context-form label { display: grid; width: 100%; gap: .5rem; }
+.source-context-form select, .source-context-form textarea { color: inherit; background: var(--background); border: 1px solid var(--border); border-radius: 8px; padding: .75rem; width: 100%; }
+.source-context-form textarea { min-height: 100px; resize: vertical; }
+.source-context-form select option { color: var(--foreground); background: var(--background); }
+.source-fact-sheet .secondary-button { border: 1px solid var(--border); border-radius: 8px; padding: .65rem 1rem; min-height: 44px; }
+.source-fact-sheet .secondary-button:hover { background: var(--muted); }
+.source-fact-sheet .secondary-button:focus-visible, .source-context-form select:focus-visible, .source-context-form textarea:focus-visible { outline: 2px solid var(--ring); outline-offset: 3px; }

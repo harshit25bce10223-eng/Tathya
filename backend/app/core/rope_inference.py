@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import logging
 import os
+from threading import RLock
 from pathlib import Path
 from typing import Any, Dict, Optional, Tuple
 
@@ -24,12 +25,14 @@ _MODEL_INSTANCE: Optional[TathyaRoPEVerifier] = None
 _TOKENIZER_INSTANCE: Optional[DocumentTokenizer] = None
 _DEVICE: Optional[torch.device] = None
 _CHECKPOINT_ID = None
+_MODEL_LOCK = RLock()
 
 def invalidate_rope_model():
     global _MODEL_INSTANCE, _TOKENIZER_INSTANCE, _CHECKPOINT_ID
-    _MODEL_INSTANCE = None
-    _TOKENIZER_INSTANCE = None
-    _CHECKPOINT_ID = None
+    with _MODEL_LOCK:
+        _MODEL_INSTANCE = None
+        _TOKENIZER_INSTANCE = None
+        _CHECKPOINT_ID = None
 
 LABEL_MAP = {
     0: "supported",
@@ -40,6 +43,11 @@ LABEL_MAP = {
 
 def load_rope_model(checkpoint_path: Optional[str] = None) -> Tuple[TathyaRoPEVerifier, DocumentTokenizer, torch.device]:
     """Loads and caches the RoPE fact verification model."""
+    with _MODEL_LOCK:
+        return _load_rope_model(checkpoint_path)
+
+
+def _load_rope_model(checkpoint_path: Optional[str] = None) -> Tuple[TathyaRoPEVerifier, DocumentTokenizer, torch.device]:
     global _MODEL_INSTANCE, _TOKENIZER_INSTANCE, _DEVICE, _CHECKPOINT_ID
 
     checkpoint_path = checkpoint_path or os.path.join(settings.MODEL_ARTIFACT_DIR, "rope_verifier_best.pt")
@@ -50,7 +58,6 @@ def load_rope_model(checkpoint_path: Optional[str] = None) -> Tuple[TathyaRoPEVe
         return _MODEL_INSTANCE, _TOKENIZER_INSTANCE, _DEVICE or torch.device("cpu")
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    _DEVICE = device
 
     tokenizer = DocumentTokenizer(max_length=512)
 
@@ -82,6 +89,7 @@ def load_rope_model(checkpoint_path: Optional[str] = None) -> Tuple[TathyaRoPEVe
     model.eval()
     _MODEL_INSTANCE = model
     _TOKENIZER_INSTANCE = tokenizer
+    _DEVICE = device
     return model, tokenizer, device
 
 

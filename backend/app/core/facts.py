@@ -179,6 +179,8 @@ def _record_to_extracted_fact(
     document: Document,
 ) -> ExtractedFact | None:
     """Convert an extraction engine FactRecord to an ExtractedFact."""
+    if not (0 <= record.norm_start < record.norm_end <= len(document.normalized_text)) or record.raw_text != document.normalized_text[record.norm_start:record.norm_end]:
+        return None
     payload = dict(record.payload)
     payload["extraction_version"] = EXTRACTION_VERSION
 

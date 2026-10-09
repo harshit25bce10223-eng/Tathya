@@ -90,3 +90,11 @@ def test_golden_source_mismatches_reach_real_score(db, monkeypatch):
     assert fresh.total_findings == 0
     assert fresh.coverage["supported"] == 4
     assert fresh.reviewed_score == 100
+    # Historical superseded findings must not leak into the newly signed passport.
+    from app.core.canonical import source_set_hash
+    from app.core.pipeline import issue_passport
+    audit.source_set_hash = source_set_hash([primary.text_hash, updated.text_hash])
+    db.add(audit)
+    db.commit()
+    passport = issue_passport(db, audit)
+    assert "total=0" in passport.finding_summary and "open=0" in passport.finding_summary

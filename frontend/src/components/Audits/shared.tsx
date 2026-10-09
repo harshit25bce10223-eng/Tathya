@@ -79,6 +79,8 @@ export function useAudit(id: string) {
     ) {
       queryClient.invalidateQueries({ queryKey: ["audit-flags", id] })
       queryClient.invalidateQueries({ queryKey: ["audit-documents", id] })
+      queryClient.invalidateQueries({ queryKey: ["audit-score", id] })
+      queryClient.invalidateQueries({ queryKey: ["source-facts", id] })
     }
     previousStatus.current = status
   }, [status, id, queryClient])

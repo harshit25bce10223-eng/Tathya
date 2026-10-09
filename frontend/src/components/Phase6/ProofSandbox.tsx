@@ -83,7 +83,7 @@ export function ProofSandbox({ auditId: _auditId }: { auditId: string }) {
 
   useEffect(() => { setResult(null); solveMutation.reset() }, [goals, assumptions, numericConstraints])
 
-  useUnsavedChanges(solveMutation.isPending || ((goals.length > 0 || assumptions.length > 0) && !result))
+  useUnsavedChanges(solveMutation.isPending || ((goals.length > 0 || assumptions.length > 0 || numericConstraints.length > 0) && !result))
 
   return (
     <fieldset disabled={solveMutation.isPending} className="product-page phase6-page workspace-fields">

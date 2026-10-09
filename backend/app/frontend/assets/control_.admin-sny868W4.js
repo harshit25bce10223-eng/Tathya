@@ -1,0 +1,1 @@
+import{t as e}from"./AdminPage-Ci-R5ixq.js";var t=e;export{t as component};
