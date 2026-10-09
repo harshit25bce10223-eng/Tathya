@@ -1,6 +1,6 @@
 import { DocumentText } from "./DocumentText"
 import { PolicyAssessment } from "./PolicyAssessment"
-import { useQuery, useMutation } from "@tanstack/react-query"
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { Link } from "@tanstack/react-router"
 import { ArrowLeft, ArrowRight, FileText, ShieldCheck } from "lucide-react"
 import { useState } from "react"
@@ -16,7 +16,12 @@ export function AuditResult({ auditId }: { auditId: string }) {
     enabled: !!selectedDoc?.id,
   })
   const breakdown = useQuery({ queryKey: ["audit-score", auditId], queryFn: () => auditApi.scoreBreakdown(auditId), enabled: summary.data?.audit.status === "completed" })
-  const retryAudit = useMutation({ mutationFn: () => auditApi.run(auditId), onSuccess: () => summary.refetch() })
+  const queryClient = useQueryClient()
+  const retryAudit = useMutation({ mutationFn: () => auditApi.run(auditId), onSuccess: async () => {
+    await summary.refetch()
+    // A fast job can finish between polls without an observed running state.
+    await Promise.all(["audit-score", "audit-flags", "audit-documents", "source-facts", "policy-results"].map(key => queryClient.invalidateQueries({queryKey: [key, auditId]})))
+  } })
   const data = summary.data
   if (!data)
     return (
@@ -26,7 +31,7 @@ export function AuditResult({ auditId }: { auditId: string }) {
         retry={() => summary.refetch()}
       />
     )
-  const score = breakdown.data && breakdown.data.score_status !== "insufficient_verification" ? breakdown.data.reviewed_score : undefined
+  const score = data.audit.status === "completed" && !retryAudit.isPending && !breakdown.error && breakdown.data && breakdown.data.score_status !== "insufficient_verification" ? breakdown.data.reviewed_score : undefined
   return (
     <div className="product-page">
       <Link to="/control" className="back-link">
@@ -78,7 +83,7 @@ export function AuditResult({ auditId }: { auditId: string }) {
           </div>
           <p>
             {score === undefined
-              ? breakdown.data?.score_limit_reason ?? "Verification coverage is being checked; no rating is available yet."
+              ? isRunning(data.audit.status) || retryAudit.isPending ? "Verification is running or refreshing; no current rating is available yet." : breakdown.error ? "The current score could not be loaded. Retry the score request below." : breakdown.data?.score_limit_reason ?? "Verification coverage is being checked; no rating is available yet."
               : data.open_flag_count
                 ? "Review the flagged findings before relying on this document."
                 : "Read the evidence and findings alongside this score."}
@@ -102,7 +107,7 @@ export function AuditResult({ auditId }: { auditId: string }) {
           </div>
         </div>
       </section>
-      {breakdown.data && <section className="product-panel" aria-label="Verification coverage">
+      {data.audit.status === "completed" && !retryAudit.isPending && breakdown.data && <section className="product-panel" aria-label="Verification coverage">
         <h2>{breakdown.data.score_status === "assessed" ? "Evidence assessment" : "Verification incomplete"}</h2>
         {breakdown.data.score_limit_reason && <p role="status">{breakdown.data.score_limit_reason}</p>}
         <div className="score-context">

@@ -24,12 +24,12 @@ from uuid import UUID
 
 from sqlmodel import Session, select
 
-from app.models import Audit, Flag, Claim, Document, Evidence
+from app.models import Audit, Flag, Claim, Document
 
 logger = logging.getLogger("tathya.trust_score")
 
 # Scoring version - increment when formula changes
-SCORING_VERSION = "6.1"
+SCORING_VERSION = "6.2"
 SCORING_METHODOLOGY = "evidence_coverage_gated_penalty_v2"
 
 # The local materiality engine is loaded lazily to avoid circular imports.
@@ -325,12 +325,18 @@ def compute_score_breakdown(session: Session, audit_id: str) -> ScoreBreakdown:
     
     current_claims = session.exec(select(Claim).join(Document, Claim.document_id == Document.id).where(Claim.audit_id == audit_uuid, Document.is_current.is_(True), Document.kind == "primary")).all()
     source_count = len(session.exec(select(Document).where(Document.audit_id == audit_uuid, Document.is_current.is_(True), Document.kind == "source")).all())
+    from app.core.business_policies import recorded_policy_results
+    policy_results = recorded_policy_results(session, UUID(str(audit_uuid)))
     counts = {status: sum(c.status == status for c in current_claims) for status in ("supported", "contradicted", "unsupported", "uncertain", "extracted")}
     total = len(current_claims)
     checked = counts["supported"] + counts["contradicted"] + counts["unsupported"]
-    evidence_rows = session.exec(select(Evidence, Document).join(Document, Evidence.source_document_id == Document.id).join(Claim, Evidence.claim_id == Claim.id).where(Claim.audit_id == audit_uuid, Document.is_current.is_(True), Document.kind == "source")).all()
-    cited_claims = {ev.claim_id for ev, source in evidence_rows if ev.quote and ev.quote in (source.normalized_text or "")}
+    from app.core.current_evidence import current_evidence
+    cited_claims = {ev.claim_id for ev in current_evidence(session, audit_uuid)}
     grounded = sum(c.status in ("supported", "contradicted") and c.id in cited_claims for c in current_claims)
+    if policy_results["documents_changed"]:
+        counts = {status: 0 for status in counts}
+        counts["uncertain"] = total
+        checked = grounded = 0
     coverage = {"total_claims": total, "checked_claims": checked, "grounded_claims": grounded, **counts, "source_count": source_count, "checked_percent": round(100 * checked / total, 2) if total else None, "evidence_percent": round(100 * grounded / total, 2) if total else None}
     score_status = "assessed" if total and source_count and grounded == total else "partial_verification" if grounded and source_count else "insufficient_verification"
     limit_reason = None
@@ -347,8 +353,6 @@ def compute_score_breakdown(session: Session, audit_id: str) -> ScoreBreakdown:
         "evidence_coverage": coverage["evidence_percent"],
     }
 
-    from app.core.business_policies import recorded_policy_results
-    policy_results = recorded_policy_results(session, UUID(str(audit_uuid)))
     policy_checks = policy_results["evaluations"]
     sub_scores["policy_compliance"] = round(100 * sum(r["state"] == "satisfied" for r in policy_checks) / len(policy_checks), 2) if policy_checks and not policy_results["stale"] else None
     policy_uncertain = any(f.type == "policy_uncertain" and f.status in ("pending", "accepted") for f in flags)
@@ -356,6 +360,10 @@ def compute_score_breakdown(session: Session, audit_id: str) -> ScoreBreakdown:
     if score_status == "assessed" and (policy_uncertain or policy_stale):
         score_status = "partial_verification"
         limit_reason = "Business policy checks are uncertain or out of date. Re-audit or resolve the recorded policy findings before relying on the rating."
+
+    if policy_results["documents_changed"]:
+        limit_reason = "The document set changed after the recorded assessment. Re-audit current documents before relying on a trust rating."
+        sub_scores = {key: None for key in sub_scores}
 
     # Calculate AI Score (all findings)
     ai_score_raw = calculate_ai_score(flags)
@@ -370,7 +378,7 @@ def compute_score_breakdown(session: Session, audit_id: str) -> ScoreBreakdown:
     elif score_status == "partial_verification":
         ai_score, reviewed_score = min(ai_score, 79.0), min(reviewed_score, 79.0)
 
-    if has_unresolved_critical(flags):
+    if has_unresolved_critical(flags) and score_status != "insufficient_verification":
         limit_reason = "Unresolved critical business risk caps the score at 49 until reviewed and resolved."
 
     # Severity counts

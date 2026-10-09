@@ -8,7 +8,7 @@ The original 146 findings remain in system-error-audit-2026-10-09.md as a histor
 - Scoring methodology schema migration, safe failed-session recovery, deduplicated jobs and interrupted-job recovery.
 - Real source-to-claim checks for comparable monetary values, dates and durations; currency-aware normalization; separate source documents; literal source quotes; conflicting evidence remains uncertain.
 - Current document versions determine retrieval, findings and coverage. Source amendments supersede old grounding findings instead of leaving contradictions active forever.
-- Scoring 6.1 separates evidence coverage from verification attempts. Zero claims, missing sources or no conclusive source-backed checks produce Not assessed. Partial coverage caps the score at 79; an unresolved critical finding caps it at 49. These are deterministic decision-support rules, not calibrated probabilities of truth.
+- Scoring 6.2 separates evidence coverage from verification attempts. Zero claims, missing sources or no conclusive source-backed checks produce Not assessed. Partial coverage caps the score at 79; an unresolved critical finding caps it at 49. These are deterministic decision-support rules, not calibrated probabilities of truth.
 - Score breakdown exposes supported, contradicted, unsupported and uncertain claims, real deductions and measured coverage. Missing evidence cannot yield a clean 100/100.
 - Passport revision updates preserve verification links. Version 2 signatures cover the issued audit identity, source hash, chain head, score, band, findings summary and review state. Tampering invalidates verification.
 - Safe bounded proof expressions replace arbitrary evaluation and contradictory boolean assertions now fail correctly.
@@ -18,7 +18,7 @@ The original 146 findings remain in system-error-audit-2026-10-09.md as a histor
 
 ## Validation
 
-- Full backend suite: 188 passed, zero skipped, against a temporary isolated PostgreSQL database. The database is removed afterward; production data is not used by the test suite.
+- Full backend suite: 193 passed, zero skipped, against a temporary isolated PostgreSQL database. The database is removed afterward; production data is not used by the test suite.
 - TypeScript build check: passed.
 - Frontend production build: passed and bundled with the backend.
 - Live browser upload of a synthetic contract and source approval produced four extracted claims, four contradictions and four findings, including a critical mismatch. The UI showed the real score and evidence coverage.
@@ -56,3 +56,16 @@ Generated model weights, training corpora, databases, runtime credentials, local
 - Actual browser preview found 12 months of source warranty against a 24-month requirement without saving results. Saving an enabled rule scoped only to the synthetic golden audit and re-running it produced five findings (four source contradictions plus one policy violation), policy compliance 0%, and a real score of 0. The mobile policy editor had no horizontal overflow. This synthetic policy does not apply to other audits.
 - Final isolated backend suite: 188 passed, zero skipped. TypeScript and production frontend build passed. Additional regressions cover invalid rules, role restrictions, non-mutating preview, currency incompatibility, source conflicts, version races, stale public ratings, pipeline enforcement and superseded/running-audit review guards.
 - Policy coverage is limited to these five extracted business fields and supported comparisons. General natural-language policy interpretation, authority precedence, source watchers, claim graph, production evals, mobile release and deployment remain outstanding. Stored policy revision history is controlled through the API; it is not a separate signed configuration ledger.
+
+
+## Continuation: Current evidence and assessment freshness
+
+- Claims, findings and evidence review endpoints now share a current-evidence filter: same audit, current primary claims, separate current source documents, non-empty literal quotes. Exact duplicate evidence records are collapsed for display; underlying historical rows remain intact.
+- The semantic and neural verification paths now receive this filtered evidence too. Forged quotes and cross-audit references cannot bypass deterministic validation by reaching a fallback model. Retrieval persistence rejects invalid source references and duplicate chunks; bulk retrieval excludes superseded primary claims.
+- Source amendments invalidate exposed claim grounding when its recorded evidence is obsolete. The current response projects uncertainty with zero confidence and no obsolete citation IDs, without rewriting the historical claim record.
+- Scoring 6.2 withdraws previous coverage and sub-scores when the document set changes after the recorded evaluation snapshot, including audits with no active business policies. A fresh audit is required before a new rating is available. Legacy audits without this snapshot should be re-audited to establish this provenance; the previously implemented public passport freshness checks remain in place.
+- Evidence loading is batched for claim and finding lists rather than fetching source evidence once per item.
+- A fast re-audit can complete between UI polls. The result page now explicitly refreshes score, findings, documents, source facts and policy results after a run request. Numeric ratings and coverage are withheld while a run is refreshing or incomplete; score-load failures also withhold the grade.
+- Isolated backend suite: 193 passed, zero skipped. New regressions cover stale and cross-audit evidence, primary self-citations, forged quotes, exact duplicates, historical primary versions, fallback-model input boundaries, stale grounding projection and source changes without any business policy. TypeScript validation passed. No full accessibility or production-deployment certification is implied.
+
+- Live browser validation confirmed the numeric grade disappears during re-audit refresh and updated policy text arrives without reloading the page. The production frontend build passed and is bundled with this delivery.

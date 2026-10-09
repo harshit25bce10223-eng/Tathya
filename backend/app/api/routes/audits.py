@@ -36,6 +36,7 @@ from app.api.schemas import (
     VerificationResult,
     SourceContextUpdate,
 )
+from app.core.current_evidence import current_evidence
 from app.core import security
 from app.core.config import settings
 from app.core.facts import get_facts_for_audit
@@ -55,7 +56,6 @@ from app.models import (
     Claim,
     Decision,
     Document,
-    Evidence,
     Fact,
     Flag,
     Passport,
@@ -400,12 +400,15 @@ def list_claims_with_grounding(
         select(Claim).join(Document, Claim.document_id == Document.id).where(Claim.audit_id == audit_id, Document.is_current.is_(True)).order_by(Claim.created_at)  # type: ignore[attr-defined]
     ).all()
 
+    from app.core.business_policies import recorded_policy_results
+    documents_changed = recorded_policy_results(session, audit_id)["documents_changed"]
+    evidence_by_claim = {}
+    for evidence in current_evidence(session, audit_id, [claim.id for claim in claims]):
+        evidence_by_claim.setdefault(evidence.claim_id, []).append(evidence)
     enriched_claims = []
     for claim in claims:
-        # Get evidence for this claim
-        evidence = session.exec(
-            select(Evidence).where(Evidence.claim_id == claim.id)
-        ).all()
+        evidence = evidence_by_claim.get(claim.id, [])
+        display_status = claim.status
 
         # Parse grounding from metadata
         grounding = None
@@ -415,6 +418,15 @@ def list_claims_with_grounding(
             if g:
                 from app.api.schemas import GroundingDetail
 
+                eligible_ids = {str(e.id) for e in evidence}
+                referenced_ids = {str(e) for e in g.get("evidence_ids", [])}
+                if g.get("primary_evidence_id"):
+                    referenced_ids.add(str(g["primary_evidence_id"]))
+                if documents_changed or not referenced_ids.issubset(eligible_ids):
+                    g = {**g, "status": "uncertain", "confidence": 0.0, "evidence_ids": [], "primary_evidence_id": None,
+                         "reason": "Source evidence or documents changed. Re-audit current documents before relying on this claim assessment.",
+                         "source_metadata": {**g.get("source_metadata", {}), "requires_reassessment": True}}
+                    display_status = "uncertain"
                 grounding = GroundingDetail(**g)
         except Exception:
             pass
@@ -427,7 +439,7 @@ def list_claims_with_grounding(
                 sentence_id=claim.sentence_id,
                 text=claim.text,
                 category=claim.category,
-                status=claim.status,
+                status=display_status,
                 metadata_json=claim.metadata_json,
                 created_at=claim.created_at,
                 grounding=grounding,
@@ -448,15 +460,7 @@ def list_evidence(
     audit_id: uuid.UUID, session: SessionDep, current_user: CurrentUser
 ) -> EvidencePublic:
     _get_audit(session, audit_id, current_user)
-    # Get all claim IDs for this audit
-    claim_ids = session.exec(select(Claim.id).where(Claim.audit_id == audit_id)).all()
-
-    if not claim_ids:
-        return EvidencePublic(data=[], count=0)
-
-    evidence = session.exec(
-        select(Evidence).where(Evidence.claim_id.in_(claim_ids))
-    ).all()
+    evidence = current_evidence(session, audit_id)
     return EvidencePublic(data=evidence, count=len(evidence))
 
 
@@ -474,14 +478,12 @@ def list_flags(
         select(Flag).join(Document, Flag.document_id == Document.id).where(Flag.audit_id == audit_id, Document.is_current.is_(True), Flag.status != "superseded").order_by(Flag.created_at)  # type: ignore[attr-defined]
     ).all()
 
+    evidence_by_claim = {}
+    for evidence in current_evidence(session, audit_id, [flag.claim_id for flag in flags if flag.claim_id]):
+        evidence_by_claim.setdefault(evidence.claim_id, []).append(evidence)
     enriched_flags = []
     for flag in flags:
-        # Get evidence for this flag's claim (if any)
-        evidence = []
-        if flag.claim_id:
-            evidence = session.exec(
-                select(Evidence).where(Evidence.claim_id == flag.claim_id)
-            ).all()
+        evidence = evidence_by_claim.get(flag.claim_id, [])
 
         # Get claim text
         claim_text = None

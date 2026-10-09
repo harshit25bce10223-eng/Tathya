@@ -233,6 +233,6 @@ def recorded_policy_results(session: Session, audit_id: UUID) -> dict[str, Any]:
     entry = session.exec(select(AuditLogEntry).where(AuditLogEntry.audit_id == audit_id, AuditLogEntry.action == "policies.evaluated").order_by(AuditLogEntry.created_at.desc())).first()
     current = _fingerprint(session, audit_id)
     if not entry:
-        return {"evaluations": [], "stale": bool(current["policies"]), "evaluated_at": None, "active_policy_count": len(current["policies"])}
+        return {"evaluations": [], "stale": bool(current["policies"]), "evaluated_at": None, "documents_changed": False, "active_policy_count": len(current["policies"])}
     payload = _json(entry.payload_json)
-    return {"evaluations": payload.get("evaluations", []), "stale": payload.get("fingerprint") != current, "evaluated_at": entry.created_at, "active_policy_count": len(current["policies"])}
+    return {"evaluations": payload.get("evaluations", []), "stale": payload.get("fingerprint") != current, "evaluated_at": entry.created_at, "documents_changed": payload.get("fingerprint", {}).get("documents") != current["documents"], "active_policy_count": len(current["policies"])}

@@ -256,11 +256,23 @@ def persist_evidence_for_claim(
     claim: Claim,
     chunks: list[RetrievedChunk],
 ) -> list[Evidence]:
-    existing = session.exec(select(Evidence).join(Document, Evidence.source_document_id == Document.id).where(Evidence.claim_id == claim.id, Document.is_current.is_(True), Document.kind == "source")).all()
+    from app.core.current_evidence import current_evidence
+    existing = current_evidence(session, claim.audit_id, [claim.id])
     if existing:
         return list(existing)
     rows: list[Evidence] = []
+    primary = session.get(Document, claim.document_id)
+    if primary is None or not primary.is_current or primary.kind != "primary" or primary.audit_id != claim.audit_id:
+        return []
+    seen = set()
     for chunk in chunks:
+        source = session.get(Document, chunk.document_id)
+        key = (chunk.document_id, chunk.start_offset, chunk.end_offset, chunk.text, chunk.support_type)
+        if source is None or source.audit_id != claim.audit_id or not source.is_current or source.kind != "source":
+            continue
+        if not chunk.text.strip() or chunk.text not in (source.normalized_text or "") or key in seen:
+            continue
+        seen.add(key)
         row = Evidence(
             claim_id=claim.id,
             source_document_id=chunk.document_id,
@@ -289,7 +301,7 @@ def persist_evidence_for_claim(
 
 
 def retrieve_evidence_for_audit(session: Session, audit_id: uuid.UUID) -> int:
-    claims = session.exec(select(Claim).where(Claim.audit_id == audit_id)).all()
+    claims = session.exec(select(Claim).join(Document, Claim.document_id == Document.id).where(Claim.audit_id == audit_id, Document.audit_id == audit_id, Document.is_current.is_(True), Document.kind == "primary")).all()
     written = 0
     for claim in claims:
         chunks = retrieve_for_claim(session, claim)

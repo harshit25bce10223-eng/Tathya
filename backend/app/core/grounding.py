@@ -144,9 +144,8 @@ def _ground_single_claim(session: Session, claim: Claim) -> GroundingResult:
             source_metadata={},
         )
 
-    evidence_list = session.exec(
-        select(Evidence).join(Document, Evidence.source_document_id == Document.id).where(Evidence.claim_id == claim.id, Document.is_current.is_(True), Document.kind == "source")
-    ).all()
+    from app.core.current_evidence import current_evidence
+    evidence_list = current_evidence(session, claim.audit_id, [claim.id])
     if not evidence_list:
         chunks = retrieve_for_claim(session, claim)
         evidence_list = persist_evidence_for_claim(session, claim, chunks)
