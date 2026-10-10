@@ -41,15 +41,14 @@ function Submit() {
     onSuccess: (audit) =>
       navigate({ to: "/submit/$auditId", params: { auditId: audit.id } }),
   })
-  function addFiles(incoming: File[]) {
+  function addFiles(selectedFiles: File[]) {
     create.reset()
-    const valid = incoming.filter(file => accepted.includes(file.name.split(".").pop()?.toLowerCase() ?? "") && file.size > 0 && file.size <= 50 * 1024 * 1024)
-    const rejected = incoming.filter(file => !valid.includes(file))
+    const valid = selectedFiles.filter(file => accepted.includes(file.name.split(".").pop()?.toLowerCase() ?? "") && file.size > 0 && file.size <= 50 * 1024 * 1024)
+    const rejected = selectedFiles.filter(file => !valid.includes(file))
     setError(rejected.length ? `${rejected.map(f => f.name).join(", ")}: choose a supported, non-empty file at most 50 MB.` : "")
-    incoming = valid
     setFiles((previous) => {
       const next = [...previous]
-      for (const file of incoming) {
+      for (const file of valid) {
         if (
           !next.some(
             (existing) =>

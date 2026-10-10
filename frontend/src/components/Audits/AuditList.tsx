@@ -84,17 +84,15 @@ export function AuditList({
         </Link>
       </div>
       {!queue && !archive && (
-        <>
-          <section className="metric-strip">
-            {counts.map((metric) => (
-              <div key={metric.label}>
-                <span>{metric.label}</span>
-                <strong>{audits.data ? metric.value : "—"}</strong>
-                <small>{metric.detail}</small>
-              </div>
-            ))}
-          </section>
-        </>
+        <section className="metric-strip">
+          {counts.map((metric) => (
+            <div key={metric.label}>
+              <span>{metric.label}</span>
+              <strong>{audits.data ? metric.value : "—"}</strong>
+              <small>{metric.detail}</small>
+            </div>
+          ))}
+        </section>
       )}
       <section className="product-panel audit-table-panel">
         <div className="panel-heading">

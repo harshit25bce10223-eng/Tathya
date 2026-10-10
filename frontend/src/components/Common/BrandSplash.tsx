@@ -1,5 +1,5 @@
 import logoImage from "@/assets/brand/tathya-logo-v2.png"
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 
 const parts = [
   { name: "Verified T mark", clip: "inset(0 72% 0 0)", delay: 0 },
@@ -8,11 +8,13 @@ const parts = [
 ]
 export function BrandSplash({ preview = false }: { preview?: boolean }) {
   const [replay, setReplay] = useState(0)
+  const skipButton = useRef<HTMLButtonElement>(null)
   const [visible, setVisible] = useState(
     () => preview || (window.location.pathname !== "/splash" && !sessionStorage.getItem("tathya-splash-seen")),
   )
   useEffect(() => {
     if (preview || !visible) return
+    skipButton.current?.focus()
     sessionStorage.setItem("tathya-splash-seen", "1")
     const surface = document.querySelector("#application-surface") as HTMLElement | null
     if (surface) surface.inert = true
@@ -33,7 +35,7 @@ export function BrandSplash({ preview = false }: { preview?: boolean }) {
       role="status"
       aria-label="Welcome to Tathya"
     >
-      {!preview && <button autoFocus type="button" className="splash-skip" onClick={() => setVisible(false)}>Skip introduction</button>}
+      {!preview && <button ref={skipButton} type="button" className="splash-skip" onClick={() => setVisible(false)}>Skip introduction</button>}
       <div className="splash-ambient" aria-hidden="true" />
       <div className="splash-art" key={replay} aria-hidden="true">
         {parts.map((part) => (

@@ -34,6 +34,22 @@ export function AuditResult({ auditId }: { auditId: string }) {
       />
     )
   const score = data.audit.status === "completed" && !retryAudit.isPending && !breakdown.error && breakdown.data && breakdown.data.score_status !== "insufficient_verification" ? breakdown.data.reviewed_score : undefined
+  const assessmentIncomplete =
+    data.audit.status === "completed" &&
+    breakdown.data?.score_status === "insufficient_verification"
+  const noClaimsExtracted =
+    assessmentIncomplete && breakdown.data?.coverage.total_claims === 0
+  const scoreExplanation =
+    score === undefined
+      ? isRunning(data.audit.status) || retryAudit.isPending
+        ? "Verification is running or refreshing; no current rating is available yet."
+        : breakdown.error
+          ? "The current score could not be loaded. Retry the score request below."
+          : breakdown.data?.score_limit_reason ??
+            "Verification coverage is being checked; no rating is available yet."
+      : data.open_flag_count
+        ? "Review the flagged findings before relying on this document."
+        : "Read the evidence and findings alongside this score."
   return (
     <div className="product-page">
       <Link to="/control" className="back-link">
@@ -66,7 +82,7 @@ export function AuditResult({ auditId }: { auditId: string }) {
         <div className="form-error" role="alert">
           Verification could not finish.{" "}
           {data.audit.failed_stage ? `The ${data.audit.failed_stage.replace(/_/g, " ")} step failed. ` : ""}Check that your documents are readable, then try again.
-          <button className="primary-link" disabled={retryAudit.isPending} onClick={() => retryAudit.mutate()}>Retry verification</button>
+          <button type="button" className="primary-link" disabled={retryAudit.isPending} onClick={() => retryAudit.mutate()}>Retry verification</button>
           {retryAudit.error && <p role="alert">{retryAudit.error.message}</p>}
         </div>
       )}
@@ -83,13 +99,7 @@ export function AuditResult({ auditId }: { auditId: string }) {
                 }).format(score)}
             {score !== undefined && <span>/ 100</span>}
           </div>
-          <p>
-            {score === undefined
-              ? isRunning(data.audit.status) || retryAudit.isPending ? "Verification is running or refreshing; no current rating is available yet." : breakdown.error ? "The current score could not be loaded. Retry the score request below." : breakdown.data?.score_limit_reason ?? "Verification coverage is being checked; no rating is available yet."
-              : data.open_flag_count
-                ? "Review the flagged findings before relying on this document."
-                : "Read the evidence and findings alongside this score."}
-          </p>
+          <p>{scoreExplanation}</p>
         </div>
         <div className="score-context">
           <div>
@@ -111,7 +121,19 @@ export function AuditResult({ auditId }: { auditId: string }) {
       </section>
       {data.audit.status === "completed" && !retryAudit.isPending && breakdown.data && <section className="product-panel" aria-label="Verification coverage">
         <h2>{breakdown.data.score_status === "assessed" ? "Evidence assessment" : "Verification incomplete"}</h2>
-        {breakdown.data.score_limit_reason && <p role="status">{breakdown.data.score_limit_reason}</p>}
+        {breakdown.data.score_status === "insufficient_verification" && (
+          <p role="status" className="form-error">
+            {breakdown.data.coverage.total_claims === 0
+              ? "No checkable claims were extracted. Tathya cannot issue a trust score for this document. Try a searchable document version or a clearer scan."
+              : breakdown.data.score_limit_reason ??
+                "There is not enough verified evidence to issue a trust score. Add current source documents and re-audit."}
+          </p>
+        )}
+        {breakdown.data.score_status === "partial_verification" && (
+          <p role="status">
+            This is a limited assessment. Some claims or policy checks remain uncertain, so the score is capped until verification is complete.
+          </p>
+        )}
         <div className="score-context">
           <div><span>Verification attempts</span><strong>{breakdown.data.coverage.checked_claims} / {breakdown.data.coverage.total_claims}</strong></div>
           <div><span>Conclusive source checks</span><strong>{breakdown.data.coverage.grounded_claims} / {breakdown.data.coverage.total_claims}</strong></div>
@@ -254,12 +276,24 @@ export function AuditResult({ auditId }: { auditId: string }) {
             <h3>
               {isRunning(data.audit.status)
                 ? "Findings will appear as the audit runs."
-                : data.audit.status === "failed" ? "Verification did not finish" : "No findings returned"}
+                : data.audit.status === "failed"
+                  ? "Verification did not finish"
+                  : noClaimsExtracted
+                    ? "No claims could be checked"
+                    : assessmentIncomplete
+                      ? "No findings returned; verification is incomplete"
+                      : "No findings returned"}
             </h3>
             <p>
               {isRunning(data.audit.status)
                 ? "You can leave this page open."
-                : "A clean result should still be considered alongside your source material."}
+                : data.audit.status === "failed"
+                  ? "The audit stopped before it could return a reliable result. Check the error above and retry verification."
+                  : noClaimsExtracted
+                    ? "Tathya could not identify checkable claims in this document, so it cannot issue a trust score. Review the document text or upload a searchable version, then re-audit."
+                    : assessmentIncomplete
+                      ? "The available claim and source checks are not enough to issue a trust score. Add current supporting source documents or review the evidence assessment above before relying on this result."
+                      : "No issues were identified in the checks that ran. Review the evidence assessment and source material before relying on this result."}
             </p>
           </div>
         )}

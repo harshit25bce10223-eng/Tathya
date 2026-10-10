@@ -1,5 +1,5 @@
 import { useUnsavedChanges } from "@/hooks/useUnsavedChanges"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { useMutation } from "@tanstack/react-query"
 import { Link } from "@tanstack/react-router"
 import {
@@ -81,7 +81,15 @@ export function ProofSandbox({ auditId: _auditId }: { auditId: string }) {
     setNumericConstraints(numericConstraints.filter((_, i) => i !== idx))
   }
 
-  useEffect(() => { setResult(null); solveMutation.reset() }, [goals, assumptions, numericConstraints])
+  const solveInputSignature = JSON.stringify([goals, assumptions, numericConstraints])
+  const previousSolveInputSignature = useRef(solveInputSignature)
+  useEffect(() => {
+    if (previousSolveInputSignature.current !== solveInputSignature) {
+      setResult(null)
+      solveMutation.reset()
+    }
+    previousSolveInputSignature.current = solveInputSignature
+  }, [solveInputSignature, solveMutation.reset])
 
   useUnsavedChanges(solveMutation.isPending || ((goals.length > 0 || assumptions.length > 0 || numericConstraints.length > 0) && !result))
 

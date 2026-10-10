@@ -19,5 +19,5 @@ export function DocumentText({text, flags}: {text: string; flags: AuditFlag[]}) 
     cursor = span.end
   }
   pieces.push(text.slice(cursor))
-  return <pre className="document-preview" aria-label="Document text with flagged passages">{pieces}</pre>
+  return <section aria-label="Document text with flagged passages"><pre className="document-preview">{pieces}</pre></section>
 }

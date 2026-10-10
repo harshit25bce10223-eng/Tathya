@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { auditApi, isAdmin, isReviewer } from "@/api/audits"
 import { fields, operators, policyApi, type BusinessCondition, type PolicyDraft, type PolicyEvaluation, type PolicyRecord } from "@/api/policies"
 import useAuth from "@/hooks/useAuth"
@@ -34,8 +34,12 @@ export function PolicyStudio() {
     if (!draft || !previewAudit) throw new Error("Choose an audit to preview this rule.")
     return policyApi.preview(previewAudit, draft.rules)
   }})
-  const ruleSignature = JSON.stringify(draft?.rules)
-  useEffect(() => {preview.reset()}, [ruleSignature, previewAudit])
+  const previewSignature = JSON.stringify([draft?.rules, previewAudit])
+  const previousPreviewSignature = useRef(previewSignature)
+  useEffect(() => {
+    if (previousPreviewSignature.current !== previewSignature) preview.reset()
+    previousPreviewSignature.current = previewSignature
+  }, [previewSignature, preview.reset])
   const pending = save.isPending || preview.isPending
   const open = (record?: PolicyRecord) => {
     if (pending || (dirty && !window.confirm("Discard your unsaved policy changes?"))) return

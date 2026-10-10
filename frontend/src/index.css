@@ -1754,8 +1754,7 @@ body {
   position: relative;
 }
 
-.splash-complete,
-.original-brand-icon {
+.splash-complete {
   filter: url(#brand-paper);
 }
 .splash-actions {
@@ -1986,7 +1985,7 @@ body {
 .policy-editor-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 200px), 1fr)); gap: .75rem; }
 .policy-condition, .policy-recorded-result { padding: 1rem; margin: 1rem 0; border: 1px solid var(--border); border-radius: 12px; }
 .policy-condition h4 { margin-bottom: .75rem; }
-.policy-checkbox { display: flex !important; align-items: center; gap: .5rem; }
+.policy-editor label.policy-checkbox { display: flex; align-items: center; gap: .5rem; }
 .policy-preview-controls, .policy-actions { display: flex; flex-wrap: wrap; gap: .75rem; align-items: end; }
 .policy-preview-controls label { flex: 1; min-width: min(100%, 200px); }
 .policy-studio .source-fact-record { margin-top: 1rem; }

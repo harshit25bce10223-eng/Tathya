@@ -2,7 +2,7 @@ import { useUnsavedChanges } from "@/hooks/useUnsavedChanges"
 import { TrialRunner } from "./TrialRunner"
 import { saveCandidate } from "@/api/workspaceDrafts"
 import { QueryState } from "@/components/Audits/shared"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef, useCallback } from "react"
 import { useMutation, useQuery } from "@tanstack/react-query"
 import { Link } from "@tanstack/react-router"
 import {
@@ -67,10 +67,10 @@ export function InjectorWorkspace({ auditId }: { auditId: string }) {
     setOriginalText(docTextQuery.data?.raw_text ?? "")
     setInjectedText(docTextQuery.data?.raw_text ?? "")
     setCandidate(null)
-  }, [activeDocId, docTextQuery.data?.raw_text])
+  }, [docTextQuery.data?.raw_text])
 
   // Apply scenario modification preset
-  const applyScenarioPreset = (version: string) => {
+  const applyScenarioPreset = useCallback((version: string) => {
     setScenarioVersion(version)
     const sc = scenarios.find(s => s.version === version)
     if (!sc) return
@@ -97,7 +97,7 @@ export function InjectorWorkspace({ auditId }: { auditId: string }) {
         setInjectedText(`${originalText}\n\n[INJECTED CLAUSE]: Terms apply without prior ministry authorization.`)
       }
     }
-  }
+  }, [scenarios, originalText])
 
   const injectMutation = useMutation({
     mutationFn: () => {
@@ -117,11 +117,19 @@ export function InjectorWorkspace({ auditId }: { auditId: string }) {
     },
   })
 
-  useEffect(() => { setCandidate(null); injectMutation.reset() }, [injectedText, severity, pattern, rationale])
+  const injectionSignature = JSON.stringify([injectedText, severity, pattern, rationale])
+  const previousInjectionSignature = useRef(injectionSignature)
+  useEffect(() => {
+    if (previousInjectionSignature.current !== injectionSignature) {
+      setCandidate(null)
+      injectMutation.reset()
+    }
+    previousInjectionSignature.current = injectionSignature
+  }, [injectionSignature, injectMutation.reset])
   useEffect(() => {
     const requested = new URLSearchParams(window.location.search).get("scenario")
     if (requested && originalText && scenarios.length && !scenarioVersion) applyScenarioPreset(requested)
-  }, [originalText, scenarios.length, scenarioVersion])
+  }, [originalText, scenarios.length, scenarioVersion, applyScenarioPreset])
 
   useUnsavedChanges(injectMutation.isPending || (injectedText !== originalText && !candidate))
 
@@ -153,8 +161,9 @@ export function InjectorWorkspace({ auditId }: { auditId: string }) {
       <section className="product-panel mb-6 p-4 rounded-xl border border-border bg-card">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label className="text-xs font-semibold text-foreground block mb-1.5">Target Audit</label>
+            <label htmlFor="injector-target-audit" className="text-xs font-semibold text-foreground block mb-1.5">Target Audit</label>
             <select
+              id="injector-target-audit"
               aria-label="Target Audit"
               value={activeAuditId}
               onChange={e => {
@@ -173,8 +182,9 @@ export function InjectorWorkspace({ auditId }: { auditId: string }) {
           </div>
 
           <div>
-            <label className="text-xs font-semibold text-foreground block mb-1.5">Source Document</label>
+            <label htmlFor="injector-source-document" className="text-xs font-semibold text-foreground block mb-1.5">Source Document</label>
             <select
+              id="injector-source-document"
               aria-label="Source Document"
               value={activeDocId}
               onChange={e => {
@@ -228,8 +238,9 @@ export function InjectorWorkspace({ auditId }: { auditId: string }) {
 
             <div className="space-y-3 pt-3 border-t border-border text-xs">
               <div>
-                <label className="text-xs font-medium text-foreground block mb-1">Severity Level</label>
+                <label htmlFor="injector-severity" className="text-xs font-medium text-foreground block mb-1">Severity Level</label>
                 <select
+                  id="injector-severity"
                   aria-label="Severity level"
                   value={severity}
                   onChange={e => setSeverity(e.target.value as any)}
@@ -243,8 +254,9 @@ export function InjectorWorkspace({ auditId }: { auditId: string }) {
               </div>
 
               <div>
-                <label className="text-xs font-medium text-foreground block mb-1">Attack Rationale</label>
+                <label htmlFor="injector-rationale" className="text-xs font-medium text-foreground block mb-1">Attack Rationale</label>
                 <input
+                  id="injector-rationale"
                   type="text"
                   aria-label="Attack rationale"
                   value={rationale}

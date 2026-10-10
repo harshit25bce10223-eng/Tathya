@@ -9,5 +9,5 @@ export function loadCandidate(auditId: string): InjectionCandidate | null {
   catch { return null }
 }
 export function clearWorkspaceDrafts() {
-  Object.keys(sessionStorage).filter(key => key.startsWith(prefix)).forEach(key => sessionStorage.removeItem(key))
+  Object.keys(sessionStorage).filter(key => key.startsWith(prefix)).forEach(key => { sessionStorage.removeItem(key) })
 }

@@ -1,7 +1,7 @@
 import { useUnsavedChanges } from "@/hooks/useUnsavedChanges"
 import { loadCandidate } from "@/api/workspaceDrafts"
 import { QueryState } from "@/components/Audits/shared"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { useMutation, useQuery } from "@tanstack/react-query"
 import { Link } from "@tanstack/react-router"
 import {
@@ -81,7 +81,15 @@ export function JudgeWorkspace({ auditId }: { auditId: string }) {
     setNewQuote("")
   }
 
-  useEffect(() => { setReview(null); runReviewMutation.reset() }, [claimText, evidenceList, claimCategory, strictCheck])
+  const reviewInputSignature = JSON.stringify([claimText, evidenceList, claimCategory, strictCheck])
+  const previousReviewInputSignature = useRef(reviewInputSignature)
+  useEffect(() => {
+    if (previousReviewInputSignature.current !== reviewInputSignature) {
+      setReview(null)
+      runReviewMutation.reset()
+    }
+    previousReviewInputSignature.current = reviewInputSignature
+  }, [reviewInputSignature, runReviewMutation.reset])
   useEffect(() => { setClaimText(loadCandidate(activeAuditId)?.injected_text.slice(0, 10000) ?? ""); setEvidenceList([]); setReview(null) }, [activeAuditId])
 
   useUnsavedChanges(runReviewMutation.isPending || (!!claimText.trim() && !review))
@@ -116,8 +124,9 @@ export function JudgeWorkspace({ auditId }: { auditId: string }) {
       <section className="product-panel mb-6 p-4 rounded-xl border border-border bg-card">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
-            <label className="text-xs font-semibold text-foreground block mb-1">Target Audit Context</label>
+            <label htmlFor="judge-target-audit" className="text-xs font-semibold text-foreground block mb-1">Target Audit Context</label>
             <select
+              id="judge-target-audit"
               value={activeAuditId}
               onChange={e => {
                 setSelectedAuditId(e.target.value)

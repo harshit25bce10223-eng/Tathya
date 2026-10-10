@@ -10,5 +10,5 @@ export const livingTrustApi = {
  watch:(id:string)=>read(`/sources/${id}/stale`,watch),
  configure:(audit_id:string,enabled:boolean,auto_reaudit:boolean,note:string)=>read("/sources/watch",watch,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({audit_id,enabled,auto_reaudit,note})}),
  check:(id:string)=>read(`/sources/${id}/check`,checked,{method:"POST"}),
- upload:async(id:string,files:File[],signal:AbortSignal)=>{const body=new FormData();body.set("source_only","true");files.forEach(file=>body.append("files",file));await apiFetch(`/audits/${id}/documents`,{method:"POST",body,signal})},
+ upload:async(id:string,files:File[],signal:AbortSignal)=>{const body=new FormData();body.set("source_only","true");files.forEach(file=>{body.append("files",file)});await apiFetch(`/audits/${id}/documents`,{method:"POST",body,signal})},
 }
