@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Product question
+    url: https://github.com/harshit25bce10223-eng/Tathya/discussions
+    about: Ask product, implementation, or contribution questions in Discussions.

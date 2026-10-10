@@ -1,0 +1,9 @@
+# Trust-core evaluation
+
+Run `.venv/Scripts/python.exe scripts/evaluate_trust_core.py` from the repository root. Add `--live-judge` to explicitly permit provider calls on synthetic fixtures. Outputs include dataset SHA256, split/category metrics, latency, abstentions, provider errors and individual records. Expected labels are never sent to the verifier. Family IDs cannot occur in multiple splits.
+
+`synthetic-v1.jsonl` is a tiny authored smoke dataset, not unseen human validation. Retrieval alone abstains because retrieval does not establish truth. Rules compare matching business fields and literal currency/date/duration values. The judge arm uses the existing provider adapter and validates authorized evidence IDs; the Z3 arm records actual constraint proofs on numeric pairs. These are component comparisons; they do not estimate full-pipeline accuracy or policy coverage.
+
+The first live run exposed a nullable-schema mismatch in Gemini and exhausted OpenAI fallback credits. After using the SDK's raw JSON-schema parameter, the configured Gemini judge returned all 12 expected statuses, including uncertainty for conflicting sources. This small synthetic result is **not a production accuracy claim**. Deterministic-only detection recall was 37.5%, documenting its limited coverage rather than disguising abstentions as clean findings.
+
+The challenge workspace additionally runs a whole candidate audit against canonical copies of the current source texts. Originals and reviewer labels stay on the parent. The candidate audit does not inherit parent review decisions or audit-specific policies. Metrics are current observations of reviewer-declared exact claim passages; changed candidate documents are excluded. The latest 100 trials are reported, with at most five active trials per parent.

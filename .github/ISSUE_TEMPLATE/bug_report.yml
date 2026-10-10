@@ -1,0 +1,35 @@
+name: Bug report
+description: Report a reproducible problem in Tathya.
+title: "bug: "
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: "Do not include documents, credentials, signing keys, or other sensitive information."
+  - type: textarea
+    id: problem
+    attributes:
+      label: What happened?
+      description: Describe the actual behavior and the expected behavior.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Go to ...
+        2. Upload or select ...
+        3. Observe ...
+    validations:
+      required: true
+  - type: input
+    id: environment
+    attributes:
+      label: Environment
+      placeholder: "Browser / OS / commit or deployment version"
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Safe diagnostics
+      description: Share redacted errors or screenshots only.
