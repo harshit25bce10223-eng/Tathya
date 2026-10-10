@@ -223,6 +223,19 @@ def test_invalid_embeddings_preserve_lexical_retrieval(pack, monkeypatch, vector
     assert citations[0].document_id == document.id
 
 
+def test_uncached_models_are_not_loaded_during_source_retrieval(pack, monkeypatch):
+    session, _, _, audit, _, source = pack
+    document = source("The warranty period is twelve months.")
+    # Remove the fixture's model stubs so the real cache guards are exercised.
+    monkeypatch.undo()
+    retrieval._embedder.cache_clear()
+    retrieval._reranker.cache_clear()
+    monkeypatch.setattr("app.core.models_runtime._model_cached", lambda _: False)
+    citations, mode = rag.retrieve_sources(session, audit.id, "Warranty period?", 5)
+    assert mode == "lexical"
+    assert [citation.document_id for citation in citations] == [document.id]
+
+
 def test_hindi_retrieval_uses_complete_words(pack):
     session, _, _, audit, _, source = pack
     relevant = source("वारंटी अवधि बारह महीने है।")

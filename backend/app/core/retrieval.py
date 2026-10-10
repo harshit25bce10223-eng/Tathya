@@ -24,7 +24,6 @@ from app.models import Claim, Document, Evidence
 logger = logging.getLogger("tathya.retrieval")
 
 _TOKEN = re.compile(r"[\w₹%./\-\u0900-\u097f]+")
-_FALLBACK_EMBEDDING = "BAAI/bge-small-en-v1.5"
 
 
 @dataclass
@@ -93,31 +92,45 @@ def _cosine_ranks(query_vec: np.ndarray, matrix: np.ndarray, top_k: int) -> list
 
 @lru_cache(maxsize=1)
 def _embedder():
-    models = [settings.EMBEDDING_MODEL, _FALLBACK_EMBEDDING]
-    last_error: Exception | None = None
-    for name in models:
-        if not name:
-            continue
-        try:
-            from sentence_transformers import SentenceTransformer
+    # User-facing retrieval must never trigger a large model download. Health
+    # reports this same cache state; lexical retrieval remains available until
+    # the configured model has been installed locally.
+    from app.core.models_runtime import _model_cached
 
-            model = SentenceTransformer(name, cache_folder=settings.MODEL_CACHE_DIR)
-            logger.info("loaded embedding model %s", name)
-            return model
-        except Exception as exc:  # noqa: BLE001
-            last_error = exc
-            logger.warning("embedding model %s unavailable: %s", name, exc)
-    if last_error:
-        logger.warning("dense retrieval disabled: %s", last_error)
-    return None
+    name = settings.EMBEDDING_MODEL
+    if not name or not _model_cached(name):
+        logger.info("dense retrieval disabled: embedding model is not cached")
+        return None
+    try:
+        from sentence_transformers import SentenceTransformer
+
+        model = SentenceTransformer(
+            name,
+            cache_folder=settings.MODEL_CACHE_DIR,
+            local_files_only=True,
+        )
+        logger.info("loaded embedding model %s", name)
+        return model
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("embedding model %s unavailable locally: %s", name, exc)
+        return None
 
 
 @lru_cache(maxsize=1)
 def _reranker():
+    from app.core.models_runtime import _model_cached
+
+    if not settings.RERANKER_MODEL or not _model_cached(settings.RERANKER_MODEL):
+        logger.info("reranking disabled: model is not cached")
+        return None
     try:
         from sentence_transformers import CrossEncoder
 
-        model = CrossEncoder(settings.RERANKER_MODEL)
+        model = CrossEncoder(
+            settings.RERANKER_MODEL,
+            cache_folder=settings.MODEL_CACHE_DIR,
+            local_files_only=True,
+        )
         logger.info("loaded reranker %s", settings.RERANKER_MODEL)
         return model
     except Exception as exc:  # noqa: BLE001
